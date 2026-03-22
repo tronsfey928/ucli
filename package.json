@@ -1,0 +1,22 @@
+{
+  "name": "fantastic-potato",
+  "private": true,
+  "version": "0.0.1",
+  "description": "OAS Gateway — centralized OpenAPI management and CLI proxy for AI agents",
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:server": "pnpm --filter @oas-gateway/server dev",
+    "dev:cli": "pnpm --filter @oas-gateway/cli dev",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

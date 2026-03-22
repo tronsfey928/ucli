@@ -1,0 +1,39 @@
+{
+  "name": "@oas-gateway/cli",
+  "version": "0.1.0",
+  "description": "OAS Gateway CLI — proxy OpenAPI services for AI agents",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/**",
+    "skill.md",
+    "README.md"
+  ],
+  "type": "module",
+  "bin": {
+    "oas-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsup && chmod +x dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tronsfey/openapi2cli": "^1.0.12",
+    "axios": "^1.8.4",
+    "commander": "^12.1.0",
+    "conf": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "tsx": "^4.19.3",
+    "tsup": "^8.4.0",
+    "vitest": "^3.1.1",
+    "typescript": "^5.7.3"
+  }
+}
