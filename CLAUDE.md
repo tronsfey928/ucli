@@ -19,7 +19,7 @@ fantastic-potato/
 ├── package.json                     # pnpm workspace root
 ├── tsconfig.base.json               # Shared TypeScript config (CommonJS, decorators)
 └── packages/
-    ├── server/                      # @oas-gateway/server (NestJS v11)
+    ├── server/                      # @tronsfey/oas-server (NestJS v11)
     │   ├── src/
     │   │   ├── main.ts              # NestJS bootstrap entry point
     │   │   ├── app.module.ts        # Root module
@@ -49,7 +49,7 @@ fantastic-potato/
     │   ├── jest.config.js
     │   ├── jest-e2e.config.js
     │   └── tsconfig.json
-    └── cli/                         # @oas-gateway/cli (Commander.js + tsup/ESM)
+    └── cli/                         # @tronsfey/oas-cli (Commander.js + tsup/ESM)
         ├── src/
         │   ├── index.ts             # CLI entry point
         │   ├── config.ts            # Conf-based local config store
@@ -142,13 +142,13 @@ cd packages/cli && pnpm build
 pnpm test
 
 # Server E2E only (uses memory adapters — no DB/Redis required)
-pnpm --filter @oas-gateway/server test:e2e
+pnpm --filter @tronsfey/oas-server test:e2e
 
 # CLI unit tests only (Vitest)
-pnpm --filter @oas-gateway/cli test
+pnpm --filter @tronsfey/oas-cli test
 
 # Server with coverage
-pnpm --filter @oas-gateway/server test:coverage
+pnpm --filter @tronsfey/oas-server test:coverage
 ```
 
 **AI assistants must run tests before committing.** Do not commit code that breaks existing tests.
@@ -164,8 +164,8 @@ E2E tests set `DB_TYPE=memory CACHE_TYPE=memory` in `packages/server/test/e2e/se
 pnpm lint
 
 # Per-package
-pnpm --filter @oas-gateway/server lint
-pnpm --filter @oas-gateway/cli lint
+pnpm --filter @tronsfey/oas-server lint
+pnpm --filter @tronsfey/oas-cli lint
 ```
 
 Always run linting before committing. Fix all TypeScript type errors.

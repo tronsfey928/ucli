@@ -1,4 +1,8 @@
-# @oas-gateway/cli
+<p align="center">
+  <img src="../../assets/logo.svg" alt="OAS Gateway" width="480" />
+</p>
+
+# @tronsfey/oas-cli
 
 CLI client for the OAS Gateway server. Provides AI agents with authenticated access to OpenAPI-described APIs — without exposing credentials.
 
@@ -6,7 +10,7 @@ CLI client for the OAS Gateway server. Provides AI agents with authenticated acc
 
 ```bash
 # Install globally
-npm install -g @oas-gateway/cli
+npm install -g @tronsfey/oas-cli
 
 # Configure (get the server URL and JWT from your admin)
 oas-cli configure --server http://localhost:3000 --token <group-jwt>

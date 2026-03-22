@@ -24,7 +24,7 @@ export async function readOASListCache(): Promise<OASEntryPublic[] | null> {
     const raw = await readFile(LIST_CACHE_FILE, 'utf8')
     const cached: CacheFile = JSON.parse(raw)
     const age = (Date.now() - cached.fetchedAt) / 1000
-    if (age > cached.ttlSec) return null  // expired
+    if (cached.ttlSec === 0 || age > cached.ttlSec) return null  // expired
     return cached.entries
   } catch {
     return null  // not found or parse error

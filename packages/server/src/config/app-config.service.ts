@@ -35,4 +35,8 @@ export class AppConfigService {
     return this.config.get<string>('METRICS_ALLOWED_IPS', '127.0.0.1,::1').split(',').map(s => s.trim())
   }
   get logLevel(): string { return this.config.get<string>('LOG_LEVEL', 'info') }
+
+  get swaggerEnabled(): boolean {
+    return this.config.get<string>('SWAGGER_ENABLED', 'true') !== 'false'
+  }
 }

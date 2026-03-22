@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" width="480" height="160">
+  <defs>
+    <!-- Background gradient border -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <!-- Icon accent gradient -->
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <!-- Glow filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Clip path for rounded rect -->
+    <clipPath id="cardClip">
+      <rect width="480" height="160" rx="14" ry="14"/>
+    </clipPath>
+  </defs>
+
+  <!-- Card background -->
+  <rect width="480" height="160" rx="14" ry="14" fill="#0d1117"/>
+
+  <!-- Subtle gradient overlay -->
+  <rect width="480" height="160" rx="14" ry="14" fill="url(#borderGrad)" opacity="0.06"/>
+
+  <!-- Border stroke -->
+  <rect x="1" y="1" width="478" height="158" rx="13" ry="13"
+        fill="none" stroke="url(#borderGrad)" stroke-width="1.5" opacity="0.8"/>
+
+  <!-- ── Left panel: gateway icon ── -->
+  <!-- Central hexagon (API gateway node) -->
+  <g transform="translate(80, 80)" filter="url(#softGlow)">
+    <!-- Hexagon shape (flat-top) -->
+    <polygon
+      points="0,-36 31.2,-18 31.2,18 0,36 -31.2,18 -31.2,-18"
+      fill="#0d1117"
+      stroke="url(#hexGrad)"
+      stroke-width="2.5"
+    />
+    <!-- Inner hex fill accent -->
+    <polygon
+      points="0,-26 22.5,-13 22.5,13 0,26 -22.5,13 -22.5,-13"
+      fill="#7c3aed"
+      opacity="0.15"
+    />
+
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="5" fill="#38bdf8" opacity="0.9"/>
+
+    <!-- Route lines (3 spokes, 120° apart) -->
+    <!-- Right spoke (0°) -->
+    <line x1="5" y1="0" x2="28" y2="0" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="28" cy="0" r="3.5" fill="#38bdf8" opacity="0.85"/>
+
+    <!-- Lower-left spoke (120°) -->
+    <line x1="-2.5" y1="4.3" x2="-16" y2="27.7" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="-16" cy="27.7" r="3.5" fill="#38bdf8" opacity="0.85"/>
+
+    <!-- Upper-left spoke (240°) -->
+    <line x1="-2.5" y1="-4.3" x2="-16" y2="-27.7" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="-16" cy="-27.7" r="3.5" fill="#38bdf8" opacity="0.85"/>
+  </g>
+
+  <!-- Vertical divider -->
+  <line x1="142" y1="24" x2="142" y2="136" stroke="#30363d" stroke-width="1"/>
+
+  <!-- ── Right panel: text ── -->
+  <!-- Main title -->
+  <text
+    x="165" y="68"
+    font-family="'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', ui-monospace, monospace"
+    font-size="32"
+    font-weight="700"
+    letter-spacing="1"
+    fill="#e6edf3"
+  >OAS GATEWAY</text>
+
+  <!-- Subtitle -->
+  <text
+    x="166" y="95"
+    font-family="'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', ui-monospace, monospace"
+    font-size="13"
+    font-weight="400"
+    letter-spacing="0.5"
+    fill="#7d8590"
+  >by tronsfey</text>
+
+  <!-- Tag line -->
+  <text
+    x="166" y="122"
+    font-family="'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', ui-monospace, monospace"
+    font-size="11"
+    font-weight="400"
+    letter-spacing="0.3"
+    fill="#3d444d"
+  >OpenAPI · NestJS · CLI · AES-256-GCM</text>
+
+  <!-- Version badge -->
+  <g transform="translate(165, 132)">
+    <rect x="0" y="0" width="62" height="18" rx="9" fill="#1a2332" stroke="#2563eb" stroke-width="1" opacity="0.9"/>
+    <text
+      x="31" y="13"
+      text-anchor="middle"
+      font-family="'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', ui-monospace, monospace"
+      font-size="9.5"
+      font-weight="600"
+      fill="#2563eb"
+      letter-spacing="0.3"
+    >npm public</text>
+  </g>
+
+  <g transform="translate(234, 132)">
+    <rect x="0" y="0" width="52" height="18" rx="9" fill="#1a2a1a" stroke="#22c55e" stroke-width="1" opacity="0.9"/>
+    <text
+      x="26" y="13"
+      text-anchor="middle"
+      font-family="'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', ui-monospace, monospace"
+      font-size="9.5"
+      font-weight="600"
+      fill="#22c55e"
+      letter-spacing="0.3"
+    >v0.1.0</text>
+  </g>
+</svg>

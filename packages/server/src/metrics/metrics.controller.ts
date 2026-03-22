@@ -1,4 +1,5 @@
 import { Controller, Get, Req, Res, ForbiddenException } from '@nestjs/common'
+import { ApiExcludeEndpoint } from '@nestjs/swagger'
 import { Request, Response } from 'express'
 import { Registry, collectDefaultMetrics, Counter, Histogram } from 'prom-client'
 import { AppConfigService } from '../config/app-config.service'
@@ -30,6 +31,7 @@ export class MetricsController {
   }
 
   @Get('metrics')
+  @ApiExcludeEndpoint()
   async metrics(@Req() req: Request, @Res() res: Response): Promise<void> {
     const allowedIPs = this.appConfig.metricsAllowedIPs
     if (allowedIPs.length > 0 && !allowedIPs.includes(req.ip ?? '')) {

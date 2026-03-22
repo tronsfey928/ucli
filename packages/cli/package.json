@@ -1,5 +1,5 @@
 {
-  "name": "@oas-gateway/cli",
+  "name": "@tronsfey/oas-cli",
   "version": "0.1.0",
   "description": "OAS Gateway CLI — proxy OpenAPI services for AI agents",
   "license": "MIT",

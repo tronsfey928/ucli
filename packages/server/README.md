@@ -1,4 +1,8 @@
-# @oas-gateway/server
+<p align="center">
+  <img src="../../assets/logo.svg" alt="OAS Gateway" width="480" />
+</p>
+
+# @tronsfey/oas-server
 
 Centralized OpenAPI Specification management server. Issues group JWTs, stores OAS entries with encrypted auth configs, and exposes a REST API for the `oas-cli` client.
 
@@ -6,7 +10,7 @@ Centralized OpenAPI Specification management server. Issues group JWTs, stores O
 
 ```bash
 # Install globally
-npm install -g @oas-gateway/server
+npm install -g @tronsfey/oas-server
 
 # Generate encryption key
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

@@ -42,6 +42,7 @@ import { AppConfigService } from './app-config.service'
         RATE_LIMIT_LIMIT: Joi.number().default(100),
 
         METRICS_ALLOWED_IPS: Joi.string().default('127.0.0.1,::1'),
+        SWAGGER_ENABLED: Joi.string().valid('true', 'false').default('true'),
         LOG_LEVEL: Joi.string()
           .valid('trace', 'debug', 'info', 'warn', 'error', 'fatal')
           .default('info'),
