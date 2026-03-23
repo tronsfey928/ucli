@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
 
 const AUTH_TYPES: AuthType[] = ['none', 'bearer', 'api_key', 'basic', 'oauth2_cc']
 
@@ -54,6 +55,7 @@ const EMPTY_FORM: OASForm = {
 }
 
 export default function OASPage() {
+  const { t } = useI18n()
   const [entries, setEntries] = useState<OASEntry[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,7 +76,7 @@ export default function OASPage() {
       setEntries(e)
       setGroups(g)
     } catch {
-      toast.error('Failed to load data')
+      toast.error(t('oas_load_error'))
     } finally {
       setLoading(false)
     }
@@ -123,7 +125,7 @@ export default function OASPage() {
     try {
       parsedAuthConfig = JSON.parse(form.authConfig) as Record<string, unknown>
     } catch {
-      setFormError('Auth config must be valid JSON')
+      setFormError(t('oas_auth_config_error'))
       return
     }
 
@@ -142,10 +144,10 @@ export default function OASPage() {
 
       if (mode === 'create') {
         await createOAS(payload)
-        toast.success('OAS entry created')
+        toast.success(t('oas_create_success'))
       } else {
         await updateOAS(editId!, { ...payload, enabled: form.enabled })
-        toast.success('OAS entry updated')
+        toast.success(t('oas_update_success'))
       }
       setDialogOpen(false)
       void load()
@@ -161,11 +163,11 @@ export default function OASPage() {
     setDeleting(true)
     try {
       await deleteOAS(deleteTarget.id)
-      toast.success('OAS entry deleted')
+      toast.success(t('oas_delete_success'))
       setDeleteTarget(null)
       void load()
     } catch {
-      toast.error('Failed to delete OAS entry')
+      toast.error(t('oas_delete_error'))
     } finally {
       setDeleting(false)
     }
@@ -177,19 +179,19 @@ export default function OASPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">OAS Entries</h2>
-          <p className="text-sm text-muted-foreground">Registered OpenAPI services with encrypted auth configs</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('oas_title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('oas_subtitle')}</p>
         </div>
         <Button onClick={openCreate} disabled={groups.length === 0}>
           <i className="ri-upload-cloud-line" />
-          Import OAS
+          {t('oas_import')}
         </Button>
       </div>
 
       {groups.length === 0 && !loading && (
         <div className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 flex items-center gap-2">
           <i className="ri-alert-line" />
-          Create a group first before importing OAS entries.
+          {t('oas_group_required')}
         </div>
       )}
 
@@ -200,19 +202,19 @@ export default function OASPage() {
       ) : entries.length === 0 ? (
         <div className="rounded-lg border border-dashed py-12 text-center text-muted-foreground">
           <i className="ri-file-code-line text-3xl block mb-2" />
-          <p className="text-sm">No OAS entries yet.</p>
+          <p className="text-sm">{t('oas_no_entries')}</p>
         </div>
       ) : (
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Group</TableHead>
-                <TableHead>Auth</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Remote URL</TableHead>
-                <TableHead>Updated</TableHead>
+                <TableHead>{t('oas_col_name')}</TableHead>
+                <TableHead>{t('oas_col_group')}</TableHead>
+                <TableHead>{t('oas_col_auth')}</TableHead>
+                <TableHead>{t('oas_col_status')}</TableHead>
+                <TableHead>{t('oas_col_remote_url')}</TableHead>
+                <TableHead>{t('oas_col_updated')}</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
@@ -228,7 +230,7 @@ export default function OASPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={entry.enabled ? 'success' : 'secondary'}>
-                      {entry.enabled ? 'enabled' : 'disabled'}
+                      {entry.enabled ? t('common_enabled') : t('common_disabled')}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
@@ -261,17 +263,15 @@ export default function OASPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{mode === 'create' ? 'Import OAS Entry' : 'Edit OAS Entry'}</DialogTitle>
+            <DialogTitle>{mode === 'create' ? t('oas_dialog_create_title') : t('oas_dialog_edit_title')}</DialogTitle>
             <DialogDescription>
-              {mode === 'create'
-                ? 'Register a new OpenAPI service. Auth config is encrypted at rest.'
-                : 'Update the OAS entry details.'}
+              {mode === 'create' ? t('oas_dialog_create_desc') : t('oas_dialog_edit_desc')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="oname">Name <span className="text-destructive">*</span></Label>
+                <Label htmlFor="oname">{t('oas_field_name')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <Input
                   id="oname"
                   placeholder="payments-api"
@@ -282,10 +282,10 @@ export default function OASPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Group <span className="text-destructive">*</span></Label>
+                <Label>{t('oas_field_group')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <Select value={form.groupId} onValueChange={v => setField('groupId', v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select group" />
+                    <SelectValue placeholder={t('oas_select_group')} />
                   </SelectTrigger>
                   <SelectContent>
                     {groups.map(g => (
@@ -297,7 +297,7 @@ export default function OASPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="odesc">Description</Label>
+              <Label htmlFor="odesc">{t('oas_field_desc')}</Label>
               <Input
                 id="odesc"
                 placeholder="Optional description"
@@ -307,7 +307,7 @@ export default function OASPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="ourl">Remote OAS URL <span className="text-destructive">*</span></Label>
+              <Label htmlFor="ourl">{t('oas_field_remote_url')} <span className="text-destructive">{t('common_required')}</span></Label>
               <Input
                 id="ourl"
                 placeholder="https://api.example.com/openapi.json"
@@ -319,7 +319,7 @@ export default function OASPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="obase">Base Endpoint Override</Label>
+              <Label htmlFor="obase">{t('oas_field_base_endpoint')}</Label>
               <Input
                 id="obase"
                 placeholder="https://api.example.com (optional)"
@@ -331,20 +331,20 @@ export default function OASPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Auth Type <span className="text-destructive">*</span></Label>
+                <Label>{t('oas_field_auth_type')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <Select value={form.authType} onValueChange={v => setField('authType', v as AuthType)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {AUTH_TYPES.map(t => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    {AUTH_TYPES.map(tp => (
+                      <SelectItem key={tp} value={tp}>{tp}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ottl">Cache TTL (seconds)</Label>
+                <Label htmlFor="ottl">{t('oas_field_cache_ttl')}</Label>
                 <Input
                   id="ottl"
                   type="number"
@@ -357,7 +357,7 @@ export default function OASPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="oauth">Auth Config (JSON) <span className="text-destructive">*</span></Label>
+              <Label htmlFor="oauth">{t('oas_field_auth_config')} <span className="text-destructive">{t('common_required')}</span></Label>
               <Textarea
                 id="oauth"
                 placeholder={AUTH_PLACEHOLDERS[form.authType]}
@@ -378,7 +378,7 @@ export default function OASPage() {
                   onChange={e => setField('enabled', e.target.checked)}
                   className="h-4 w-4 rounded"
                 />
-                <Label htmlFor="oenabled" className="cursor-pointer">Enabled</Label>
+                <Label htmlFor="oenabled" className="cursor-pointer">{t('oas_field_enabled')}</Label>
               </div>
             )}
 
@@ -390,10 +390,10 @@ export default function OASPage() {
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>{t('common_cancel')}</Button>
               <Button type="submit" disabled={saving}>
                 {saving && <i className="ri-loader-4-line animate-spin" />}
-                {mode === 'create' ? 'Import' : 'Save changes'}
+                {mode === 'create' ? t('common_import') : t('common_save')}
               </Button>
             </DialogFooter>
           </form>
@@ -404,17 +404,16 @@ export default function OASPage() {
       <Dialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete OAS entry?</DialogTitle>
+            <DialogTitle>{t('oas_delete_title')}</DialogTitle>
             <DialogDescription>
-              This will permanently delete <strong>{deleteTarget?.name}</strong>. Clients using this service will
-              lose access. This action cannot be undone.
+              This will permanently delete <strong>{deleteTarget?.name}</strong>. {t('oas_delete_desc')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common_cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting && <i className="ri-loader-4-line animate-spin" />}
-              Delete
+              {t('common_delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

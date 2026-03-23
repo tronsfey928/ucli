@@ -378,19 +378,9 @@ OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> ucli-server
 
 管理界面自动从 npm 包内附带的 `dist/admin-ui/` 目录提供服务，无需额外配置，启动服务后打开 `http://localhost:3000/admin-ui` 即可访问。
 
-### 界面截图
+界面支持**英文和简体中文**切换（侧栏切换按钮）及**浅色 / 深色主题**切换（侧栏切换按钮）。
 
-| 仪表板 | OAS 条目 |
-|--------|---------|
-| ![仪表板](../../docs/screenshots/02-dashboard.png) | ![OAS 条目](../../docs/screenshots/05-oas.png) |
-
-| MCP 服务器 | Token 管理 |
-|-----------|-----------|
-| ![MCP 服务器](../../docs/screenshots/07-mcp.png) | ![Token 管理](../../docs/screenshots/09-tokens.png) |
-
-| 群组管理 | 签发 Token |
-|---------|-----------|
-| ![群组管理](../../docs/screenshots/03-groups.png) | ![签发 Token](../../docs/screenshots/10-tokens-issued.png) |
+完整截图和功能说明，请查看 [`packages/admin/README.md`](../../packages/admin/README.md)。
 
 也可以通过环境变量指定自定义目录：
 

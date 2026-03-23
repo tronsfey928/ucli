@@ -14,18 +14,18 @@ import {
   TableHeader, TableRow,
 } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
 
 export default function GroupsPage() {
+  const { t } = useI18n()
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Create dialog
   const [createOpen, setCreateOpen] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // Delete confirm
   const [deleteTarget, setDeleteTarget] = useState<Group | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -33,7 +33,7 @@ export default function GroupsPage() {
     try {
       setGroups(await listGroups())
     } catch {
-      toast.error('Failed to load groups')
+      toast.error(t('groups_load_error'))
     } finally {
       setLoading(false)
     }
@@ -46,13 +46,13 @@ export default function GroupsPage() {
     setSaving(true)
     try {
       await createGroup({ name: name.trim(), description: description.trim() })
-      toast.success('Group created')
+      toast.success(t('groups_create_success'))
       setCreateOpen(false)
       setName('')
       setDescription('')
       void load()
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Failed to create group'))
+      toast.error(getErrorMessage(err, t('groups_create_error')))
     } finally {
       setSaving(false)
     }
@@ -63,11 +63,11 @@ export default function GroupsPage() {
     setDeleting(true)
     try {
       await deleteGroup(deleteTarget.id)
-      toast.success('Group deleted')
+      toast.success(t('groups_delete_success'))
       setDeleteTarget(null)
       void load()
     } catch {
-      toast.error('Failed to delete group')
+      toast.error(t('groups_delete_error'))
     } finally {
       setDeleting(false)
     }
@@ -77,12 +77,12 @@ export default function GroupsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Groups</h2>
-          <p className="text-sm text-muted-foreground">Logical namespaces for OAS entries and tokens</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('groups_title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('groups_subtitle')}</p>
         </div>
         <Button onClick={() => setCreateOpen(true)}>
           <i className="ri-add-line" />
-          New Group
+          {t('groups_new')}
         </Button>
       </div>
 
@@ -93,16 +93,16 @@ export default function GroupsPage() {
       ) : groups.length === 0 ? (
         <div className="rounded-lg border border-dashed py-12 text-center text-muted-foreground">
           <i className="ri-group-line text-3xl block mb-2" />
-          <p className="text-sm">No groups yet. Create your first group to get started.</p>
+          <p className="text-sm">{t('groups_no_groups')}</p>
         </div>
       ) : (
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Created</TableHead>
+                <TableHead>{t('groups_col_name')}</TableHead>
+                <TableHead>{t('groups_col_desc')}</TableHead>
+                <TableHead>{t('groups_col_created')}</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
@@ -135,15 +135,15 @@ export default function GroupsPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>New Group</DialogTitle>
-            <DialogDescription>Groups namespace OAS entries and tokens together.</DialogDescription>
+            <DialogTitle>{t('groups_dialog_title')}</DialogTitle>
+            <DialogDescription>{t('groups_dialog_desc')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="gname">Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="gname">{t('groups_field_name')} <span className="text-destructive">{t('common_required')}</span></Label>
               <Input
                 id="gname"
-                placeholder="production"
+                placeholder={t('groups_name_placeholder')}
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
@@ -151,20 +151,20 @@ export default function GroupsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="gdesc">Description</Label>
+              <Label htmlFor="gdesc">{t('groups_field_desc')}</Label>
               <Textarea
                 id="gdesc"
-                placeholder="Optional description"
+                placeholder={t('groups_desc_placeholder')}
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 rows={2}
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>{t('common_cancel')}</Button>
               <Button type="submit" disabled={saving}>
                 {saving && <i className="ri-loader-4-line animate-spin" />}
-                Create
+                {t('common_create')}
               </Button>
             </DialogFooter>
           </form>
@@ -175,17 +175,16 @@ export default function GroupsPage() {
       <Dialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete group?</DialogTitle>
+            <DialogTitle>{t('groups_delete_title')}</DialogTitle>
             <DialogDescription>
-              This will permanently delete <strong>{deleteTarget?.name}</strong> and all associated
-              OAS entries and tokens. This action cannot be undone.
+              {t('groups_delete_warning')} <strong>{deleteTarget?.name}</strong> {t('groups_delete_desc')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common_cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting && <i className="ri-loader-4-line animate-spin" />}
-              Delete
+              {t('common_delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

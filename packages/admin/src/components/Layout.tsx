@@ -3,17 +3,21 @@ import { clearAuth } from '@/lib/auth'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-
-const NAV_ITEMS = [
-  { to: '/dashboard', icon: 'ri-dashboard-line', label: 'Dashboard' },
-  { to: '/groups', icon: 'ri-group-line', label: 'Groups' },
-  { to: '/oas', icon: 'ri-file-code-line', label: 'OAS Entries' },
-  { to: '/mcp', icon: 'ri-robot-line', label: 'MCP Servers' },
-  { to: '/tokens', icon: 'ri-key-line', label: 'Tokens' },
-]
+import { useI18n } from '@/lib/i18n'
+import { useTheme } from '@/lib/theme'
 
 export default function Layout() {
   const navigate = useNavigate()
+  const { t, lang, toggleLang } = useI18n()
+  const { theme, toggleTheme } = useTheme()
+
+  const NAV_ITEMS = [
+    { to: '/dashboard', icon: 'ri-dashboard-line', label: t('nav_dashboard') },
+    { to: '/groups', icon: 'ri-group-line', label: t('nav_groups') },
+    { to: '/oas', icon: 'ri-file-code-line', label: t('nav_oas') },
+    { to: '/mcp', icon: 'ri-robot-line', label: t('nav_mcp') },
+    { to: '/tokens', icon: 'ri-key-line', label: t('nav_tokens') },
+  ]
 
   function handleLogout() {
     clearAuth()
@@ -28,7 +32,7 @@ export default function Layout() {
         <div className="flex h-14 items-center gap-2 px-4">
           <i className="ri-hexagon-line text-xl text-violet-400" />
           <span className="font-semibold text-sm tracking-tight">ucli</span>
-          <span className="ml-auto text-xs text-sidebar-foreground/40">Admin</span>
+          <span className="ml-auto text-xs text-sidebar-foreground/40">{t('nav_brand')}</span>
         </div>
 
         <Separator className="bg-sidebar-border" />
@@ -56,8 +60,29 @@ export default function Layout() {
 
         <Separator className="bg-sidebar-border" />
 
+        {/* Theme + Language toggles */}
+        <div className="flex items-center gap-1 px-3 py-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+            onClick={toggleTheme}
+            title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            <i className={theme === 'light' ? 'ri-moon-line text-base' : 'ri-sun-line text-base'} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+            onClick={toggleLang}
+          >
+            {lang === 'en' ? '中文' : 'EN'}
+          </Button>
+        </div>
+
         {/* Logout */}
-        <div className="p-2">
+        <div className="px-2 pb-2">
           <Button
             variant="ghost"
             size="sm"
@@ -65,7 +90,7 @@ export default function Layout() {
             onClick={handleLogout}
           >
             <i className="ri-logout-box-line text-base" />
-            Logout
+            {t('nav_logout')}
           </Button>
         </div>
       </aside>

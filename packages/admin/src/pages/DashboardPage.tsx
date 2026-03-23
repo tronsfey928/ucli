@@ -4,6 +4,7 @@ import { getStats, listOAS, type Stats, type OASEntry } from '@/lib/api'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { relativeTime } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
 
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: number | string; sub?: string }) {
   return (
@@ -21,6 +22,7 @@ function StatCard({ icon, label, value, sub }: { icon: string; label: string; va
 }
 
 export default function DashboardPage() {
+  const { t, lang } = useI18n()
   const [stats, setStats] = useState<Stats | null>(null)
   const [recentOAS, setRecentOAS] = useState<OASEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,30 +46,30 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground text-sm">Overview of your OAS Gateway</p>
+        <h2 className="text-2xl font-bold tracking-tight">{t('dash_title')}</h2>
+        <p className="text-muted-foreground text-sm">{t('dash_subtitle')}</p>
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard icon="ri-group-line" label="Groups" value={stats?.groups ?? 0} sub="Logical namespaces" />
-        <StatCard icon="ri-file-code-line" label="OAS Entries" value={stats?.oasEntries ?? 0} sub="Registered services" />
-        <StatCard icon="ri-key-line" label="Active Tokens" value={stats?.activeTokens ?? 0} sub="Non-revoked JWTs" />
+        <StatCard icon="ri-group-line" label={t('dash_groups')} value={stats?.groups ?? 0} sub={t('dash_groups_sub')} />
+        <StatCard icon="ri-file-code-line" label={t('dash_oas')} value={stats?.oasEntries ?? 0} sub={t('dash_oas_sub')} />
+        <StatCard icon="ri-key-line" label={t('dash_tokens')} value={stats?.activeTokens ?? 0} sub={t('dash_tokens_sub')} />
       </div>
 
       {/* Recent OAS entries */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-sm">Recent OAS entries</h3>
-          <Link to="/oas" className="text-xs text-primary hover:underline">View all →</Link>
+          <h3 className="font-semibold text-sm">{t('dash_recent_oas')}</h3>
+          <Link to="/oas" className="text-xs text-primary hover:underline">{t('dash_view_all')}</Link>
         </div>
 
         {recentOAS.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground text-sm">
               <i className="ri-file-code-line text-3xl block mb-2" />
-              No OAS entries yet.{' '}
-              <Link to="/oas" className="text-primary hover:underline">Add one →</Link>
+              {t('dash_no_oas')}{' '}
+              <Link to="/oas" className="text-primary hover:underline">{t('dash_add_one')}</Link>
             </CardContent>
           </Card>
         ) : (
@@ -80,12 +82,12 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm font-medium truncate">{entry.name}</span>
                       <Badge variant={entry.enabled ? 'success' : 'secondary'} className="shrink-0">
-                        {entry.enabled ? 'enabled' : 'disabled'}
+                        {entry.enabled ? t('common_enabled') : t('common_disabled')}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">{entry.remoteUrl}</p>
                   </div>
-                  <div className="text-xs text-muted-foreground shrink-0">{relativeTime(entry.createdAt)}</div>
+                  <div className="text-xs text-muted-foreground shrink-0">{relativeTime(entry.createdAt, lang)}</div>
                 </CardContent>
               </Card>
             ))}
@@ -95,12 +97,12 @@ export default function DashboardPage() {
 
       {/* Quick links */}
       <div>
-        <h3 className="font-semibold text-sm mb-3">Quick actions</h3>
+        <h3 className="font-semibold text-sm mb-3">{t('dash_quick_actions')}</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
-            { to: '/groups', icon: 'ri-add-circle-line', label: 'New group', desc: 'Create a group namespace' },
-            { to: '/oas', icon: 'ri-upload-cloud-line', label: 'Import OAS', desc: 'Register a new service' },
-            { to: '/tokens', icon: 'ri-key-2-line', label: 'Issue token', desc: 'Generate a group JWT' },
+            { to: '/groups', icon: 'ri-add-circle-line', label: t('dash_new_group'), desc: t('dash_new_group_desc') },
+            { to: '/oas', icon: 'ri-upload-cloud-line', label: t('dash_import_oas'), desc: t('dash_import_oas_desc') },
+            { to: '/tokens', icon: 'ri-key-2-line', label: t('dash_issue_token'), desc: t('dash_issue_token_desc') },
           ].map(({ to, icon, label, desc }) => (
             <Link key={to} to={to}>
               <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">

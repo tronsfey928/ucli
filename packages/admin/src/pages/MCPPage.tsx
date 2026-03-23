@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
+import { useI18n } from '@/lib/i18n'
 
 const AUTH_PLACEHOLDERS: Record<string, string> = {
   none: '{"type":"none"}',
@@ -48,6 +49,7 @@ const EMPTY_FORM: MCPForm = {
 }
 
 export default function MCPPage() {
+  const { t } = useI18n()
   const [entries, setEntries] = useState<McpEntry[]>([])
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
@@ -68,7 +70,7 @@ export default function MCPPage() {
       setEntries(e)
       setGroups(g)
     } catch {
-      toast.error('Failed to load data')
+      toast.error(t('mcp_load_error'))
     } finally {
       setLoading(false)
     }
@@ -113,7 +115,7 @@ export default function MCPPage() {
     try {
       parsedAuthConfig = JSON.parse(form.authConfig) as McpAuthConfig
     } catch {
-      setFormError('Auth config must be valid JSON')
+      setFormError(t('mcp_auth_config_error'))
       return
     }
 
@@ -131,10 +133,10 @@ export default function MCPPage() {
 
       if (mode === 'create') {
         await createMCP(payload)
-        toast.success('MCP server registered')
+        toast.success(t('mcp_create_success'))
       } else {
         await updateMCP(editId!, { ...payload, enabled: form.enabled })
-        toast.success('MCP server updated')
+        toast.success(t('mcp_update_success'))
       }
       setDialogOpen(false)
       void load()
@@ -150,11 +152,11 @@ export default function MCPPage() {
     setDeleting(true)
     try {
       await deleteMCP(deleteTarget.id)
-      toast.success('MCP server deleted')
+      toast.success(t('mcp_delete_success'))
       setDeleteTarget(null)
       void load()
     } catch {
-      toast.error('Failed to delete MCP server')
+      toast.error(t('mcp_delete_error'))
     } finally {
       setDeleting(false)
     }
@@ -166,19 +168,19 @@ export default function MCPPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">MCP Servers</h2>
-          <p className="text-sm text-muted-foreground">Registered MCP servers with encrypted auth configs</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('mcp_title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('mcp_subtitle')}</p>
         </div>
         <Button onClick={openCreate} disabled={groups.length === 0}>
           <i className="ri-add-line" />
-          Add MCP Server
+          {t('mcp_add')}
         </Button>
       </div>
 
       {groups.length === 0 && !loading && (
         <div className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 flex items-center gap-2">
           <i className="ri-alert-line" />
-          Create a group first before adding MCP servers.
+          {t('mcp_group_required')}
         </div>
       )}
 
@@ -189,19 +191,19 @@ export default function MCPPage() {
       ) : entries.length === 0 ? (
         <div className="rounded-lg border border-dashed py-12 text-center text-muted-foreground">
           <i className="ri-robot-line text-3xl block mb-2" />
-          <p className="text-sm">No MCP servers yet.</p>
+          <p className="text-sm">{t('mcp_no_entries')}</p>
         </div>
       ) : (
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Group</TableHead>
-                <TableHead>Transport</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Target</TableHead>
-                <TableHead>Updated</TableHead>
+                <TableHead>{t('mcp_col_name')}</TableHead>
+                <TableHead>{t('mcp_col_group')}</TableHead>
+                <TableHead>{t('mcp_col_transport')}</TableHead>
+                <TableHead>{t('mcp_col_status')}</TableHead>
+                <TableHead>{t('mcp_col_target')}</TableHead>
+                <TableHead>{t('mcp_col_updated')}</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
@@ -217,7 +219,7 @@ export default function MCPPage() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={entry.enabled ? 'success' : 'secondary'}>
-                      {entry.enabled ? 'enabled' : 'disabled'}
+                      {entry.enabled ? t('common_enabled') : t('common_disabled')}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
@@ -250,17 +252,15 @@ export default function MCPPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{mode === 'create' ? 'Add MCP Server' : 'Edit MCP Server'}</DialogTitle>
+            <DialogTitle>{mode === 'create' ? t('mcp_dialog_create_title') : t('mcp_dialog_edit_title')}</DialogTitle>
             <DialogDescription>
-              {mode === 'create'
-                ? 'Register a new MCP server. Auth config is encrypted at rest.'
-                : 'Update the MCP server details.'}
+              {mode === 'create' ? t('mcp_dialog_create_desc') : t('mcp_dialog_edit_desc')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="mname">Name <span className="text-destructive">*</span></Label>
+                <Label htmlFor="mname">{t('mcp_field_name')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <Input
                   id="mname"
                   placeholder="my-mcp-server"
@@ -271,10 +271,10 @@ export default function MCPPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Group <span className="text-destructive">*</span></Label>
+                <Label>{t('mcp_field_group')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <Select value={form.groupId} onValueChange={v => setField('groupId', v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select group" />
+                    <SelectValue placeholder={t('mcp_select_group')} />
                   </SelectTrigger>
                   <SelectContent>
                     {groups.map(g => (
@@ -286,7 +286,7 @@ export default function MCPPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="mdesc">Description</Label>
+              <Label htmlFor="mdesc">{t('mcp_field_desc')}</Label>
               <Input
                 id="mdesc"
                 placeholder="Optional description"
@@ -296,21 +296,21 @@ export default function MCPPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Transport <span className="text-destructive">*</span></Label>
+              <Label>{t('mcp_field_transport')} <span className="text-destructive">{t('common_required')}</span></Label>
               <Select value={form.transport} onValueChange={v => setField('transport', v as McpTransport)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="http">http (SSE/streaming)</SelectItem>
-                  <SelectItem value="stdio">stdio (subprocess)</SelectItem>
+                  <SelectItem value="http">{t('mcp_transport_http')}</SelectItem>
+                  <SelectItem value="stdio">{t('mcp_transport_stdio')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {form.transport === 'http' ? (
               <div className="space-y-1.5">
-                <Label htmlFor="murl">Server URL <span className="text-destructive">*</span></Label>
+                <Label htmlFor="murl">{t('mcp_field_server_url')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <Input
                   id="murl"
                   placeholder="https://mcp.example.com/sse"
@@ -322,7 +322,7 @@ export default function MCPPage() {
               </div>
             ) : (
               <div className="space-y-1.5">
-                <Label htmlFor="mcmd">Command <span className="text-destructive">*</span></Label>
+                <Label htmlFor="mcmd">{t('mcp_field_command')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <Input
                   id="mcmd"
                   placeholder="npx -y my-mcp-server"
@@ -335,9 +335,9 @@ export default function MCPPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="mauth">
-                Auth Config (JSON) <span className="text-destructive">*</span>
+                {t('mcp_field_auth_config')} <span className="text-destructive">{t('common_required')}</span>
                 <span className="text-muted-foreground ml-1 font-normal text-xs">
-                  — none / http_headers / env
+                  {t('mcp_auth_types_hint')}
                 </span>
               </Label>
               <Textarea
@@ -360,7 +360,7 @@ export default function MCPPage() {
                   onChange={e => setField('enabled', e.target.checked)}
                   className="h-4 w-4 rounded"
                 />
-                <Label htmlFor="menabled" className="cursor-pointer">Enabled</Label>
+                <Label htmlFor="menabled" className="cursor-pointer">{t('mcp_field_enabled')}</Label>
               </div>
             )}
 
@@ -372,10 +372,10 @@ export default function MCPPage() {
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>{t('common_cancel')}</Button>
               <Button type="submit" disabled={saving}>
                 {saving && <i className="ri-loader-4-line animate-spin" />}
-                {mode === 'create' ? 'Add Server' : 'Save changes'}
+                {mode === 'create' ? t('mcp_add_server') : t('mcp_save_changes')}
               </Button>
             </DialogFooter>
           </form>
@@ -386,17 +386,16 @@ export default function MCPPage() {
       <Dialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete MCP server?</DialogTitle>
+            <DialogTitle>{t('mcp_delete_title')}</DialogTitle>
             <DialogDescription>
-              This will permanently delete <strong>{deleteTarget?.name}</strong>. Clients using this server
-              will lose access. This action cannot be undone.
+              This will permanently delete <strong>{deleteTarget?.name}</strong>. {t('mcp_delete_desc')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common_cancel')}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting && <i className="ri-loader-4-line animate-spin" />}
-              Delete
+              {t('common_delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

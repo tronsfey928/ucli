@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useI18n } from '@/lib/i18n'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [serverUrl, setServerUrl] = useState('http://localhost:3000')
   const [adminSecret, setAdminSecret] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,17 +26,17 @@ export default function LoginPage() {
       new URL(url)
       setUrlError('')
     } catch {
-      setUrlError('Please enter a valid URL (e.g. http://localhost:3000)')
+      setUrlError(t('login_url_error'))
       return
     }
     setLoading(true)
     try {
       await ping(url, secret)
       setAuth({ serverUrl: url, adminSecret: secret })
-      toast.success('Connected successfully')
+      toast.success(t('login_success'))
       navigate('/dashboard', { replace: true })
     } catch {
-      toast.error('Connection failed — check the server URL and admin secret')
+      toast.error(t('login_error'))
     } finally {
       setLoading(false)
     }
@@ -49,20 +51,20 @@ export default function LoginPage() {
             <i className="ri-hexagon-line text-2xl text-primary" />
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold">OAS Gateway</h1>
-            <p className="text-sm text-muted-foreground">Admin Dashboard</p>
+            <h1 className="text-xl font-bold">{t('login_title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('login_subtitle')}</p>
           </div>
         </div>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Connect to server</CardTitle>
-            <CardDescription>Enter your server URL and admin secret to continue.</CardDescription>
+            <CardTitle className="text-base">{t('login_card_title')}</CardTitle>
+            <CardDescription>{t('login_card_desc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="serverUrl">Server URL</Label>
+                <Label htmlFor="serverUrl">{t('login_server_url')}</Label>
                 <Input
                   id="serverUrl"
                   placeholder="http://localhost:3000"
@@ -74,7 +76,7 @@ export default function LoginPage() {
                 {urlError && <p className="text-xs text-destructive">{urlError}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="adminSecret">Admin Secret</Label>
+                <Label htmlFor="adminSecret">{t('login_secret')}</Label>
                 <Input
                   id="adminSecret"
                   type="password"
@@ -89,12 +91,12 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <i className="ri-loader-4-line animate-spin" />
-                    Connecting…
+                    {t('login_connecting')}
                   </>
                 ) : (
                   <>
                     <i className="ri-arrow-right-line" />
-                    Connect
+                    {t('login_connect')}
                   </>
                 )}
               </Button>

@@ -13,21 +13,16 @@ import {
 } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
-
-function tokenStatus(token: Token): { label: string; variant: 'success' | 'destructive' | 'warning' | 'secondary' } {
-  if (token.revokedAt) return { label: 'revoked', variant: 'destructive' }
-  if (token.expiresAt && new Date(token.expiresAt) < new Date()) return { label: 'expired', variant: 'warning' }
-  return { label: 'active', variant: 'success' }
-}
+import { useI18n } from '@/lib/i18n'
 
 export default function TokensPage() {
+  const { t } = useI18n()
   const [groups, setGroups] = useState<Group[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [tokens, setTokens] = useState<Token[]>([])
   const [loading, setLoading] = useState(true)
   const [tokensLoading, setTokensLoading] = useState(false)
 
-  // Issue dialog
   const [issueOpen, setIssueOpen] = useState(false)
   const [tokenName, setTokenName] = useState('')
   const [ttlSec, setTtlSec] = useState('86400')
@@ -35,7 +30,6 @@ export default function TokensPage() {
   const [issuedJwt, setIssuedJwt] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // Revoke confirm
   const [revokeTarget, setRevokeTarget] = useState<Token | null>(null)
   const [revoking, setRevoking] = useState(false)
 
@@ -53,7 +47,7 @@ export default function TokensPage() {
     setTokensLoading(true)
     void listTokens(selectedGroupId)
       .then(setTokens)
-      .catch(() => toast.error('Failed to load tokens'))
+      .catch(() => toast.error(t('tokens_load_error')))
       .finally(() => setTokensLoading(false))
   }, [selectedGroupId])
 
@@ -68,11 +62,10 @@ export default function TokensPage() {
       })
       setIssuedJwt(result.jwt)
       setTokenName('')
-      // Refresh list
       const updated = await listTokens(selectedGroupId)
       setTokens(updated)
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, 'Failed to issue token'))
+      toast.error(getErrorMessage(err, t('tokens_issue_error')))
     } finally {
       setIssuing(false)
     }
@@ -83,12 +76,12 @@ export default function TokensPage() {
     setRevoking(true)
     try {
       await revokeToken(revokeTarget.id)
-      toast.success('Token revoked')
+      toast.success(t('tokens_revoke_success'))
       setRevokeTarget(null)
       const updated = await listTokens(selectedGroupId)
       setTokens(updated)
     } catch {
-      toast.error('Failed to revoke token')
+      toast.error(t('tokens_revoke_error'))
     } finally {
       setRevoking(false)
     }
@@ -111,6 +104,12 @@ export default function TokensPage() {
     setCopied(false)
   }
 
+  function tokenStatus(token: Token): { label: string; variant: 'success' | 'destructive' | 'warning' | 'secondary' } {
+    if (token.revokedAt) return { label: t('tokens_status_revoked'), variant: 'destructive' }
+    if (token.expiresAt && new Date(token.expiresAt) < new Date()) return { label: t('tokens_status_expired'), variant: 'warning' }
+    return { label: t('tokens_status_active'), variant: 'success' }
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -123,25 +122,25 @@ export default function TokensPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Tokens</h2>
-          <p className="text-sm text-muted-foreground">Group JWTs (RS256) for client authentication</p>
+          <h2 className="text-2xl font-bold tracking-tight">{t('tokens_title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('tokens_subtitle')}</p>
         </div>
         <Button onClick={() => { setIssueOpen(true); setIssuedJwt(null) }} disabled={!selectedGroupId}>
           <i className="ri-key-2-line" />
-          Issue Token
+          {t('tokens_issue')}
         </Button>
       </div>
 
       {groups.length === 0 ? (
         <div className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 flex items-center gap-2">
           <i className="ri-alert-line" />
-          Create a group first to issue tokens.
+          {t('tokens_group_required')}
         </div>
       ) : (
         <>
           {/* Group selector */}
           <div className="flex items-center gap-3">
-            <Label className="shrink-0 text-sm">Group:</Label>
+            <Label className="shrink-0 text-sm">{t('tokens_group_label')}</Label>
             <div className="w-56">
               <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
                 <SelectTrigger>
@@ -163,40 +162,40 @@ export default function TokensPage() {
           ) : tokens.length === 0 ? (
             <div className="rounded-lg border border-dashed py-12 text-center text-muted-foreground">
               <i className="ri-key-line text-3xl block mb-2" />
-              <p className="text-sm">No tokens for this group.</p>
+              <p className="text-sm">{t('tokens_no_tokens')}</p>
             </div>
           ) : (
             <div className="rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Expires</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead>{t('tokens_col_name')}</TableHead>
+                    <TableHead>{t('tokens_col_status')}</TableHead>
+                    <TableHead>{t('tokens_col_expires')}</TableHead>
+                    <TableHead>{t('tokens_col_created')}</TableHead>
                     <TableHead className="w-20" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tokens.map(t => {
-                    const { label, variant } = tokenStatus(t)
+                  {tokens.map(tk => {
+                    const { label, variant } = tokenStatus(tk)
                     return (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-mono font-medium">{t.name}</TableCell>
+                      <TableRow key={tk.id}>
+                        <TableCell className="font-mono font-medium">{tk.name}</TableCell>
                         <TableCell>
                           <Badge variant={variant}>{label}</Badge>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {t.expiresAt ? formatDate(t.expiresAt) : <span className="italic">never</span>}
+                          {tk.expiresAt ? formatDate(tk.expiresAt) : <span className="italic">{t('tokens_never')}</span>}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{formatDate(t.createdAt)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{formatDate(tk.createdAt)}</TableCell>
                         <TableCell>
-                          {!t.revokedAt && (
+                          {!tk.revokedAt && (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => setRevokeTarget(t)}
+                              onClick={() => setRevokeTarget(tk)}
                             >
                               <i className="ri-forbid-line" />
                             </Button>
@@ -218,14 +217,14 @@ export default function TokensPage() {
           {!issuedJwt ? (
             <>
               <DialogHeader>
-                <DialogTitle>Issue Token</DialogTitle>
+                <DialogTitle>{t('tokens_issue_title')}</DialogTitle>
                 <DialogDescription>
-                  Issue a new RS256-signed JWT for group <strong>{groups.find(g => g.id === selectedGroupId)?.name}</strong>.
+                  {t('tokens_issue_desc_prefix')} <strong>{groups.find(g => g.id === selectedGroupId)?.name}</strong>.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleIssue} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="tname">Token name <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="tname">{t('tokens_field_name')} <span className="text-destructive">{t('common_required')}</span></Label>
                   <Input
                     id="tname"
                     placeholder="agent-prod"
@@ -235,7 +234,7 @@ export default function TokensPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="tttl">TTL (seconds)</Label>
+                  <Label htmlFor="tttl">{t('tokens_field_ttl')}</Label>
                   <Input
                     id="tttl"
                     type="number"
@@ -244,13 +243,13 @@ export default function TokensPage() {
                     value={ttlSec}
                     onChange={e => setTtlSec(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">0 = never expires</p>
+                  <p className="text-xs text-muted-foreground">{t('tokens_ttl_hint')}</p>
                 </div>
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={closeIssueDialog}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={closeIssueDialog}>{t('common_cancel')}</Button>
                   <Button type="submit" disabled={issuing}>
                     {issuing && <i className="ri-loader-4-line animate-spin" />}
-                    Issue
+                    {t('common_issue')}
                   </Button>
                 </DialogFooter>
               </form>
@@ -260,10 +259,10 @@ export default function TokensPage() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-green-700">
                   <i className="ri-checkbox-circle-line text-lg" />
-                  Token issued!
+                  {t('tokens_issued_title')}
                 </DialogTitle>
                 <DialogDescription>
-                  Copy your JWT now — <strong>it will not be shown again</strong>.
+                  {t('tokens_issued_desc')}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
@@ -275,11 +274,11 @@ export default function TokensPage() {
                 />
                 <Button className="w-full" variant="outline" onClick={handleCopy}>
                   <i className={copied ? 'ri-checkbox-circle-line text-green-600' : 'ri-clipboard-line'} />
-                  {copied ? 'Copied!' : 'Copy to clipboard'}
+                  {copied ? t('tokens_copied') : t('tokens_copy')}
                 </Button>
               </div>
               <DialogFooter>
-                <Button onClick={closeIssueDialog}>Done</Button>
+                <Button onClick={closeIssueDialog}>{t('tokens_done')}</Button>
               </DialogFooter>
             </>
           )}
@@ -290,17 +289,16 @@ export default function TokensPage() {
       <Dialog open={!!revokeTarget} onOpenChange={open => !open && setRevokeTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Revoke token?</DialogTitle>
+            <DialogTitle>{t('tokens_revoke_title')}</DialogTitle>
             <DialogDescription>
-              This will immediately revoke <strong>{revokeTarget?.name}</strong>. Any client using this
-              token will lose access. This action cannot be undone.
+              {t('tokens_revoke_desc_prefix')} <strong>{revokeTarget?.name}</strong>{t('tokens_revoke_desc_suffix')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRevokeTarget(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRevokeTarget(null)}>{t('common_cancel')}</Button>
             <Button variant="destructive" onClick={handleRevoke} disabled={revoking}>
               {revoking && <i className="ri-loader-4-line animate-spin" />}
-              Revoke
+              {t('common_revoke')}
             </Button>
           </DialogFooter>
         </DialogContent>
