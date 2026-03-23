@@ -18,6 +18,7 @@
 `@ucli/server` 是 ucli 的服务端组件，提供：
 
 - **加密 OAS 存储** — OpenAPI 规范及认证配置以 AES-256-GCM 静态加密
+- **加密 MCP 服务器存储** — MCP 服务器配置及认证信息（none / http_headers / env）以 AES-256-GCM 静态加密
 - **群组级 JWT 签发** — RS256 签名令牌，控制客户端可访问的规范范围
 - **令牌吊销** — 基于 JTI 的缓存黑名单机制
 - **可插拔后端** — 通过环境变量切换存储（memory / PostgreSQL / MySQL）和缓存（memory / Redis）
@@ -35,7 +36,7 @@ graph TB
         Crypto["CryptoModule\nJwtService (RS256)\nEncryptionService (AES-256-GCM)"]
 
         subgraph Storage["StorageModule.forRoot()（存储模块）"]
-            Mem1["MemoryGroupRepo\nMemoryTokenRepo\nMemoryOASRepo"]
+            Mem1["MemoryGroupRepo\nMemoryTokenRepo\nMemoryOASRepo\nMemoryMCPRepo"]
             DB1["TypeORM 仓库\n(postgres · mysql)"]
         end
 
@@ -47,6 +48,7 @@ graph TB
         Groups["GroupsModule\nPOST/GET /admin/groups"]
         Tokens["TokensModule\n令牌签发 + 吊销"]
         OAS["OASModule\n管理端 CRUD + 客户端读取"]
+        MCP["MCPModule\n管理端 CRUD + 客户端读取"]
         Health["HealthModule\n存活 · 就绪探针"]
         Metrics["MetricsModule\nPrometheus 指标"]
     end
@@ -59,9 +61,11 @@ graph TB
     Storage --> Groups
     Storage --> Tokens
     Storage --> OAS
+    Storage --> MCP
     Cache --> Auth
     Groups --> Tokens
     Groups --> OAS
+    Crypto --> MCP
 ```
 
 ## 安装
@@ -244,6 +248,44 @@ curl -X DELETE http://localhost:3000/admin/oas/<oas-id> \
   -H "X-Admin-Secret: my-secret"
 ```
 
+### MCP 服务器管理
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/admin/mcp` | 注册 MCP 服务器 |
+| `GET` | `/admin/mcp` | 列出所有 MCP 服务器 |
+| `GET` | `/admin/mcp/:id` | 获取单个 MCP 服务器 |
+| `PUT` | `/admin/mcp/:id` | 更新 MCP 服务器 |
+| `DELETE` | `/admin/mcp/:id` | 删除 MCP 服务器 |
+
+```bash
+# 注册（http transport + 无认证）
+curl -X POST http://localhost:3000/admin/mcp \
+  -H "X-Admin-Secret: my-secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "groupId": "<group-id>",
+    "name": "weather",
+    "transport": "http",
+    "serverUrl": "https://weather.mcp.example.com/sse",
+    "authConfig": {"type":"none"}
+  }'
+
+# 注册（stdio transport + env 认证）
+curl -X POST http://localhost:3000/admin/mcp \
+  -H "X-Admin-Secret: my-secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "groupId": "<group-id>",
+    "name": "local-tools",
+    "transport": "stdio",
+    "command": "npx -y @myorg/mcp-tools",
+    "authConfig": {"type":"env","env":{"API_KEY":"<secret>"}}
+  }'
+```
+
+---
+
 ## 客户端 API 参考
 
 客户端端点需要 `Authorization: Bearer <group-jwt>`。
@@ -252,6 +294,8 @@ curl -X DELETE http://localhost:3000/admin/oas/<oas-id> \
 |------|------|------|
 | `GET` | `/api/v1/oas` | 列出当前令牌群组可访问的 OAS 条目 |
 | `GET` | `/api/v1/oas/:name` | 获取单个 OAS 条目（含解密认证信息） |
+| `GET` | `/api/v1/mcp` | 列出当前令牌群组可访问的 MCP 服务器（含解密认证信息） |
+| `GET` | `/api/v1/mcp/:name` | 获取单个 MCP 服务器（含解密认证信息） |
 
 ## 认证类型
 
@@ -264,6 +308,16 @@ curl -X DELETE http://localhost:3000/admin/oas/<oas-id> \
 | `oauth2_cc` | `{ "type": "oauth2_cc", "tokenUrl": "...", "clientId": "...", "clientSecret": "...", "scopes": [] }` |
 
 认证配置在存储前以 AES-256-GCM 加密，仅在请求处理时在内存中解密。
+
+## MCP 认证类型
+
+| `authConfig.type` | 结构 |
+|--------------------|------|
+| `none` | `{ "type": "none" }` |
+| `http_headers` | `{ "type": "http_headers", "headers": { "Authorization": "Bearer ..." } }` |
+| `env` | `{ "type": "env", "env": { "API_KEY": "..." } }` （stdio transport 使用） |
+
+MCP 认证配置与 OAS 认证配置采用相同的加密模型：静态 AES-256-GCM 加密，请求时在内存中解密。
 
 ## OpenTelemetry 分布式追踪
 
@@ -316,9 +370,10 @@ OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> ucli-server
 
 安装 npm 包后，`/admin-ui` 路径自动提供内置 Web 管理界面，功能包括：
 
-- **仪表板** — 统计概览（分组数、OAS 条目数、有效 Token 数）
+- **仪表板** — 统计概览（分组数、OAS 条目数、MCP 服务器数、有效 Token 数）
 - **分组管理** — 创建和删除分组
 - **OAS 条目管理** — 注册、编辑和删除 OAS 条目及其认证配置
+- **MCP 服务器管理** — 注册、编辑和删除 MCP 服务器配置及其认证信息
 - **Token 管理** — 按分组签发 JWT Token（签发后一次性显示）、查看状态、吊销
 
 管理界面自动从 npm 包内附带的 `dist/admin-ui/` 目录提供服务，无需额外配置，启动服务后打开 `http://localhost:3000/admin-ui` 即可访问。

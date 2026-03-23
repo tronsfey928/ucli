@@ -17,8 +17,8 @@
 
 **ucli** is a centralized [OpenAPI Specification](https://swagger.io/specification/) management system built with a client/server architecture.
 
-- The **server** (`@ucli/server`) stores OpenAPI specs with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
-- The **CLI** (`@ucli/cli`) lets AI agents discover and invoke API operations **without ever seeing credentials** — auth is injected as environment variables at runtime.
+- The **server** (`@ucli/server`) stores OpenAPI specs and **MCP server configs** (Model Context Protocol) with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
+- The **CLI** (`@ucli/cli`) lets AI agents discover and invoke API operations and MCP tools **without ever seeing credentials** — auth is injected as environment variables or headers at runtime.
 
 ## Architecture
 
@@ -29,7 +29,7 @@ graph TB
     end
 
     subgraph Server["🖥️  @ucli/server  ·  NestJS v11"]
-        SVC["REST API\n(AdminGuard + GroupTokenGuard)"]
+        SVC["REST API\nOAS · MCP\n(AdminGuard + GroupTokenGuard)"]
         ST[("Storage\nmemory · postgres · mysql")]
         CA[("Cache\nmemory · redis")]
         CR["Crypto\nAES-256-GCM · RS256 JWT"]
@@ -41,7 +41,9 @@ graph TB
     subgraph Client["💻  @ucli/cli  ·  Commander.js"]
         CLI[ucli]
         O2C["@tronsfey/openapi2cli\n(subprocess)"]
+        M2C["@tronsfey/mcp2cli\n(programmatic)"]
         CLI -->|"spawn with ENV creds"| O2C
+        CLI -->|"inject via headers/env"| M2C
     end
 
     subgraph APIs["🌐 Target APIs"]
@@ -77,6 +79,10 @@ sequenceDiagram
     Server->>Server: Encrypt authConfig with AES-256-GCM
     Server-->>Admin: OAS entry created
 
+    Admin->>Server: POST /admin/mcp { name, transport, authConfig }
+    Server->>Server: Encrypt authConfig with AES-256-GCM
+    Server-->>Admin: MCP server entry created
+
     Note over CLI,Server: Later — agent runtime
 
     CLI->>Server: GET /api/v1/oas  (Bearer JWT)
@@ -86,6 +92,14 @@ sequenceDiagram
     CLI->>CLI: Inject auth as ENV vars (never written to disk)
     CLI->>API: HTTP request via @tronsfey/openapi2cli subprocess
     API-->>CLI: Response (JSON / YAML / table)
+
+    CLI->>Server: GET /api/v1/mcp  (Bearer JWT)
+    Server->>Server: Verify JWT · Decrypt authConfig
+    Server-->>CLI: MCP server config + plain auth (TLS only)
+
+    CLI->>CLI: Inject auth as headers/env (never written to disk)
+    CLI->>MCP: Tool call via @tronsfey/mcp2cli programmatic API
+    MCP-->>CLI: Tool result (JSON)
 ```
 
 ## Repository Structure
@@ -111,13 +125,14 @@ fantastic-potato/
     │   │   ├── health/              # Liveness + readiness probes
     │   │   ├── metrics/             # Prometheus export
     │   │   ├── oas/                 # OAS CRUD (admin + client)
+    │   │   ├── mcp/                 # MCP Server CRUD (admin + client)
     │   │   ├── storage/             # Pluggable storage (memory | postgres | mysql)
     │   │   └── tokens/              # Token issuance + revocation
     │   └── test/e2e/                # Jest E2E tests (memory adapters)
     └── cli/                         # @ucli/cli (Commander.js + tsup/ESM)
         ├── src/
-        │   ├── commands/            # configure, services, run, refresh, help
-        │   └── lib/                 # server-client, cache, oas-runner
+        │   ├── commands/            # configure, services, run, refresh, help, mcp
+        │   └── lib/                 # server-client, cache, oas-runner, mcp-runner
         └── test/                    # Vitest unit tests
 ```
 
@@ -161,6 +176,18 @@ curl -s -X POST http://localhost:3000/admin/oas \
     \"authType\": \"none\",
     \"authConfig\": {\"type\":\"none\"}
   }"
+
+# Register an MCP server
+curl -s -X POST http://localhost:3000/admin/mcp \
+  -H "X-Admin-Secret: my-secret" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"groupId\": \"$GROUP\",
+    \"name\": \"weather\",
+    \"transport\": \"http\",
+    \"serverUrl\": \"https://weather.mcp.example.com/sse\",
+    \"authConfig\": {\"type\":\"none\"}
+  }"
 ```
 
 **Step 3 — Use the CLI**
@@ -171,6 +198,11 @@ npm install -g @ucli/cli
 ucli configure --server http://localhost:3000 --token $JWT
 ucli services list
 ucli run --service petstore --operation getPetById --params '{"petId": 1}'
+
+# Use MCP servers
+ucli mcp list
+ucli mcp tools weather
+ucli mcp run weather get_forecast --location "New York"
 ```
 
 ## Packages

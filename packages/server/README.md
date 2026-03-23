@@ -18,6 +18,7 @@
 `@ucli/server` is the server component of ucli. It provides:
 
 - **Encrypted OAS storage** — OpenAPI specs with auth configs encrypted at rest (AES-256-GCM)
+- **Encrypted MCP server storage** — MCP server configs with auth (none / http_headers / env) encrypted at rest
 - **Group-scoped JWT issuance** — RS256-signed tokens that control which specs a client can access
 - **Token revocation** — blacklist via cache (JTI-based)
 - **Pluggable backends** — swap storage (memory / PostgreSQL / MySQL) and cache (memory / Redis) via env vars
@@ -35,7 +36,7 @@ graph TB
         Crypto["CryptoModule\nJwtService (RS256)\nEncryptionService (AES-256-GCM)"]
 
         subgraph Storage["StorageModule.forRoot()"]
-            Mem1["MemoryGroupRepo\nMemoryTokenRepo\nMemoryOASRepo"]
+            Mem1["MemoryGroupRepo\nMemoryTokenRepo\nMemoryOASRepo\nMemoryMCPRepo"]
             DB1["TypeORM repos\n(postgres · mysql)"]
         end
 
@@ -47,6 +48,7 @@ graph TB
         Groups["GroupsModule\nPOST/GET /admin/groups"]
         Tokens["TokensModule\nPOST /admin/groups/:id/tokens\nDELETE /admin/tokens/:id"]
         OAS["OASModule\nAdmin CRUD + Client read"]
+        MCP["MCPModule\nAdmin CRUD + Client read"]
         Health["HealthModule\n/api/v1/health · /api/v1/ready"]
         Metrics["MetricsModule\nGET /metrics (Prometheus)"]
     end
@@ -59,9 +61,11 @@ graph TB
     Storage --> Groups
     Storage --> Tokens
     Storage --> OAS
+    Storage --> MCP
     Cache --> Auth
     Groups --> Tokens
     Groups --> OAS
+    Crypto --> MCP
 ```
 
 ## Installation
@@ -248,6 +252,58 @@ curl -X DELETE http://localhost:3000/admin/oas/<oas-id> \
   -H "X-Admin-Secret: my-secret"
 ```
 
+### MCP Servers
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/admin/mcp` | Register an MCP server |
+| `GET` | `/admin/mcp` | List all MCP servers |
+| `GET` | `/admin/mcp/:id` | Get a single MCP server |
+| `PUT` | `/admin/mcp/:id` | Update an MCP server |
+| `DELETE` | `/admin/mcp/:id` | Delete an MCP server |
+
+```bash
+# Register (http transport + no auth)
+curl -X POST http://localhost:3000/admin/mcp \
+  -H "X-Admin-Secret: my-secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "groupId": "<group-id>",
+    "name": "weather",
+    "transport": "http",
+    "serverUrl": "https://weather.mcp.example.com/sse",
+    "authConfig": {"type":"none"}
+  }'
+
+# Register (stdio transport + env auth)
+curl -X POST http://localhost:3000/admin/mcp \
+  -H "X-Admin-Secret: my-secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "groupId": "<group-id>",
+    "name": "local-tools",
+    "transport": "stdio",
+    "command": "npx -y @myorg/mcp-tools",
+    "authConfig": {"type":"env","env":{"API_KEY":"<secret>","REGION":"us-east-1"}}
+  }'
+
+# List
+curl http://localhost:3000/admin/mcp \
+  -H "X-Admin-Secret: my-secret"
+
+# Update
+curl -X PUT http://localhost:3000/admin/mcp/<mcp-id> \
+  -H "X-Admin-Secret: my-secret" \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Updated description"}'
+
+# Delete
+curl -X DELETE http://localhost:3000/admin/mcp/<mcp-id> \
+  -H "X-Admin-Secret: my-secret"
+```
+
+---
+
 ## Client API Reference
 
 Client endpoints require `Authorization: Bearer <group-jwt>`.
@@ -256,6 +312,8 @@ Client endpoints require `Authorization: Bearer <group-jwt>`.
 |--------|------|-------------|
 | `GET` | `/api/v1/oas` | List OAS entries visible to the token's group |
 | `GET` | `/api/v1/oas/:name` | Get a single OAS entry with decrypted auth |
+| `GET` | `/api/v1/mcp` | List MCP servers for the token's group (decrypted auth) |
+| `GET` | `/api/v1/mcp/:name` | Get a single MCP server with decrypted auth |
 
 ## Auth Types
 
@@ -268,6 +326,16 @@ Client endpoints require `Authorization: Bearer <group-jwt>`.
 | `oauth2_cc` | `{ "type": "oauth2_cc", "tokenUrl": "...", "clientId": "...", "clientSecret": "...", "scopes": [] }` |
 
 Auth configs are encrypted with AES-256-GCM before storage. They are decrypted in-memory only at request time.
+
+## MCP Auth Types
+
+| `authConfig.type` | Shape |
+|--------------------|-------|
+| `none` | `{ "type": "none" }` |
+| `http_headers` | `{ "type": "http_headers", "headers": { "Authorization": "Bearer ..." } }` |
+| `env` | `{ "type": "env", "env": { "API_KEY": "..." } }` (stdio transport) |
+
+MCP auth configs follow the same encryption model as OAS auth configs: AES-256-GCM at rest, decrypted in-memory at request time.
 
 ## OpenTelemetry Tracing
 
@@ -320,9 +388,10 @@ OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> ucli-server
 
 A built-in web UI is served at `/admin-ui` when the package is installed. It provides:
 
-- **Dashboard** — overview stats (groups, OAS entries, active tokens)
+- **Dashboard** — overview stats (groups, OAS entries, MCP servers, active tokens)
 - **Groups** — create and delete groups
 - **OAS Entries** — register, edit, and delete OAS entries with auth configuration
+- **MCP Servers** — register, edit, and delete MCP server configs with auth configuration
 - **Tokens** — issue JWT tokens per group (shown once after creation), view status, revoke
 
 The dashboard is auto-served from the `dist/admin-ui/` directory bundled with the npm package.

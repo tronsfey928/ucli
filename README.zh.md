@@ -17,8 +17,8 @@
 
 **ucli** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 集中管理系统。
 
-- **服务端**（`@ucli/server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及认证配置，并签发 **RS256 群组 JWT**。
-- **CLI**（`@ucli/cli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作——认证信息在运行时以环境变量方式注入子进程，**永不落盘**。
+- **服务端**（`@ucli/server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及 **MCP 服务器配置**（Model Context Protocol），并签发 **RS256 群组 JWT**。
+- **CLI**（`@ucli/cli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作和 MCP 工具——认证信息在运行时以环境变量或请求头方式注入，**永不落盘**。
 
 ## 架构图
 
@@ -29,7 +29,7 @@ graph TB
     end
 
     subgraph Server["🖥️  @ucli/server  ·  NestJS v11"]
-        SVC["REST API\n(AdminGuard + GroupTokenGuard)"]
+        SVC["REST API\nOAS · MCP\n(AdminGuard + GroupTokenGuard)"]
         ST[("存储层\nmemory · postgres · mysql")]
         CA[("缓存层\nmemory · redis")]
         CR["加密模块\nAES-256-GCM · RS256 JWT"]
@@ -41,7 +41,9 @@ graph TB
     subgraph Client["💻  @ucli/cli  ·  Commander.js"]
         CLI[ucli]
         O2C["@tronsfey/openapi2cli\n（子进程）"]
+        M2C["@tronsfey/mcp2cli\n（程序化调用）"]
         CLI -->|"携带 ENV 凭据启动"| O2C
+        CLI -->|"注入 headers/env"| M2C
     end
 
     subgraph APIs["🌐 目标 API"]
@@ -77,6 +79,10 @@ sequenceDiagram
     Server->>Server: AES-256-GCM 加密 authConfig
     Server-->>Admin: OAS 条目创建成功
 
+    Admin->>Server: POST /admin/mcp { name, transport, authConfig }
+    Server->>Server: AES-256-GCM 加密 authConfig
+    Server-->>Admin: MCP 服务器条目创建成功
+
     Note over CLI,Server: 之后——智能体运行时
 
     CLI->>Server: GET /api/v1/oas（Bearer JWT）
@@ -86,6 +92,14 @@ sequenceDiagram
     CLI->>CLI: 将认证信息注入 ENV 变量（不写入磁盘）
     CLI->>API: 通过 @tronsfey/openapi2cli 子进程发起 HTTP 请求
     API-->>CLI: 响应（JSON / YAML / 表格）
+
+    CLI->>Server: GET /api/v1/mcp（Bearer JWT）
+    Server->>Server: 验证 JWT · 解密 authConfig
+    Server-->>CLI: MCP 服务器配置 + 明文认证信息（仅 TLS 传输）
+
+    CLI->>CLI: 将认证信息注入 headers/env（不写入磁盘）
+    CLI->>MCP: 通过 @tronsfey/mcp2cli 程序化 API 调用工具
+    MCP-->>CLI: 工具执行结果（JSON）
 ```
 
 ## 仓库结构
@@ -111,13 +125,14 @@ fantastic-potato/
     │   │   ├── health/              # 存活 + 就绪探针
     │   │   ├── metrics/             # Prometheus 指标导出
     │   │   ├── oas/                 # OAS CRUD（管理端 + 客户端）
+    │   │   ├── mcp/                 # MCP 服务器 CRUD（管理端 + 客户端）
     │   │   ├── storage/             # 可插拔存储（memory | postgres | mysql）
     │   │   └── tokens/              # 令牌签发 + 吊销
     │   └── test/e2e/                # Jest E2E 测试（内存适配器）
     └── cli/                         # @ucli/cli（Commander.js + tsup/ESM）
         ├── src/
-        │   ├── commands/            # configure、services、run、refresh、help
-        │   └── lib/                 # server-client、cache、oas-runner
+        │   ├── commands/            # configure、services、run、refresh、help、mcp
+        │   └── lib/                 # server-client、cache、oas-runner、mcp-runner
         └── test/                    # Vitest 单元测试
 ```
 
@@ -161,6 +176,18 @@ curl -s -X POST http://localhost:3000/admin/oas \
     \"authType\": \"none\",
     \"authConfig\": {\"type\":\"none\"}
   }"
+
+# 注册 MCP 服务器
+curl -s -X POST http://localhost:3000/admin/mcp \
+  -H "X-Admin-Secret: my-secret" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"groupId\": \"$GROUP\",
+    \"name\": \"weather\",
+    \"transport\": \"http\",
+    \"serverUrl\": \"https://weather.mcp.example.com/sse\",
+    \"authConfig\": {\"type\":\"none\"}
+  }"
 ```
 
 **第三步 — 使用 CLI**
@@ -171,6 +198,11 @@ npm install -g @ucli/cli
 ucli configure --server http://localhost:3000 --token $JWT
 ucli services list
 ucli run --service petstore --operation getPetById --params '{"petId": 1}'
+
+# 使用 MCP 服务器
+ucli mcp list
+ucli mcp tools weather
+ucli mcp run weather get_forecast location="New York"
 ```
 
 ## 子包说明

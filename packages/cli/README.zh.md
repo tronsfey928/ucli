@@ -20,8 +20,9 @@
 - **发现** 注册在 ucli 服务端上的 OpenAPI 服务
 - **执行** API 操作，无需直接处理凭据
 - **本地缓存** 规范，减少网络请求
+- **调用** MCP 服务器工具，使用 `ucli mcp run`
 
-认证凭据（Bearer Token、API 密钥、OAuth2 密钥）在服务端加密存储，运行时以**环境变量**方式注入操作子进程——**永不落盘**，也不会出现在进程列表中。
+认证凭据（Bearer Token、API 密钥、OAuth2 密钥、MCP 请求头/环境变量）在服务端加密存储，运行时以环境变量或请求头方式注入——**永不落盘**，也不会出现在进程列表中。
 
 ## 工作原理
 
@@ -53,6 +54,14 @@ sequenceDiagram
     CLI->>API: 启动 @tronsfey/openapi2cli（ENV 含认证凭据）
     API-->>CLI: HTTP 响应
     CLI-->>Agent: 格式化输出（JSON / 表格 / YAML）
+
+    Agent->>CLI: ucli mcp run my-server get_weather --city Beijing
+    CLI->>Server: GET /api/v1/mcp/my-server（Bearer JWT）
+    Server-->>CLI: McpEntry + 解密认证配置（TLS）
+    CLI->>CLI: 将认证信息注入 mcp2cli 配置（headers/env）
+    CLI->>MCP: @tronsfey/mcp2cli（程序化调用，非子进程）
+    MCP-->>CLI: 工具执行结果（JSON）
+    CLI-->>Agent: 输出
 ```
 
 ## 安装
@@ -188,6 +197,48 @@ ucli run --service crm --operation createContact \
 
 ---
 
+### `mcp list`
+
+列出当前群组可访问的所有 MCP 服务器。
+
+```bash
+ucli mcp list [--format table|json|yaml]
+```
+
+---
+
+### `mcp tools <server>`
+
+列出指定 MCP 服务器上的可用工具。
+
+```bash
+ucli mcp tools <server-name> [--format table|json]
+```
+
+---
+
+### `mcp run <server> <tool> [args...]`
+
+在 MCP 服务器上执行指定工具。
+
+```bash
+ucli mcp run <server-name> <tool-name> [args...]
+```
+
+参数以 `key=value` 形式传入。
+
+**示例：**
+
+```bash
+# 调用天气工具
+ucli mcp run weather get_forecast location="北京" units=metric
+
+# 调用搜索工具
+ucli mcp run search-server web_search query="ucli MCP" limit=5
+```
+
+---
+
 ### `refresh`
 
 强制从服务器刷新本地 OAS 缓存。
@@ -241,6 +292,8 @@ ucli help
 - 日志文件
 - 智能体的上下文窗口
 
+对于 MCP 服务器，认证信息（`http_headers` 或 `env`）直接注入 `@tronsfey/mcp2cli` 的程序化配置中——**永不作为 CLI 参数传递**（否则会出现在 `ps` 列表中）。
+
 ## AI 智能体使用指南
 
 AI 智能体将 `ucli` 作为技能使用时，推荐的工作流程：
@@ -281,5 +334,7 @@ ucli run --service orders --operation createOrder \
 | `Unauthorized (401)` | JWT 已过期或被吊销 | 联系管理员获取新令牌 |
 | `Service not found` | 服务名拼写错误或不在当前群组 | 运行 `services list` 查看可用服务 |
 | `Operation not found` | 无效的 `operationId` | 运行 `services info <name>` 查看有效操作 |
+| `MCP server not found` | MCP 服务器名拼写错误或不在当前群组 | 运行 `ucli mcp list` 查看可用服务器 |
+| `Tool not found` | 无效的工具名 | 运行 `ucli mcp tools <server>` 查看可用工具 |
 | `Connection refused` | 服务器未运行或 URL 错误 | 用 `ucli configure` 检查服务器 URL |
 | `Cache error` | 临时目录权限问题 | 运行 `ucli refresh` 重置缓存 |

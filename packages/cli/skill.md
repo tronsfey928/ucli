@@ -162,31 +162,43 @@ ucli run <service> <operation>
 
 ## MCP Server Tools
 
-In addition to OpenAPI services, ucli can also interact with MCP (Model Context Protocol) servers.
+In addition to OpenAPI services, ucli can interact with MCP (Model Context Protocol) servers. Auth credentials (`http_headers` or `env`) are injected programmatically — they are never passed as CLI arguments (which would be visible in `ps`).
 
-### List MCP servers
+### Workflow
 
 ```bash
+# Step 1: Discover available MCP servers
 ucli mcp list
-```
 
-### List tools on an MCP server
-
-```bash
+# Step 2: Inspect a server's available tools
 ucli mcp tools <server-name>
+
+# Step 3: Run a tool (args as key=value pairs)
+ucli mcp run <server-name> <tool-name> [key=value ...]
 ```
 
-### Run an MCP tool
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `ucli mcp list` | List all MCP servers available to your group |
+| `ucli mcp tools <server>` | List tools available on the server |
+| `ucli mcp run <server> <tool> [args...]` | Execute a tool on the server |
+
+### Examples
 
 ```bash
-ucli mcp run <server-name> <tool-name> [args...]
-```
-
-**Example:**
-```bash
+# List available MCP servers
 ucli mcp list
-ucli mcp tools my-mcp-server
-ucli mcp run my-mcp-server get_weather --location "New York"
+
+# See what tools are available on "weather" server
+ucli mcp tools weather
+
+# Call the get_forecast tool with arguments
+ucli mcp run weather get_forecast location="New York" units=metric
+
+# Call a search tool
+ucli mcp run search-server web_search query="ucli documentation" limit=5
 ```
 
 ---

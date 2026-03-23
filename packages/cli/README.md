@@ -20,8 +20,9 @@
 - **Discover** OpenAPI services registered on a ucli server
 - **Execute** API operations without ever handling credentials directly
 - **Cache** specs locally to reduce round-trips
+- **Invoke** MCP server tools via `ucli mcp run`
 
-Auth credentials (bearer tokens, API keys, OAuth2 secrets) are stored encrypted on the server and injected as **environment variables** into the operation subprocess at runtime — they are **never written to disk** or visible in process listings.
+Auth credentials (bearer tokens, API keys, OAuth2 secrets, MCP headers/env) are stored encrypted on the server and injected at runtime — they are **never written to disk** or visible in process listings.
 
 ## How It Works
 
@@ -53,6 +54,14 @@ sequenceDiagram
     CLI->>API: spawn @tronsfey/openapi2cli (ENV: auth creds)
     API-->>CLI: HTTP response
     CLI-->>Agent: Formatted output (JSON / table / YAML)
+
+    Agent->>CLI: ucli mcp run my-server get_weather --city Beijing
+    CLI->>Server: GET /api/v1/mcp/my-server (Bearer JWT)
+    Server-->>CLI: McpEntry + decrypted authConfig (TLS)
+    CLI->>CLI: Inject auth as headers/env into mcp2cli config
+    CLI->>MCP: @tronsfey/mcp2cli (programmatic, no subprocess)
+    MCP-->>CLI: Tool result (JSON)
+    CLI-->>Agent: Output
 ```
 
 ## Installation
@@ -188,6 +197,57 @@ ucli run --service crm --operation createContact \
 
 ---
 
+### `mcp list`
+
+List all MCP servers available to your group.
+
+```bash
+ucli mcp list [--format table|json|yaml]
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--format` | `table` | Output format: `table`, `json`, or `yaml` |
+
+---
+
+### `mcp tools <server>`
+
+List tools available on a specific MCP server.
+
+```bash
+ucli mcp tools <server-name> [--format table|json]
+```
+
+| Argument/Flag | Description |
+|---------------|-------------|
+| `<server-name>` | MCP server name from `mcp list` |
+| `--format` | Output format (`table` default) |
+
+---
+
+### `mcp run <server> <tool> [args...]`
+
+Execute a tool on an MCP server.
+
+```bash
+ucli mcp run <server-name> <tool-name> [args...]
+```
+
+Args are passed as `key=value` pairs and converted to a JSON object.
+
+**Examples:**
+
+```bash
+# Call a weather tool
+ucli mcp run weather get_forecast location="New York" units=metric
+
+# Call a search tool
+ucli mcp run search-server web_search query="ucli MCP" limit=5
+```
+
+---
+
 ### `refresh`
 
 Force-refresh the local OAS cache from the server.
@@ -241,6 +301,8 @@ This means credentials never appear in:
 - Log files
 - The agent's context window
 
+For MCP servers, auth (`http_headers` or `env`) is injected directly into the `@tronsfey/mcp2cli` programmatic config — it is **never passed as CLI arguments** (which would be visible in `ps`).
+
 ## For AI Agents
 
 The recommended workflow for AI agents using `ucli` as a skill:
@@ -281,5 +343,7 @@ ucli run --service orders --operation createOrder \
 | `Unauthorized (401)` | JWT expired or revoked | Get a new token from the admin |
 | `Service not found` | Service name misspelled or not in group | Run `services list` to see available services |
 | `Operation not found` | Invalid `operationId` | Run `services info <name>` to see valid operations |
+| `MCP server not found` | Server name misspelled or not in group | Run `ucli mcp list` to see available servers |
+| `Tool not found` | Invalid tool name | Run `ucli mcp tools <server>` to see available tools |
 | `Connection refused` | Server not running or wrong URL | Check server URL with `ucli configure` |
 | `Cache error` | Temp dir permissions issue | Run `ucli refresh` to reset cache |
