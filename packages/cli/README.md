@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="./assets/logo.svg" alt="OAS Gateway" width="480" />
-</p>
+<h1 align="center">OAS Gateway CLI</h1>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@tronsfey/oas-cli"><img src="https://img.shields.io/npm/v/@tronsfey/oas-cli?color=2563eb" alt="npm version"/></a>

@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="./assets/logo.svg" alt="OAS Gateway" width="480" />
-</p>
+<h1 align="center">OAS Gateway</h1>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@tronsfey/oas-server"><img src="https://img.shields.io/npm/v/@tronsfey/oas-server?label=%40tronsfey%2Foas-server&color=7c3aed" alt="oas-server version"/></a>
