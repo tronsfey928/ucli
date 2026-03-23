@@ -8,21 +8,21 @@ export interface CLIConfig {
 }
 
 const conf = new Conf<CLIConfig>({
-  projectName: 'oas-cli',
+  projectName: 'ucli',
   schema: {
     serverUrl: { type: 'string' },
     token: { type: 'string' },
   },
 })
 
-export const cacheDir = join(homedir(), '.cache', 'oas-cli')
+export const cacheDir = join(homedir(), '.cache', 'ucli')
 
 export function getConfig(): CLIConfig {
   const serverUrl = conf.get('serverUrl')
   const token = conf.get('token')
 
   if (!serverUrl || !token) {
-    console.error('oas-cli is not configured. Run: oas-cli configure --server <url> --token <jwt>')
+    console.error('ucli is not configured. Run: ucli configure --server <url> --token <jwt>')
     process.exit(1)
   }
 

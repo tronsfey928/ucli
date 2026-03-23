@@ -1,7 +1,7 @@
-<h1 align="center">OAS Gateway</h1>
+<h1 align="center">ucli server</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-server"><img src="https://img.shields.io/npm/v/@tronsfey/oas-server?color=7c3aed" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?color=7c3aed" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/NestJS-v11-e0234e" alt="NestJS"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,7 +15,7 @@
 
 ## 概述
 
-`@tronsfey/oas-server` 是 OAS Gateway 的服务端组件，提供：
+`@ucli/server` 是 ucli 的服务端组件，提供：
 
 - **加密 OAS 存储** — OpenAPI 规范及认证配置以 AES-256-GCM 静态加密
 - **群组级 JWT 签发** — RS256 签名令牌，控制客户端可访问的规范范围
@@ -67,9 +67,9 @@ graph TB
 ## 安装
 
 ```bash
-npm install -g @tronsfey/oas-server
+npm install -g @ucli/server
 # 或
-pnpm add -g @tronsfey/oas-server
+pnpm add -g @ucli/server
 ```
 
 ## 快速开始（内存模式，无需 DB/Redis）
@@ -79,7 +79,7 @@ pnpm add -g @tronsfey/oas-server
 ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 
 # 2. 启动服务器
-ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY oas-server
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY ucli-server
 
 # 服务启动于 http://localhost:3000
 # Swagger UI: http://localhost:3000/api/docs
@@ -117,12 +117,12 @@ ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY oas-server
 # PostgreSQL
 DB_TYPE=postgres \
 DATABASE_URL=postgresql://user:pass@host:5432/oas_gateway \
-ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> oas-server
+ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> ucli-server
 
 # MySQL
 DB_TYPE=mysql \
 DATABASE_URL=mysql://user:pass@host:3306/oas_gateway \
-ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> oas-server
+ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> ucli-server
 ```
 
 ## 缓存后端
@@ -134,7 +134,7 @@ ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> oas-server
 
 ```bash
 CACHE_TYPE=redis REDIS_URL=redis://:password@host:6379 \
-ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> oas-server
+ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> ucli-server
 ```
 
 ## 生产部署
@@ -159,7 +159,7 @@ DATABASE_URL=postgresql://oas_gateway:changeme@localhost:5432/oas_gateway \
 REDIS_URL=redis://:changeme@localhost:6379 \
 JWT_PRIVATE_KEY=<base64-pem> JWT_PUBLIC_KEY=<base64-pem> \
 ADMIN_SECRET=<强密码> ENCRYPTION_KEY=<64位hex> \
-oas-server
+ucli-server
 ```
 
 ## 管理 API 参考
@@ -283,7 +283,7 @@ curl -X DELETE http://localhost:3000/admin/oas/<oas-id> \
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
 | `OTEL_ENABLED` | `true` | 设为 `false` 完全禁用 |
-| `OTEL_SERVICE_NAME` | `oas-server` | 所有 Span 上的服务名标签 |
+| `OTEL_SERVICE_NAME` | `ucli-server` | 所有 Span 上的服务名标签 |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | — | 采集器 URL（如 `http://otel-collector:4318`）。不填则本地丢弃（no-op） |
 | `OTEL_EXPORTER_OTLP_HEADERS` | — | 采集器认证头（如 `Authorization=Bearer token`） |
 | `OTEL_PROPAGATORS` | `tracecontext,baggage` | W3C 上下文传播（标准） |
@@ -298,9 +298,9 @@ docker run -d --name jaeger \
   -p 16686:16686 \
   jaegertracing/all-in-one:latest
 
-# 启动 oas-server 并开启追踪
+# 启动 ucli-server 并开启追踪
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
-ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> oas-server
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> ucli-server
 
 # 打开 Jaeger UI
 open http://localhost:16686
@@ -309,7 +309,7 @@ open http://localhost:16686
 ### 禁用 OTEL
 
 ```bash
-OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> oas-server
+OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> ucli-server
 ```
 
 ## 管理后台
@@ -326,7 +326,7 @@ OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> oas-server
 也可以通过环境变量指定自定义目录：
 
 ```bash
-ADMIN_UI_PATH=/path/to/custom/dist ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> oas-server
+ADMIN_UI_PATH=/path/to/custom/dist ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> ucli-server
 ```
 
 ## 健康检查与可观测性

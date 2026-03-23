@@ -1,7 +1,7 @@
 <h1 align="center">OAS Gateway CLI</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-cli"><img src="https://img.shields.io/npm/v/@tronsfey/oas-cli?color=2563eb" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?color=2563eb" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/Commander.js-ESM-38bdf8" alt="Commander.js"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,7 +15,7 @@
 
 ## 概述
 
-`@tronsfey/oas-cli` 是 OAS Gateway 的客户端组件，为 AI 智能体（和人类）提供简洁的接口来：
+`@ucli/cli` 是 OAS Gateway 的客户端组件，为 AI 智能体（和人类）提供简洁的接口来：
 
 - **发现** 注册在 OAS Gateway 服务端上的 OpenAPI 服务
 - **执行** API 操作，无需直接处理凭据
@@ -28,15 +28,15 @@
 ```mermaid
 sequenceDiagram
     participant Agent as AI 智能体 / 用户
-    participant CLI as oas-cli
-    participant Server as oas-server
+    participant CLI as ucli
+    participant Server as ucli-server
     participant Cache as 本地缓存
     participant API as 目标 API
 
-    Agent->>CLI: oas-cli configure --server URL --token JWT
+    Agent->>CLI: ucli configure --server URL --token JWT
     CLI->>CLI: 保存配置（OS 配置目录）
 
-    Agent->>CLI: oas-cli services list
+    Agent->>CLI: ucli services list
     CLI->>Cache: 检查本地缓存（TTL）
     alt 缓存未命中
         CLI->>Server: GET /api/v1/oas（Bearer JWT）
@@ -46,7 +46,7 @@ sequenceDiagram
     Cache-->>CLI: OAS 列表
     CLI-->>Agent: 表格 / JSON 输出
 
-    Agent->>CLI: oas-cli run --service payments --operation createPayment --params '{...}'
+    Agent->>CLI: ucli run --service payments --operation createPayment --params '{...}'
     CLI->>Server: GET /api/v1/oas/payments（Bearer JWT）
     Server-->>CLI: OAS 规范 + 解密认证配置（TLS）
     CLI->>CLI: 将认证配置注入 ENV 变量
@@ -58,25 +58,25 @@ sequenceDiagram
 ## 安装
 
 ```bash
-npm install -g @tronsfey/oas-cli
+npm install -g @ucli/cli
 # 或
-pnpm add -g @tronsfey/oas-cli
+pnpm add -g @ucli/cli
 ```
 
 ## 快速开始
 
 ```bash
 # 1. 配置（从管理员获取服务器 URL 和 JWT）
-oas-cli configure --server http://localhost:3000 --token <group-jwt>
+ucli configure --server http://localhost:3000 --token <group-jwt>
 
 # 2. 列出可用服务
-oas-cli services list
+ucli services list
 
 # 3. 查看服务的操作列表
-oas-cli services info payments
+ucli services info payments
 
 # 4. 执行操作
-oas-cli run --service payments --operation getPetById --params '{"petId": 42}'
+ucli run --service payments --operation getPetById --params '{"petId": 42}'
 ```
 
 ## 命令参考
@@ -86,7 +86,7 @@ oas-cli run --service payments --operation getPetById --params '{"petId": 42}'
 将服务器 URL 和群组 JWT 保存到本地。
 
 ```bash
-oas-cli configure --server <url> --token <jwt>
+ucli configure --server <url> --token <jwt>
 ```
 
 | 参数 | 必填 | 说明 |
@@ -95,8 +95,8 @@ oas-cli configure --server <url> --token <jwt>
 | `--token` | 是 | 服务端管理员签发的群组 JWT |
 
 配置存储在 OS 对应的配置目录：
-- Linux/macOS：`~/.config/oas-cli/`
-- Windows：`%APPDATA%\oas-cli\`
+- Linux/macOS：`~/.config/ucli/`
+- Windows：`%APPDATA%\ucli\`
 
 ---
 
@@ -105,7 +105,7 @@ oas-cli configure --server <url> --token <jwt>
 列出当前群组可访问的所有 OpenAPI 服务。
 
 ```bash
-oas-cli services list [--format table|json|yaml] [--refresh]
+ucli services list [--format table|json|yaml] [--refresh]
 ```
 
 | 参数 | 默认值 | 说明 |
@@ -138,7 +138,7 @@ crm          CRM 操作                  7200s
 显示指定服务的详细信息（包括可用操作列表）。
 
 ```bash
-oas-cli services info <service-name> [--format table|json|yaml]
+ucli services info <service-name> [--format table|json|yaml]
 ```
 
 | 参数 | 说明 |
@@ -153,7 +153,7 @@ oas-cli services info <service-name> [--format table|json|yaml]
 执行 OpenAPI 规范中定义的单个 API 操作。
 
 ```bash
-oas-cli run --service <name> --operation <operationId> [选项]
+ucli run --service <name> --operation <operationId> [选项]
 ```
 
 | 参数 | 必填 | 说明 |
@@ -168,21 +168,21 @@ oas-cli run --service <name> --operation <operationId> [选项]
 
 ```bash
 # GET 带路径参数
-oas-cli run --service petstore --operation getPetById \
+ucli run --service petstore --operation getPetById \
   --params '{"petId": 42}'
 
 # POST 带请求体
-oas-cli run --service payments --operation createPayment \
+ucli run --service payments --operation createPayment \
   --params '{"amount": 100, "currency": "CNY", "recipient": "acct_123"}' \
   --format json
 
 # 使用 JMESPath 过滤结果
-oas-cli run --service inventory --operation listProducts \
+ucli run --service inventory --operation listProducts \
   --params '{"category": "electronics"}' \
   --query 'items[?price < `500`].name'
 
 # 从文件读取参数
-oas-cli run --service crm --operation createContact \
+ucli run --service crm --operation createContact \
   --params "@./contact.json"
 ```
 
@@ -193,7 +193,7 @@ oas-cli run --service crm --operation createContact \
 强制从服务器刷新本地 OAS 缓存。
 
 ```bash
-oas-cli refresh [--service <name>]
+ucli refresh [--service <name>]
 ```
 
 | 参数 | 说明 |
@@ -207,7 +207,7 @@ oas-cli refresh [--service <name>]
 显示命令列表及 AI 智能体使用说明。
 
 ```bash
-oas-cli help
+ucli help
 ```
 
 ## 配置说明
@@ -221,10 +221,10 @@ oas-cli help
 
 ## 缓存机制
 
-- OAS 条目以 JSON 文件形式缓存到 OS 临时目录（`oas-cli/` 子目录）
+- OAS 条目以 JSON 文件形式缓存到 OS 临时目录（`ucli/` 子目录）
 - 每个条目的缓存 TTL 由服务端管理员通过 `cacheTtl` 字段设置（单位：秒）
 - 过期条目在下次访问时自动重新拉取
-- 强制刷新：`oas-cli refresh` 或在 `services list` 时添加 `--refresh`
+- 强制刷新：`ucli refresh` 或在 `services list` 时添加 `--refresh`
 
 ## 认证处理
 
@@ -243,27 +243,27 @@ oas-cli help
 
 ## AI 智能体使用指南
 
-AI 智能体将 `oas-cli` 作为技能使用时，推荐的工作流程：
+AI 智能体将 `ucli` 作为技能使用时，推荐的工作流程：
 
 ```bash
 # 第一步：发现可用服务
-oas-cli services list --format json
+ucli services list --format json
 
 # 第二步：查看服务支持的操作
-oas-cli services info <service-name> --format json
+ucli services info <service-name> --format json
 
 # 第三步：执行操作
-oas-cli run --service <name> --operation <operationId> \
+ucli run --service <name> --operation <operationId> \
   --params '{ ... }' --format json
 
 # 第四步：用 JMESPath 过滤结果
-oas-cli run --service inventory --operation listProducts \
+ucli run --service inventory --operation listProducts \
   --query 'items[?inStock == `true`] | [0:5]'
 
 # 第五步：链式操作（将前一个结果作为下一个的输入）
-PRODUCT_ID=$(oas-cli run --service inventory --operation listProducts \
+PRODUCT_ID=$(ucli run --service inventory --operation listProducts \
   --query 'items[0].id' | tr -d '"')
-oas-cli run --service orders --operation createOrder \
+ucli run --service orders --operation createOrder \
   --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
 ```
 
@@ -272,7 +272,7 @@ oas-cli run --service orders --operation createOrder \
 - 使用 `--format json` 方便程序解析
 - 使用 `--query` 配合 JMESPath 提取特定字段
 - 注意列表操作的分页字段（`nextPage`、`totalCount`）
-- 若服务数据疑似过期，执行 `oas-cli refresh --service <name>`
+- 若服务数据疑似过期，执行 `ucli refresh --service <name>`
 
 ## 错误参考
 
@@ -281,5 +281,5 @@ oas-cli run --service orders --operation createOrder \
 | `Unauthorized (401)` | JWT 已过期或被吊销 | 联系管理员获取新令牌 |
 | `Service not found` | 服务名拼写错误或不在当前群组 | 运行 `services list` 查看可用服务 |
 | `Operation not found` | 无效的 `operationId` | 运行 `services info <name>` 查看有效操作 |
-| `Connection refused` | 服务器未运行或 URL 错误 | 用 `oas-cli configure` 检查服务器 URL |
-| `Cache error` | 临时目录权限问题 | 运行 `oas-cli refresh` 重置缓存 |
+| `Connection refused` | 服务器未运行或 URL 错误 | 用 `ucli configure` 检查服务器 URL |
+| `Cache error` | 临时目录权限问题 | 运行 `ucli refresh` 重置缓存 |

@@ -27,10 +27,10 @@ export function registerHelp(program: Command): void {
             for (const e of entries) {
               console.log(`  ${e.name.padEnd(20)} ${e.description}`)
             }
-            console.log('\nTip: Run `oas-cli help <service>` for service-specific operations.')
+            console.log('\nTip: Run `ucli help <service>` for service-specific operations.')
           }
         } else {
-          console.log('\nRun `oas-cli configure --server <url> --token <jwt>` to get started.')
+          console.log('\nRun `ucli configure --server <url> --token <jwt>` to get started.')
         }
         return
       }
@@ -44,7 +44,7 @@ export function registerHelp(program: Command): void {
         entry = await client.getOAS(service)
       } catch {
         console.error(`Unknown service: ${service}`)
-        console.error('Run `oas-cli services list` to see available services.')
+        console.error('Run `ucli services list` to see available services.')
         process.exit(1)
       }
 
@@ -58,34 +58,34 @@ export function registerHelp(program: Command): void {
       console.log(help)
 
       console.log('\nExamples:')
-      console.log(`  oas-cli run ${entry.name} <operation>`)
-      console.log(`  oas-cli run ${entry.name} <operation> --format table`)
-      console.log(`  oas-cli run ${entry.name} <operation> --query "results[*].id"`)
-      console.log(`  oas-cli run ${entry.name} <operation> --data '{"key":"value"}'`)
+      console.log(`  ucli run ${entry.name} <operation>`)
+      console.log(`  ucli run ${entry.name} <operation> --format table`)
+      console.log(`  ucli run ${entry.name} <operation> --query "results[*].id"`)
+      console.log(`  ucli run ${entry.name} <operation> --data '{"key":"value"}'`)
     })
 }
 
 function printGeneralHelp(): void {
   console.log(`
-OAS CLI — OpenAPI Gateway for AI Agents
+ucli — OpenAPI & MCP Gateway for AI Agents
 ════════════════════════════════════════
 
 SETUP
-  oas-cli configure --server <url> --token <jwt>
+  ucli configure --server <url> --token <jwt>
       Configure server connection and authentication.
 
 DISCOVERY
-  oas-cli services list
+  ucli services list
       List all OAS services available in your group.
 
-  oas-cli services info <service>
+  ucli services info <service>
       Show detailed service info and all available operations.
 
-  oas-cli help [service]
+  ucli help [service]
       Show this guide, or service-specific operations.
 
 EXECUTION
-  oas-cli run <service> <operation> [options]
+  ucli run <service> <operation> [options]
       Execute a service operation.
 
       Options:
@@ -94,13 +94,13 @@ EXECUTION
         --data <json|@file>        Request body for POST/PUT/PATCH
 
 MAINTENANCE
-  oas-cli refresh
+  ucli refresh
       Force-refresh the local OAS cache from the server.
 
 ERRORS
-  401 Unauthorized  → Run: oas-cli configure --server <url> --token <jwt>
-  404 Not Found     → Check service name: oas-cli services list
-  4xx Client Error  → Check operation args: oas-cli services info <service>
-  5xx Server Error  → Retry or run: oas-cli refresh
+  401 Unauthorized  → Run: ucli configure --server <url> --token <jwt>
+  404 Not Found     → Check service name: ucli services list
+  4xx Client Error  → Check operation args: ucli services info <service>
+  5xx Server Error  → Retry or run: ucli refresh
 `)
 }

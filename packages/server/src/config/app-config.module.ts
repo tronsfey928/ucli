@@ -49,7 +49,7 @@ import { AppConfigService } from './app-config.service'
 
         // OpenTelemetry
         OTEL_ENABLED: Joi.string().valid('true', 'false').default('true'),
-        OTEL_SERVICE_NAME: Joi.string().default('oas-server'),
+        OTEL_SERVICE_NAME: Joi.string().default('ucli-server'),
         OTEL_EXPORTER_OTLP_ENDPOINT: Joi.string().uri().optional(),
 
         // Admin UI

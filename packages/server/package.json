@@ -1,7 +1,7 @@
 {
-  "name": "@tronsfey/oas-server",
-  "version": "0.4.0",
-  "description": "OAS Gateway — centralized OpenAPI management server with multi-database support",
+  "name": "@ucli/server",
+  "version": "0.5.0",
+  "description": "ucli server — centralized OpenAPI and MCP management server with multi-database support",
   "keywords": ["openapi", "oas", "gateway", "nestjs", "jwt", "api-management"],
   "license": "MIT",
   "engines": { "node": ">=18" },
@@ -15,15 +15,15 @@
     "README.zh.md"
   ],
   "bin": {
-    "oas-server": "./dist/main.js"
+    "ucli-server": "./dist/main.js"
   },
   "main": "./dist/main.js",
   "types": "./dist/main.d.ts",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "build:full": "pnpm --filter @tronsfey/oas-admin build && cp -r ../admin/dist ./dist/admin-ui && tsc -p tsconfig.json",
-    "prepack": "pnpm --filter @tronsfey/oas-admin build && mkdir -p dist && cp -r ../admin/dist ./dist/admin-ui",
+    "build:full": "pnpm --filter @ucli/admin build && cp -r ../admin/dist ./dist/admin-ui && tsc -p tsconfig.json",
+    "prepack": "pnpm --filter @ucli/admin build && mkdir -p dist && cp -r ../admin/dist ./dist/admin-ui",
     "start": "node dist/main.js",
     "start:prod": "NODE_ENV=production node dist/main.js",
     "test": "jest --config jest.config.js",

@@ -107,3 +107,55 @@ export interface IOASRepo {
   update(id: string, data: UpdateOASInput): Promise<OASEntry>
   delete(id: string): Promise<void>
 }
+
+// ── MCP domain models ───────────────────────────────────────────────────────
+
+export type McpAuthConfig =
+  | { type: 'none' }
+  | { type: 'http_headers'; headers: Record<string, string> }
+  | { type: 'env'; env: Record<string, string> }
+
+export interface McpEntry {
+  id: string
+  groupId: string
+  name: string
+  description: string
+  transport: 'http' | 'stdio'
+  serverUrl: string | null
+  command: string | null
+  /** Stored AES-256-GCM encrypted; decrypted on retrieval */
+  authConfig: McpAuthConfig
+  enabled: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CreateMcpInput {
+  groupId: string
+  name: string
+  description: string
+  transport: 'http' | 'stdio'
+  serverUrl?: string | null
+  command?: string | null
+  authConfig: McpAuthConfig
+}
+
+export interface UpdateMcpInput {
+  name?: string
+  description?: string
+  transport?: 'http' | 'stdio'
+  serverUrl?: string | null
+  command?: string | null
+  authConfig?: McpAuthConfig
+  enabled?: boolean
+}
+
+export interface IMCPRepo {
+  create(data: CreateMcpInput): Promise<McpEntry>
+  findAll(): Promise<McpEntry[]>
+  findByGroup(groupId: string): Promise<McpEntry[]>
+  findById(id: string): Promise<McpEntry | null>
+  findByName(name: string): Promise<McpEntry | null>
+  update(id: string, data: UpdateMcpInput): Promise<McpEntry>
+  delete(id: string): Promise<void>
+}

@@ -1,7 +1,7 @@
-<h1 align="center">OAS Gateway</h1>
+<h1 align="center">ucli server</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-server"><img src="https://img.shields.io/npm/v/@tronsfey/oas-server?color=7c3aed" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?color=7c3aed" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/NestJS-v11-e0234e" alt="NestJS"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,7 +15,7 @@
 
 ## Overview
 
-`@tronsfey/oas-server` is the server component of OAS Gateway. It provides:
+`@ucli/server` is the server component of ucli. It provides:
 
 - **Encrypted OAS storage** — OpenAPI specs with auth configs encrypted at rest (AES-256-GCM)
 - **Group-scoped JWT issuance** — RS256-signed tokens that control which specs a client can access
@@ -67,9 +67,9 @@ graph TB
 ## Installation
 
 ```bash
-npm install -g @tronsfey/oas-server
+npm install -g @ucli/server
 # or
-pnpm add -g @tronsfey/oas-server
+pnpm add -g @ucli/server
 ```
 
 ## Quick Start (memory mode — no DB/Redis required)
@@ -79,7 +79,7 @@ pnpm add -g @tronsfey/oas-server
 ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
 
 # 2. Start the server
-ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY oas-server
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY ucli-server
 
 # Server starts on http://localhost:3000
 # Swagger UI: http://localhost:3000/api/docs
@@ -103,7 +103,7 @@ ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY oas-server
 | `LOG_LEVEL` | No | `info` | `trace` \| `debug` \| `info` \| `warn` \| `error` \| `fatal` |
 | `SWAGGER_ENABLED` | No | `true` | Set `false` to disable `/api/docs` in production |
 | `OTEL_ENABLED` | No | `true` | Set `false` to disable OpenTelemetry tracing |
-| `OTEL_SERVICE_NAME` | No | `oas-server` | Service name on all trace spans |
+| `OTEL_SERVICE_NAME` | No | `ucli-server` | Service name on all trace spans |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OTLP collector URL; unset = no-op exporter |
 | `ADMIN_UI_PATH` | No | auto | Override path to admin dashboard static files |
 
@@ -121,12 +121,12 @@ Tables are auto-created on first run.
 # PostgreSQL
 DB_TYPE=postgres \
 DATABASE_URL=postgresql://user:pass@host:5432/oas_gateway \
-ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> oas-server
+ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> ucli-server
 
 # MySQL
 DB_TYPE=mysql \
 DATABASE_URL=mysql://user:pass@host:3306/oas_gateway \
-ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> oas-server
+ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> ucli-server
 ```
 
 ## Cache Backends
@@ -138,7 +138,7 @@ ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> oas-server
 
 ```bash
 CACHE_TYPE=redis REDIS_URL=redis://:password@host:6379 \
-ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> oas-server
+ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> ucli-server
 ```
 
 ## Production Deployment
@@ -163,7 +163,7 @@ DATABASE_URL=postgresql://oas_gateway:changeme@localhost:5432/oas_gateway \
 REDIS_URL=redis://:changeme@localhost:6379 \
 JWT_PRIVATE_KEY=<base64-pem> JWT_PUBLIC_KEY=<base64-pem> \
 ADMIN_SECRET=<strong-secret> ENCRYPTION_KEY=<64-hex> \
-oas-server
+ucli-server
 ```
 
 ## Admin API Reference
@@ -287,7 +287,7 @@ They are independent — no conflict. Prometheus scrapes `/metrics` as usual; OT
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OTEL_ENABLED` | `true` | Set `false` to disable entirely |
-| `OTEL_SERVICE_NAME` | `oas-server` | Service name tag on all spans |
+| `OTEL_SERVICE_NAME` | `ucli-server` | Service name tag on all spans |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | — | Collector URL (e.g. `http://otel-collector:4318`). When unset, spans are discarded locally (no-op) |
 | `OTEL_EXPORTER_OTLP_HEADERS` | — | Auth headers for the collector (e.g. `Authorization=Bearer token`) |
 | `OTEL_PROPAGATORS` | `tracecontext,baggage` | W3C trace context propagation (standard) |
@@ -302,9 +302,9 @@ docker run -d --name jaeger \
   -p 16686:16686 \
   jaegertracing/all-in-one:latest
 
-# Start oas-server with tracing enabled
+# Start ucli-server with tracing enabled
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
-ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> oas-server
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> ucli-server
 
 # Open Jaeger UI
 open http://localhost:16686
@@ -313,7 +313,7 @@ open http://localhost:16686
 ### Disabling OTEL
 
 ```bash
-OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> oas-server
+OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> ucli-server
 ```
 
 ## Admin Dashboard
@@ -331,7 +331,7 @@ No extra configuration is required — just start the server and open `http://lo
 You can also point it at an existing dist directory:
 
 ```bash
-ADMIN_UI_PATH=/path/to/custom/dist ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> oas-server
+ADMIN_UI_PATH=/path/to/custom/dist ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> ucli-server
 ```
 
 ## Health & Observability

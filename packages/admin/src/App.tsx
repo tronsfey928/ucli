@@ -6,6 +6,7 @@ import LoginPage from '@/pages/LoginPage'
 import DashboardPage from '@/pages/DashboardPage'
 import GroupsPage from '@/pages/GroupsPage'
 import OASPage from '@/pages/OASPage'
+import MCPPage from '@/pages/MCPPage'
 import TokensPage from '@/pages/TokensPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/groups" element={<GroupsPage />} />
           <Route path="/oas" element={<OASPage />} />
+          <Route path="/mcp" element={<MCPPage />} />
           <Route path="/tokens" element={<TokensPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

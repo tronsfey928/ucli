@@ -4,8 +4,8 @@ This file provides guidance for AI assistants (Claude and others) working in thi
 
 ## Project Overview
 
-**Project name:** OAS Gateway (`fantastic-potato`)
-**Purpose:** Centralized OpenAPI Specification management system with a C/S architecture. The server stores OAS entries with encrypted auth configs and issues group JWTs; the CLI client enables AI agents to discover and invoke API operations without handling credentials directly.
+**Project name:** ucli (`fantastic-potato`)
+**Purpose:** Centralized OpenAPI Specification and MCP Server management system with a C/S architecture. The server stores OAS entries and MCP server configs with encrypted auth configs and issues group JWTs; the CLI client enables AI agents to discover and invoke API operations and MCP tools without handling credentials directly.
 **Primary language:** TypeScript (strict)
 **Framework(s):** NestJS v11 (server), Commander.js (CLI)
 
@@ -19,14 +19,14 @@ fantastic-potato/
 ├── package.json                     # pnpm workspace root
 ├── tsconfig.base.json               # Shared TypeScript config (CommonJS, decorators)
 └── packages/
-    ├── server/                      # @tronsfey/oas-server (NestJS v11)
+    ├── server/                      # @ucli/server (NestJS v11)
     │   ├── src/
     │   │   ├── main.ts              # NestJS bootstrap entry point
     │   │   ├── app.module.ts        # Root module
     │   │   ├── config/              # AppConfigModule (Joi-validated env vars)
     │   │   ├── storage/             # Pluggable storage (memory | postgres | mysql)
-    │   │   │   ├── interfaces/      # IGroupRepo / ITokenRepo / IOASRepo
-    │   │   │   ├── storage.tokens.ts # GROUP_REPO / TOKEN_REPO / OAS_REPO injection tokens
+    │   │   │   ├── interfaces/      # IGroupRepo / ITokenRepo / IOASRepo / IMCPRepo
+    │   │   │   ├── storage.tokens.ts # GROUP_REPO / TOKEN_REPO / OAS_REPO / MCP_REPO injection tokens
     │   │   │   ├── memory/          # In-memory repos (default, no DB required)
     │   │   │   └── typeorm/         # TypeORM repos + entities (PostgreSQL + MySQL)
     │   │   ├── cache/               # Pluggable cache (memory | redis)
@@ -38,42 +38,44 @@ fantastic-potato/
     │   │   ├── groups/              # POST/GET /admin/groups
     │   │   ├── tokens/              # POST /admin/groups/:id/tokens, DELETE /admin/tokens/:id
     │   │   ├── oas/                 # Admin + client OAS CRUD endpoints
+    │   │   ├── mcp/                 # Admin + client MCP Server CRUD + proxy endpoints
     │   │   ├── health/              # /api/v1/health, /api/v1/ready (@nestjs/terminus)
     │   │   └── metrics/             # GET /metrics (Prometheus, prom-client)
     │   ├── test/e2e/                # Jest E2E tests (memory adapters, no external deps)
     │   │   ├── setup.ts             # createTestApp() factory + ADMIN_HEADERS
-    │   │   ├── admin/               # groups, tokens, oas E2E specs
-    │   │   ├── api/                 # client OAS E2E spec (group isolation)
+    │   │   ├── admin/               # groups, tokens, oas, mcp E2E specs
+    │   │   ├── api/                 # client OAS + MCP E2E specs (group isolation)
     │   │   ├── health/              # health + ready probe spec
     │   │   └── auth/                # 401 scenarios, token revocation
     │   ├── jest.config.js
     │   ├── jest-e2e.config.js
     │   └── tsconfig.json
-    ├── cli/                         # @tronsfey/oas-cli (Commander.js + tsup/ESM)
+    ├── cli/                         # @ucli/cli (Commander.js + tsup/ESM)
     │   ├── src/
     │   │   ├── index.ts             # CLI entry point
     │   │   ├── config.ts            # Conf-based local config store
-    │   │   ├── commands/            # configure, services, run, refresh, help
+    │   │   ├── commands/            # configure, services, run, refresh, help, mcp
     │   │   └── lib/
-    │   │       ├── server-client.ts # Axios HTTP client for /api/v1/oas
+    │   │       ├── server-client.ts # Axios HTTP client for /api/v1/oas + /api/v1/mcp
     │   │       ├── cache.ts         # OS temp dir file cache with TTL
-    │   │       └── oas-runner.ts    # Spawns @tronsfey/openapi2cli with injected auth
+    │   │       ├── oas-runner.ts    # Spawns @tronsfey/openapi2cli with injected auth
+    │   │       └── mcp-runner.ts    # Uses @tronsfey/mcp2cli programmatic API
     │   ├── test/                    # Vitest unit tests
     │   ├── skill.md                 # Anthropic skill definition for AI agents
     │   └── tsconfig.json
-    └── admin/                       # @tronsfey/oas-admin (private, bundled into server)
+    └── admin/                       # @ucli/admin (private, bundled into server)
         ├── src/
         │   ├── main.tsx             # React 18 entry point
         │   ├── App.tsx              # Router + RequireAuth wrapper
         │   ├── index.css            # Tailwind + Remixicon + CSS variables
         │   ├── lib/
         │   │   ├── api.ts           # Axios client (timeout, 401 interceptor, helpers)
-        │   │   ├── auth.ts          # sessionStorage auth store
+        │   │   ├── auth.ts          # sessionStorage auth store (key: ucli-admin-auth)
         │   │   └── utils.ts         # cn(), formatDate(), relativeTime()
         │   ├── components/
         │   │   ├── Layout.tsx       # Sidebar navigation
         │   │   └── ui/              # shadcn-style components (Radix UI primitives)
-        │   └── pages/               # Login, Dashboard, Groups, OASPage, Tokens
+        │   └── pages/               # Login, Dashboard, Groups, OASPage, Tokens, MCPPage
         ├── vite.config.ts           # base: '/admin-ui/', proxy to :3000
         ├── tailwind.config.ts       # Tailwind v3 + CSS variable color system
         └── package.json             # private: true, not published independently
@@ -131,7 +133,7 @@ node dist/index.js services list
 | `JWT_DEFAULT_TTL` | No | `86400` | Token TTL in seconds (0 = no expiry) |
 | `LOG_LEVEL` | No | `info` | `trace\|debug\|info\|warn\|error\|fatal` |
 | `OTEL_ENABLED` | No | `true` | Set `false` to disable OpenTelemetry tracing |
-| `OTEL_SERVICE_NAME` | No | `oas-server` | Service name on all trace spans |
+| `OTEL_SERVICE_NAME` | No | `ucli-server` | Service name on all trace spans |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OTLP collector URL; unset = no-op exporter |
 | `RATE_LIMIT_TTL` | No | `60000` | Rate limit window in milliseconds |
 | `RATE_LIMIT_LIMIT` | No | `100` | Max requests per window per IP |
@@ -165,13 +167,13 @@ cd packages/cli && pnpm build
 pnpm test
 
 # Server E2E only (uses memory adapters — no DB/Redis required)
-pnpm --filter @tronsfey/oas-server test:e2e
+pnpm --filter @ucli/server test:e2e
 
 # CLI unit tests only (Vitest)
-pnpm --filter @tronsfey/oas-cli test
+pnpm --filter @ucli/cli test
 
 # Server with coverage
-pnpm --filter @tronsfey/oas-server test:coverage
+pnpm --filter @ucli/server test:coverage
 ```
 
 **AI assistants must run tests before committing.** Do not commit code that breaks existing tests.
@@ -187,8 +189,8 @@ E2E tests set `DB_TYPE=memory CACHE_TYPE=memory` in `packages/server/test/e2e/se
 pnpm lint
 
 # Per-package
-pnpm --filter @tronsfey/oas-server lint
-pnpm --filter @tronsfey/oas-cli lint
+pnpm --filter @ucli/server lint
+pnpm --filter @ucli/cli lint
 ```
 
 Always run linting before committing. Fix all TypeScript type errors.
@@ -200,10 +202,10 @@ Always run linting before committing. Fix all TypeScript type errors.
 ### Pluggable Storage (StorageModule)
 
 `StorageModule.forRoot()` is a NestJS `DynamicModule` that reads `DB_TYPE` at startup:
-- **memory**: `MemoryGroupRepo`, `MemoryTokenRepo`, `MemoryOASRepo` (no external deps)
-- **postgres / mysql**: TypeORM repositories with `GroupEntity`, `TokenEntity`, `OASEntryEntity`
+- **memory**: `MemoryGroupRepo`, `MemoryTokenRepo`, `MemoryOASRepo`, `MemoryMCPRepo` (no external deps)
+- **postgres / mysql**: TypeORM repositories with `GroupEntity`, `TokenEntity`, `OASEntryEntity`, `McpEntryEntity`
 
-Injection tokens (`GROUP_REPO`, `TOKEN_REPO`, `OAS_REPO`) defined in `storage/storage.tokens.ts`.
+Injection tokens (`GROUP_REPO`, `TOKEN_REPO`, `OAS_REPO`, `MCP_REPO`) defined in `storage/storage.tokens.ts`.
 
 ### Pluggable Cache (CacheModule)
 
@@ -224,7 +226,8 @@ Injection token: `CACHE_ADAPTER` (from `cache/cache.token.ts`).
 
 - Auth configs encrypted with AES-256-GCM before database storage
 - Decrypted in memory only at request time; delivered to CLI over TLS
-- CLI injects credentials as env vars into `@tronsfey/openapi2cli` subprocess
+- CLI injects OAS credentials as env vars into `@tronsfey/openapi2cli` subprocess
+- CLI injects MCP credentials as headers/env into `@tronsfey/mcp2cli` programmatic API
 - Credentials are **never written to disk** or exposed as CLI args (visible in `ps`)
 
 ### TypeScript Config (tsconfig.base.json)
@@ -253,6 +256,11 @@ The CLI uses `"type": "module"` (ESM) in its own `package.json` with `tsup` for 
 | `GET` | `/admin/oas` | List all OAS entries |
 | `PUT` | `/admin/oas/:id` | Update OAS entry |
 | `DELETE` | `/admin/oas/:id` | Delete OAS entry |
+| `POST` | `/admin/mcp` | Register MCP server |
+| `GET` | `/admin/mcp` | List all MCP servers |
+| `GET` | `/admin/mcp/:id` | Get MCP server by ID |
+| `PUT` | `/admin/mcp/:id` | Update MCP server |
+| `DELETE` | `/admin/mcp/:id` | Delete MCP server |
 
 ### Client API (`Authorization: Bearer <group-jwt>`)
 
@@ -260,6 +268,8 @@ The CLI uses `"type": "module"` (ESM) in its own `package.json` with `tsup` for 
 |--------|------|-------------|
 | `GET` | `/api/v1/oas` | List OAS entries for group |
 | `GET` | `/api/v1/oas/:name` | Get single OAS entry (decrypted auth) |
+| `GET` | `/api/v1/mcp` | List MCP servers for group (decrypted auth) |
+| `GET` | `/api/v1/mcp/:name` | Get single MCP server (decrypted auth) |
 | `GET` | `/api/v1/health` | Liveness probe (always 200) |
 | `GET` | `/api/v1/ready` | Readiness probe (checks adapters) |
 | `GET` | `/metrics` | Prometheus metrics (IP-restricted) |
@@ -313,7 +323,7 @@ Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`
 4. **No backwards-compat shims.** If something is removed, delete it entirely.
 5. **Never log auth_config in plaintext.** Auth configs are decrypted in memory only — never write to logs.
 6. **No security vulnerabilities.** AES-256-GCM at rest, RS256 JWT, TLS in transit. Do not weaken these.
-7. **CLI auth injection.** In `oas-runner.ts`, credentials are env vars to the child process — never CLI args.
+7. **CLI auth injection.** In `oas-runner.ts`, credentials are env vars to the child process — never CLI args. In `mcp-runner.ts`, credentials are passed via headers/env in `McpServerConfig` — never CLI args.
 8. **Storage/cache pattern.** To add a new backend: implement the interface, add to the DynamicModule factory.
 9. **Run tests before committing.** `pnpm test` must pass.
 10. **Run lint before committing.** `pnpm lint` must produce no errors.

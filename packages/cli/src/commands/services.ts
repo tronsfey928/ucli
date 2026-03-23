@@ -57,7 +57,7 @@ export function registerServices(program: Command): void {
         entry = await client.getOAS(name)
       } catch (err) {
         console.error(`Service not found: ${name}`)
-        console.error('Run `oas-cli services list` to see available services.')
+        console.error('Run `ucli services list` to see available services.')
         process.exit(1)
       }
 

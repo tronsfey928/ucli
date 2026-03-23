@@ -166,6 +166,67 @@ export async function deleteOAS(id: string): Promise<void> {
   await client().delete(`/admin/oas/${id}`)
 }
 
+// ── MCP entries ───────────────────────────────────────────────────────────
+
+export type McpTransport = 'http' | 'stdio'
+
+export type McpAuthConfig =
+  | { type: 'none' }
+  | { type: 'http_headers'; headers: Record<string, string> }
+  | { type: 'env'; env: Record<string, string> }
+
+export interface McpEntry {
+  id: string
+  groupId: string
+  name: string
+  description: string
+  transport: McpTransport
+  serverUrl: string | null
+  command: string | null
+  authConfig: McpAuthConfig
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export async function listMCP(): Promise<McpEntry[]> {
+  const res = await client().get<McpEntry[]>('/admin/mcp')
+  return res.data
+}
+
+export async function createMCP(data: {
+  groupId: string
+  name: string
+  description?: string
+  transport: McpTransport
+  serverUrl?: string
+  command?: string
+  authConfig: McpAuthConfig
+}): Promise<McpEntry> {
+  const res = await client().post<McpEntry>('/admin/mcp', data)
+  return res.data
+}
+
+export async function updateMCP(
+  id: string,
+  data: Partial<{
+    name: string
+    description: string
+    transport: McpTransport
+    serverUrl: string
+    command: string
+    authConfig: McpAuthConfig
+    enabled: boolean
+  }>,
+): Promise<McpEntry> {
+  const res = await client().put<McpEntry>(`/admin/mcp/${id}`, data)
+  return res.data
+}
+
+export async function deleteMCP(id: string): Promise<void> {
+  await client().delete(`/admin/mcp/${id}`)
+}
+
 // ── Stats helper ──────────────────────────────────────────────────────────
 
 export interface Stats {

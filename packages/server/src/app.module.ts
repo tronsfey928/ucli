@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module'
 import { GroupsModule } from './groups/groups.module'
 import { TokensModule } from './tokens/tokens.module'
 import { OASModule } from './oas/oas.module'
+import { MCPModule } from './mcp/mcp.module'
 import { HealthModule } from './health/health.module'
 import { MetricsModule } from './metrics/metrics.module'
 
@@ -39,6 +40,7 @@ import { MetricsModule } from './metrics/metrics.module'
     GroupsModule,
     TokensModule,
     OASModule,
+    MCPModule,
     HealthModule,
     MetricsModule,
   ],

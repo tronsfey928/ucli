@@ -12,7 +12,7 @@ import {
 import { AppConfigService } from '../config/app-config.service'
 
 const ALGORITHM = 'RS256'
-const ISSUER = 'oas-server'
+const ISSUER = 'ucli-server'
 
 export interface JwtPayload {
   sub: string

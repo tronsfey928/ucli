@@ -1,7 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import { AppConfigService } from '../config/app-config.service'
-import type { AuthConfig } from '../storage/interfaces/repos.interface'
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
@@ -15,12 +14,12 @@ export class EncryptionService {
     return Buffer.from(this.appConfig.encryptionKey, 'hex')
   }
 
-  encrypt(authConfig: AuthConfig): string {
+  encrypt(config: object): string {
     const key = this.getKey()
     const iv = randomBytes(IV_LENGTH)
     const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: TAG_LENGTH })
 
-    const plaintext = JSON.stringify(authConfig)
+    const plaintext = JSON.stringify(config)
     const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
     const tag = cipher.getAuthTag()
 
@@ -28,7 +27,7 @@ export class EncryptionService {
     return combined.toString('base64url')
   }
 
-  decrypt(encoded: string): AuthConfig {
+  decrypt(encoded: string): object {
     const key = this.getKey()
     const combined = Buffer.from(encoded, 'base64url')
 
@@ -41,7 +40,7 @@ export class EncryptionService {
 
     const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()])
     try {
-      return JSON.parse(decrypted.toString('utf8')) as AuthConfig
+      return JSON.parse(decrypted.toString('utf8')) as object
     } catch {
       throw new InternalServerErrorException('Failed to decrypt auth configuration — data may be corrupted')
     }

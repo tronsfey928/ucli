@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/dashboard', icon: 'ri-dashboard-line', label: 'Dashboard' },
   { to: '/groups', icon: 'ri-group-line', label: 'Groups' },
   { to: '/oas', icon: 'ri-file-code-line', label: 'OAS Entries' },
+  { to: '/mcp', icon: 'ri-robot-line', label: 'MCP Servers' },
   { to: '/tokens', icon: 'ri-key-line', label: 'Tokens' },
 ]
 
@@ -26,7 +27,7 @@ export default function Layout() {
         {/* Brand */}
         <div className="flex h-14 items-center gap-2 px-4">
           <i className="ri-hexagon-line text-xl text-violet-400" />
-          <span className="font-semibold text-sm tracking-tight">OAS Gateway</span>
+          <span className="font-semibold text-sm tracking-tight">ucli</span>
           <span className="ml-auto text-xs text-sidebar-foreground/40">Admin</span>
         </div>
 

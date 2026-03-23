@@ -45,7 +45,7 @@ export class AppConfigService {
     return this.config.get<string>('OTEL_ENABLED', 'true') !== 'false'
   }
   get otelServiceName(): string {
-    return this.config.get<string>('OTEL_SERVICE_NAME', 'oas-server')
+    return this.config.get<string>('OTEL_SERVICE_NAME', 'ucli-server')
   }
   get otlpEndpoint(): string | undefined {
     return this.config.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT')

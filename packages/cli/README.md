@@ -1,7 +1,7 @@
-<h1 align="center">OAS Gateway CLI</h1>
+<h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-cli"><img src="https://img.shields.io/npm/v/@tronsfey/oas-cli?color=2563eb" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?color=2563eb" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/Commander.js-ESM-38bdf8" alt="Commander.js"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,9 +15,9 @@
 
 ## Overview
 
-`@tronsfey/oas-cli` is the client component of OAS Gateway. It gives AI agents (and humans) a simple interface to:
+`@ucli/cli` is the client component of ucli. It gives AI agents (and humans) a simple interface to:
 
-- **Discover** OpenAPI services registered on an OAS Gateway server
+- **Discover** OpenAPI services registered on a ucli server
 - **Execute** API operations without ever handling credentials directly
 - **Cache** specs locally to reduce round-trips
 
@@ -28,15 +28,15 @@ Auth credentials (bearer tokens, API keys, OAuth2 secrets) are stored encrypted 
 ```mermaid
 sequenceDiagram
     participant Agent as AI Agent / User
-    participant CLI as oas-cli
-    participant Server as oas-server
+    participant CLI as ucli
+    participant Server as ucli-server
     participant Cache as Local Cache
     participant API as Target API
 
-    Agent->>CLI: oas-cli configure --server URL --token JWT
+    Agent->>CLI: ucli configure --server URL --token JWT
     CLI->>CLI: Save config (OS config dir)
 
-    Agent->>CLI: oas-cli services list
+    Agent->>CLI: ucli services list
     CLI->>Cache: Check local cache (TTL)
     alt Cache miss
         CLI->>Server: GET /api/v1/oas  (Bearer JWT)
@@ -46,7 +46,7 @@ sequenceDiagram
     Cache-->>CLI: OAS list
     CLI-->>Agent: Table / JSON output
 
-    Agent->>CLI: oas-cli run --service payments --operation createPayment --params '{...}'
+    Agent->>CLI: ucli run --service payments --operation createPayment --params '{...}'
     CLI->>Server: GET /api/v1/oas/payments  (Bearer JWT)
     Server-->>CLI: OAS spec + decrypted authConfig (TLS)
     CLI->>CLI: Inject authConfig as ENV vars
@@ -58,25 +58,25 @@ sequenceDiagram
 ## Installation
 
 ```bash
-npm install -g @tronsfey/oas-cli
+npm install -g @ucli/cli
 # or
-pnpm add -g @tronsfey/oas-cli
+pnpm add -g @ucli/cli
 ```
 
 ## Quick Start
 
 ```bash
 # 1. Configure (get server URL and JWT from your admin)
-oas-cli configure --server http://localhost:3000 --token <group-jwt>
+ucli configure --server http://localhost:3000 --token <group-jwt>
 
 # 2. List available services
-oas-cli services list
+ucli services list
 
 # 3. Inspect a service's operations
-oas-cli services info payments
+ucli services info payments
 
 # 4. Run an operation
-oas-cli run --service payments --operation getPetById --params '{"petId": 42}'
+ucli run --service payments --operation getPetById --params '{"petId": 42}'
 ```
 
 ## Command Reference
@@ -86,7 +86,7 @@ oas-cli run --service payments --operation getPetById --params '{"petId": 42}'
 Store the server URL and group JWT locally.
 
 ```bash
-oas-cli configure --server <url> --token <jwt>
+ucli configure --server <url> --token <jwt>
 ```
 
 | Flag | Required | Description |
@@ -95,8 +95,8 @@ oas-cli configure --server <url> --token <jwt>
 | `--token` | Yes | Group JWT issued by the server admin |
 
 Config is stored in the OS-appropriate config directory:
-- Linux/macOS: `~/.config/oas-cli/`
-- Windows: `%APPDATA%\oas-cli\`
+- Linux/macOS: `~/.config/ucli/`
+- Windows: `%APPDATA%\ucli\`
 
 ---
 
@@ -105,7 +105,7 @@ Config is stored in the OS-appropriate config directory:
 List all OpenAPI services available to your group.
 
 ```bash
-oas-cli services list [--format table|json|yaml] [--refresh]
+ucli services list [--format table|json|yaml] [--refresh]
 ```
 
 | Flag | Default | Description |
@@ -138,7 +138,7 @@ crm          CRM operations           7200s
 Show detailed information about a specific service, including its available operations.
 
 ```bash
-oas-cli services info <service-name> [--format table|json|yaml]
+ucli services info <service-name> [--format table|json|yaml]
 ```
 
 | Argument/Flag | Description |
@@ -153,7 +153,7 @@ oas-cli services info <service-name> [--format table|json|yaml]
 Execute a single API operation defined in an OpenAPI spec.
 
 ```bash
-oas-cli run --service <name> --operation <operationId> [options]
+ucli run --service <name> --operation <operationId> [options]
 ```
 
 | Flag | Required | Description |
@@ -168,21 +168,21 @@ oas-cli run --service <name> --operation <operationId> [options]
 
 ```bash
 # GET with path parameter
-oas-cli run --service petstore --operation getPetById \
+ucli run --service petstore --operation getPetById \
   --params '{"petId": 42}'
 
 # POST with body
-oas-cli run --service payments --operation createPayment \
+ucli run --service payments --operation createPayment \
   --params '{"amount": 100, "currency": "USD", "recipient": "acct_123"}' \
   --format json
 
 # GET with query parameter + JMESPath filter
-oas-cli run --service inventory --operation listProducts \
+ucli run --service inventory --operation listProducts \
   --params '{"category": "electronics", "limit": 10}' \
   --query 'items[?price < `50`].name'
 
 # POST with data from file
-oas-cli run --service crm --operation createContact \
+ucli run --service crm --operation createContact \
   --params "@./contact.json"
 ```
 
@@ -193,7 +193,7 @@ oas-cli run --service crm --operation createContact \
 Force-refresh the local OAS cache from the server.
 
 ```bash
-oas-cli refresh [--service <name>]
+ucli refresh [--service <name>]
 ```
 
 | Flag | Description |
@@ -207,7 +207,7 @@ oas-cli refresh [--service <name>]
 Show available commands and AI agent usage instructions.
 
 ```bash
-oas-cli help
+ucli help
 ```
 
 ## Configuration
@@ -221,10 +221,10 @@ Config is managed via the `configure` command. Values are stored in the OS confi
 
 ## Caching
 
-- OAS entries are cached locally as JSON files in the OS temp dir (`oas-cli/` subdirectory)
+- OAS entries are cached locally as JSON files in the OS temp dir (`ucli/` subdirectory)
 - Cache TTL per entry is set by the server admin via the `cacheTtl` field (seconds)
 - Expired entries are automatically re-fetched on next access
-- Force a refresh: `oas-cli refresh` or use `--refresh` flag on `services list`
+- Force a refresh: `ucli refresh` or use `--refresh` flag on `services list`
 
 ## Auth Handling
 
@@ -243,27 +243,27 @@ This means credentials never appear in:
 
 ## For AI Agents
 
-The recommended workflow for AI agents using `oas-cli` as a skill:
+The recommended workflow for AI agents using `ucli` as a skill:
 
 ```bash
 # Step 1: Discover available services
-oas-cli services list --format json
+ucli services list --format json
 
 # Step 2: Inspect a service to see available operations
-oas-cli services info <service-name> --format json
+ucli services info <service-name> --format json
 
 # Step 3: Execute an operation
-oas-cli run --service <name> --operation <operationId> \
+ucli run --service <name> --operation <operationId> \
   --params '{ ... }' --format json
 
 # Step 4: Filter results with JMESPath
-oas-cli run --service inventory --operation listProducts \
+ucli run --service inventory --operation listProducts \
   --query 'items[?inStock == `true`] | [0:5]'
 
 # Step 5: Chain operations (use output from one as input to another)
-PRODUCT_ID=$(oas-cli run --service inventory --operation listProducts \
+PRODUCT_ID=$(ucli run --service inventory --operation listProducts \
   --query 'items[0].id' | tr -d '"')
-oas-cli run --service orders --operation createOrder \
+ucli run --service orders --operation createOrder \
   --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
 ```
 
@@ -272,7 +272,7 @@ oas-cli run --service orders --operation createOrder \
 - Use `--format json` for programmatic parsing
 - Use `--query` with JMESPath to extract specific fields
 - Check pagination fields (`nextPage`, `totalCount`) for list operations
-- If a service seems stale, run `oas-cli refresh --service <name>`
+- If a service seems stale, run `ucli refresh --service <name>`
 
 ## Error Reference
 
@@ -281,5 +281,5 @@ oas-cli run --service orders --operation createOrder \
 | `Unauthorized (401)` | JWT expired or revoked | Get a new token from the admin |
 | `Service not found` | Service name misspelled or not in group | Run `services list` to see available services |
 | `Operation not found` | Invalid `operationId` | Run `services info <name>` to see valid operations |
-| `Connection refused` | Server not running or wrong URL | Check server URL with `oas-cli configure` |
-| `Cache error` | Temp dir permissions issue | Run `oas-cli refresh` to reset cache |
+| `Connection refused` | Server not running or wrong URL | Check server URL with `ucli configure` |
+| `Cache error` | Temp dir permissions issue | Run `ucli refresh` to reset cache |

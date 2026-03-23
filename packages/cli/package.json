@@ -1,7 +1,7 @@
 {
-  "name": "@tronsfey/oas-cli",
-  "version": "0.2.1",
-  "description": "OAS Gateway CLI — proxy OpenAPI services for AI agents",
+  "name": "@ucli/cli",
+  "version": "0.3.0",
+  "description": "ucli — proxy OpenAPI and MCP services for AI agents",
   "keywords": ["openapi", "oas", "cli", "ai-agent", "api-client"],
   "license": "MIT",
   "engines": { "node": ">=18" },
@@ -17,7 +17,7 @@
   ],
   "type": "module",
   "bin": {
-    "oas-cli": "./dist/index.js"
+    "ucli": "./dist/index.js"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -28,6 +28,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@tronsfey/mcp2cli": "^1.0.0",
     "@tronsfey/openapi2cli": "^1.0.12",
     "axios": "^1.8.4",
     "commander": "^12.1.0",

@@ -24,7 +24,7 @@ export function registerRun(program: Command): void {
         entry = await client.getOAS(service)
       } catch {
         console.error(`Unknown service: ${service}`)
-        console.error('Run `oas-cli services list` to see available services.')
+        console.error('Run `ucli services list` to see available services.')
         process.exit(1)
       }
 

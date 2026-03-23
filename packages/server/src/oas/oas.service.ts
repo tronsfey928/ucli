@@ -59,6 +59,6 @@ export class OASService {
   }
 
   private decrypt(entry: OASEntry): OASEntry {
-    return { ...entry, authConfig: this.encryption.decrypt(entry.authConfig as unknown as string) }
+    return { ...entry, authConfig: this.encryption.decrypt(entry.authConfig as unknown as string) as AuthConfig }
   }
 }

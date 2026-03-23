@@ -1,8 +1,8 @@
-<h1 align="center">OAS Gateway</h1>
+<h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-server"><img src="https://img.shields.io/npm/v/@tronsfey/oas-server?label=%40tronsfey%2Foas-server&color=7c3aed" alt="oas-server version"/></a>
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-cli"><img src="https://img.shields.io/npm/v/@tronsfey/oas-cli?label=%40tronsfey%2Foas-cli&color=2563eb" alt="oas-cli version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
 </p>
@@ -13,12 +13,12 @@
 
 ---
 
-## What is OAS Gateway?
+## What is ucli?
 
-**OAS Gateway** is a centralized [OpenAPI Specification](https://swagger.io/specification/) management system built with a client/server architecture.
+**ucli** is a centralized [OpenAPI Specification](https://swagger.io/specification/) management system built with a client/server architecture.
 
-- The **server** (`@tronsfey/oas-server`) stores OpenAPI specs with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
-- The **CLI** (`@tronsfey/oas-cli`) lets AI agents discover and invoke API operations **without ever seeing credentials** — auth is injected as environment variables at runtime.
+- The **server** (`@ucli/server`) stores OpenAPI specs with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
+- The **CLI** (`@ucli/cli`) lets AI agents discover and invoke API operations **without ever seeing credentials** — auth is injected as environment variables at runtime.
 
 ## Architecture
 
@@ -28,7 +28,7 @@ graph TB
         ADM[curl / Admin Client]
     end
 
-    subgraph Server["🖥️  @tronsfey/oas-server  ·  NestJS v11"]
+    subgraph Server["🖥️  @ucli/server  ·  NestJS v11"]
         SVC["REST API\n(AdminGuard + GroupTokenGuard)"]
         ST[("Storage\nmemory · postgres · mysql")]
         CA[("Cache\nmemory · redis")]
@@ -38,8 +38,8 @@ graph TB
         SVC --- CR
     end
 
-    subgraph Client["💻  @tronsfey/oas-cli  ·  Commander.js"]
-        CLI[oas-cli]
+    subgraph Client["💻  @ucli/cli  ·  Commander.js"]
+        CLI[ucli]
         O2C["@tronsfey/openapi2cli\n(subprocess)"]
         CLI -->|"spawn with ENV creds"| O2C
     end
@@ -63,8 +63,8 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant Server as oas-server
-    participant CLI as oas-cli
+    participant Server as ucli-server
+    participant CLI as ucli
     participant API as Target API
 
     Admin->>Server: POST /admin/groups (X-Admin-Secret)
@@ -101,7 +101,7 @@ fantastic-potato/
 ├── tsconfig.base.json               # Shared TS config
 ├── docker-compose.yml               # PostgreSQL + Redis for local dev
 └── packages/
-    ├── server/                      # @tronsfey/oas-server (NestJS v11)
+    ├── server/                      # @ucli/server (NestJS v11)
     │   ├── src/
     │   │   ├── auth/                # AdminGuard + GroupTokenGuard
     │   │   ├── cache/               # Pluggable cache (memory | redis)
@@ -114,7 +114,7 @@ fantastic-potato/
     │   │   ├── storage/             # Pluggable storage (memory | postgres | mysql)
     │   │   └── tokens/              # Token issuance + revocation
     │   └── test/e2e/                # Jest E2E tests (memory adapters)
-    └── cli/                         # @tronsfey/oas-cli (Commander.js + tsup/ESM)
+    └── cli/                         # @ucli/cli (Commander.js + tsup/ESM)
         ├── src/
         │   ├── commands/            # configure, services, run, refresh, help
         │   └── lib/                 # server-client, cache, oas-runner
@@ -126,12 +126,12 @@ fantastic-potato/
 **Step 1 — Start the server**
 
 ```bash
-npm install -g @tronsfey/oas-server
+npm install -g @ucli/server
 
 # Generate a 32-byte encryption key
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
-ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> oas-server
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> ucli-server
 # → Listening on http://localhost:3000
 ```
 
@@ -166,20 +166,20 @@ curl -s -X POST http://localhost:3000/admin/oas \
 **Step 3 — Use the CLI**
 
 ```bash
-npm install -g @tronsfey/oas-cli
+npm install -g @ucli/cli
 
-oas-cli configure --server http://localhost:3000 --token $JWT
-oas-cli services list
-oas-cli run --service petstore --operation getPetById --params '{"petId": 1}'
+ucli configure --server http://localhost:3000 --token $JWT
+ucli services list
+ucli run --service petstore --operation getPetById --params '{"petId": 1}'
 ```
 
 ## Packages
 
 | Package | Description | Docs |
 |---------|-------------|------|
-| [`@tronsfey/oas-server`](./packages/server) | NestJS server — storage, crypto, auth, REST API, admin dashboard | [README](./packages/server/README.md) |
-| [`@tronsfey/oas-cli`](./packages/cli) | Commander.js CLI — service discovery, operation runner | [README](./packages/cli/README.md) |
-| `@tronsfey/oas-admin` *(private)* | React admin dashboard — bundled into `oas-server` at `/admin-ui` | — |
+| [`@ucli/server`](./packages/server) | NestJS server — storage, crypto, auth, REST API, admin dashboard | [README](./packages/server/README.md) |
+| [`@ucli/cli`](./packages/cli) | Commander.js CLI — service discovery, operation runner | [README](./packages/cli/README.md) |
+| `@ucli/admin` *(private)* | React admin dashboard — bundled into `ucli-server` at `/admin-ui` | — |
 
 ## Development
 

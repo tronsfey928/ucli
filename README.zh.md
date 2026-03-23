@@ -1,8 +1,8 @@
-<h1 align="center">OAS Gateway</h1>
+<h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-server"><img src="https://img.shields.io/npm/v/@tronsfey/oas-server?label=%40tronsfey%2Foas-server&color=7c3aed" alt="oas-server version"/></a>
-  <a href="https://www.npmjs.com/package/@tronsfey/oas-cli"><img src="https://img.shields.io/npm/v/@tronsfey/oas-cli?label=%40tronsfey%2Foas-cli&color=2563eb" alt="oas-cli version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
+  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
 </p>
@@ -13,12 +13,12 @@
 
 ---
 
-## OAS Gateway 是什么？
+## ucli 是什么？
 
-**OAS Gateway** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 集中管理系统。
+**ucli** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 集中管理系统。
 
-- **服务端**（`@tronsfey/oas-server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及认证配置，并签发 **RS256 群组 JWT**。
-- **CLI**（`@tronsfey/oas-cli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作——认证信息在运行时以环境变量方式注入子进程，**永不落盘**。
+- **服务端**（`@ucli/server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及认证配置，并签发 **RS256 群组 JWT**。
+- **CLI**（`@ucli/cli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作——认证信息在运行时以环境变量方式注入子进程，**永不落盘**。
 
 ## 架构图
 
@@ -28,7 +28,7 @@ graph TB
         ADM[curl / 管理客户端]
     end
 
-    subgraph Server["🖥️  @tronsfey/oas-server  ·  NestJS v11"]
+    subgraph Server["🖥️  @ucli/server  ·  NestJS v11"]
         SVC["REST API\n(AdminGuard + GroupTokenGuard)"]
         ST[("存储层\nmemory · postgres · mysql")]
         CA[("缓存层\nmemory · redis")]
@@ -38,8 +38,8 @@ graph TB
         SVC --- CR
     end
 
-    subgraph Client["💻  @tronsfey/oas-cli  ·  Commander.js"]
-        CLI[oas-cli]
+    subgraph Client["💻  @ucli/cli  ·  Commander.js"]
+        CLI[ucli]
         O2C["@tronsfey/openapi2cli\n（子进程）"]
         CLI -->|"携带 ENV 凭据启动"| O2C
     end
@@ -63,8 +63,8 @@ graph TB
 ```mermaid
 sequenceDiagram
     participant Admin as 管理员
-    participant Server as oas-server
-    participant CLI as oas-cli
+    participant Server as ucli-server
+    participant CLI as ucli
     participant API as 目标 API
 
     Admin->>Server: POST /admin/groups（X-Admin-Secret）
@@ -101,7 +101,7 @@ fantastic-potato/
 ├── tsconfig.base.json               # 共享 TypeScript 配置
 ├── docker-compose.yml               # 本地开发用 PostgreSQL + Redis
 └── packages/
-    ├── server/                      # @tronsfey/oas-server（NestJS v11）
+    ├── server/                      # @ucli/server（NestJS v11）
     │   ├── src/
     │   │   ├── auth/                # AdminGuard + GroupTokenGuard
     │   │   ├── cache/               # 可插拔缓存（memory | redis）
@@ -114,7 +114,7 @@ fantastic-potato/
     │   │   ├── storage/             # 可插拔存储（memory | postgres | mysql）
     │   │   └── tokens/              # 令牌签发 + 吊销
     │   └── test/e2e/                # Jest E2E 测试（内存适配器）
-    └── cli/                         # @tronsfey/oas-cli（Commander.js + tsup/ESM）
+    └── cli/                         # @ucli/cli（Commander.js + tsup/ESM）
         ├── src/
         │   ├── commands/            # configure、services、run、refresh、help
         │   └── lib/                 # server-client、cache、oas-runner
@@ -126,12 +126,12 @@ fantastic-potato/
 **第一步 — 启动服务端**
 
 ```bash
-npm install -g @tronsfey/oas-server
+npm install -g @ucli/server
 
 # 生成 32 字节加密密钥
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
-ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位十六进制> oas-server
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位十六进制> ucli-server
 # → 监听 http://localhost:3000
 ```
 
@@ -166,20 +166,20 @@ curl -s -X POST http://localhost:3000/admin/oas \
 **第三步 — 使用 CLI**
 
 ```bash
-npm install -g @tronsfey/oas-cli
+npm install -g @ucli/cli
 
-oas-cli configure --server http://localhost:3000 --token $JWT
-oas-cli services list
-oas-cli run --service petstore --operation getPetById --params '{"petId": 1}'
+ucli configure --server http://localhost:3000 --token $JWT
+ucli services list
+ucli run --service petstore --operation getPetById --params '{"petId": 1}'
 ```
 
 ## 子包说明
 
 | 包名 | 描述 | 文档 |
 |------|------|------|
-| [`@tronsfey/oas-server`](./packages/server) | NestJS 服务端——存储、加密、认证、REST API、管理后台 | [README](./packages/server/README.zh.md) |
-| [`@tronsfey/oas-cli`](./packages/cli) | Commander.js CLI——服务发现、操作执行 | [README](./packages/cli/README.zh.md) |
-| `@tronsfey/oas-admin` *（私有）* | React 管理后台——随 `oas-server` 打包，访问路径 `/admin-ui` | — |
+| [`@ucli/server`](./packages/server) | NestJS 服务端——存储、加密、认证、REST API、管理后台 | [README](./packages/server/README.zh.md) |
+| [`@ucli/cli`](./packages/cli) | Commander.js CLI——服务发现、操作执行 | [README](./packages/cli/README.zh.md) |
+| `@ucli/admin` *（私有）* | React 管理后台——随 `ucli-server` 打包，访问路径 `/admin-ui` | — |
 
 ## 开发
 

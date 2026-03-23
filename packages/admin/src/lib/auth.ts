@@ -3,7 +3,7 @@ export interface AuthConfig {
   adminSecret: string
 }
 
-const KEY = 'oas-admin-auth'
+const KEY = 'ucli-admin-auth'
 
 export function getAuth(): AuthConfig | null {
   try {

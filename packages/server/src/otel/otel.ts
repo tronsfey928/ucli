@@ -32,7 +32,7 @@ const enabled = process.env.OTEL_ENABLED !== 'false'
 
 if (enabled) {
   const resource = resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? 'oas-server',
+    [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? 'ucli-server',
     [ATTR_SERVICE_VERSION]: process.env.npm_package_version ?? 'unknown',
   })
 
