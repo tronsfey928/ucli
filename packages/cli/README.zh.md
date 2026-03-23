@@ -1,4 +1,4 @@
-<h1 align="center">OAS Gateway CLI</h1>
+<h1 align="center">ucli</h1>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?color=2563eb" alt="npm version"/></a>
@@ -15,9 +15,9 @@
 
 ## 概述
 
-`@ucli/cli` 是 OAS Gateway 的客户端组件，为 AI 智能体（和人类）提供简洁的接口来：
+`@ucli/cli` 是 ucli 的客户端组件，为 AI 智能体（和人类）提供简洁的接口来：
 
-- **发现** 注册在 OAS Gateway 服务端上的 OpenAPI 服务
+- **发现** 注册在 ucli 服务端上的 OpenAPI 服务
 - **执行** API 操作，无需直接处理凭据
 - **本地缓存** 规范，减少网络请求
 
@@ -91,7 +91,7 @@ ucli configure --server <url> --token <jwt>
 
 | 参数 | 必填 | 说明 |
 |------|------|------|
-| `--server` | 是 | OAS Gateway 服务器 URL（如 `https://gateway.example.com`） |
+| `--server` | 是 | ucli 服务器 URL（如 `https://gateway.example.com`） |
 | `--token` | 是 | 服务端管理员签发的群组 JWT |
 
 配置存储在 OS 对应的配置目录：
@@ -216,7 +216,7 @@ ucli help
 
 | 键名 | 说明 |
 |------|------|
-| `serverUrl` | OAS Gateway 服务器 URL |
+| `serverUrl` | ucli 服务器 URL |
 | `token` | 用于与服务端认证的群组 JWT |
 
 ## 缓存机制

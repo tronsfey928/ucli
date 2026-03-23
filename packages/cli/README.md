@@ -91,7 +91,7 @@ ucli configure --server <url> --token <jwt>
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--server` | Yes | OAS Gateway server URL (e.g. `https://gateway.example.com`) |
+| `--server` | Yes | ucli server URL (e.g. `https://gateway.example.com`) |
 | `--token` | Yes | Group JWT issued by the server admin |
 
 Config is stored in the OS-appropriate config directory:
@@ -216,7 +216,7 @@ Config is managed via the `configure` command. Values are stored in the OS confi
 
 | Key | Description |
 |-----|-------------|
-| `serverUrl` | OAS Gateway server URL |
+| `serverUrl` | ucli server URL |
 | `token` | Group JWT for authenticating with the server |
 
 ## Caching
