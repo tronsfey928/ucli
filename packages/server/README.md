@@ -104,6 +104,10 @@ ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY oas-server
 | `JWT_DEFAULT_TTL` | No | `86400` | Token TTL in seconds (`0` = no expiry) |
 | `LOG_LEVEL` | No | `info` | `trace` \| `debug` \| `info` \| `warn` \| `error` \| `fatal` |
 | `SWAGGER_ENABLED` | No | `true` | Set `false` to disable `/api/docs` in production |
+| `OTEL_ENABLED` | No | `true` | Set `false` to disable OpenTelemetry tracing |
+| `OTEL_SERVICE_NAME` | No | `oas-server` | Service name on all trace spans |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OTLP collector URL; unset = no-op exporter |
+| `ADMIN_UI_PATH` | No | auto | Override path to admin dashboard static files |
 
 ## Storage Backends
 
@@ -314,6 +318,24 @@ open http://localhost:16686
 OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> oas-server
 ```
 
+## Admin Dashboard
+
+A built-in web UI is served at `/admin-ui` when the package is installed. It provides:
+
+- **Dashboard** — overview stats (groups, OAS entries, active tokens)
+- **Groups** — create and delete groups
+- **OAS Entries** — register, edit, and delete OAS entries with auth configuration
+- **Tokens** — issue JWT tokens per group (shown once after creation), view status, revoke
+
+The dashboard is auto-served from the `dist/admin-ui/` directory bundled with the npm package.
+No extra configuration is required — just start the server and open `http://localhost:3000/admin-ui`.
+
+You can also point it at an existing dist directory:
+
+```bash
+ADMIN_UI_PATH=/path/to/custom/dist ADMIN_SECRET=secret ENCRYPTION_KEY=<64-hex> oas-server
+```
+
 ## Health & Observability
 
 | Endpoint | Method | Description |
@@ -323,6 +345,7 @@ OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> oas-server
 | `/metrics` | `GET` | Prometheus metrics (IP-restricted by default) |
 | `/api/docs` | `GET` | Swagger UI (disable with `SWAGGER_ENABLED=false`) |
 | `/api/openapi.json` | `GET` | OpenAPI 3.0 JSON spec |
+| `/admin-ui` | `GET` | Admin dashboard |
 
 ## Security Model
 

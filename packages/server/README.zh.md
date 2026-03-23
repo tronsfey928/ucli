@@ -314,6 +314,23 @@ open http://localhost:16686
 OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> oas-server
 ```
 
+## 管理后台
+
+安装 npm 包后，`/admin-ui` 路径自动提供内置 Web 管理界面，功能包括：
+
+- **仪表板** — 统计概览（分组数、OAS 条目数、有效 Token 数）
+- **分组管理** — 创建和删除分组
+- **OAS 条目管理** — 注册、编辑和删除 OAS 条目及其认证配置
+- **Token 管理** — 按分组签发 JWT Token（签发后一次性显示）、查看状态、吊销
+
+管理界面自动从 npm 包内附带的 `dist/admin-ui/` 目录提供服务，无需额外配置，启动服务后打开 `http://localhost:3000/admin-ui` 即可访问。
+
+也可以通过环境变量指定自定义目录：
+
+```bash
+ADMIN_UI_PATH=/path/to/custom/dist ADMIN_SECRET=secret ENCRYPTION_KEY=<64位hex> oas-server
+```
+
 ## 健康检查与可观测性
 
 | 端点 | 方法 | 说明 |
@@ -323,6 +340,7 @@ OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> oas-server
 | `/metrics` | `GET` | Prometheus 指标（默认 IP 限制） |
 | `/api/docs` | `GET` | Swagger UI（`SWAGGER_ENABLED=false` 可关闭） |
 | `/api/openapi.json` | `GET` | OpenAPI 3.0 JSON 规范 |
+| `/admin-ui` | `GET` | 管理后台 |
 
 ## 安全模型
 

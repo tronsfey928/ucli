@@ -50,4 +50,8 @@ export class AppConfigService {
   get otlpEndpoint(): string | undefined {
     return this.config.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT')
   }
+
+  get adminUiPath(): string | undefined {
+    return this.config.get<string>('ADMIN_UI_PATH')
+  }
 }

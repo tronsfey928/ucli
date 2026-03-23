@@ -33,6 +33,10 @@ export class TokensService {
     return { token, jwt }
   }
 
+  async listByGroup(groupId: string): Promise<Token[]> {
+    return this.tokenRepo.findByGroup(groupId)
+  }
+
   async revoke(tokenId: string): Promise<void> {
     const token = await this.tokenRepo.findById(tokenId)
     if (!token) throw new NotFoundException(`Token not found: ${tokenId}`)

@@ -51,6 +51,9 @@ import { AppConfigService } from './app-config.service'
         OTEL_ENABLED: Joi.string().valid('true', 'false').default('true'),
         OTEL_SERVICE_NAME: Joi.string().default('oas-server'),
         OTEL_EXPORTER_OTLP_ENDPOINT: Joi.string().uri().optional(),
+
+        // Admin UI
+        ADMIN_UI_PATH: Joi.string().optional(),
       }),
     }),
   ],

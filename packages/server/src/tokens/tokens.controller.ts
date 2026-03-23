@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, HttpCode, Param, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { AdminGuard } from '../auth/admin.guard'
 import { GroupsService } from '../groups/groups.service'
@@ -14,6 +14,15 @@ export class TokensController {
     private readonly tokensService: TokensService,
     private readonly groupsService: GroupsService,
   ) {}
+
+  @Get('groups/:groupId/tokens')
+  @ApiOperation({ summary: 'List tokens for a group (metadata only — JWTs not stored)' })
+  @ApiResponse({ status: 200, description: 'Token list' })
+  @ApiResponse({ status: 404, description: 'Group not found' })
+  async list(@Param('groupId') groupId: string) {
+    await this.groupsService.findById(groupId) // 404 if group missing
+    return this.tokensService.listByGroup(groupId)
+  }
 
   @Post('groups/:groupId/tokens')
   @HttpCode(201)
@@ -40,3 +49,4 @@ export class TokensController {
     await this.tokensService.revoke(id)
   }
 }
+
