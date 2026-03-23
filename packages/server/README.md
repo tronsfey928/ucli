@@ -397,6 +397,20 @@ A built-in web UI is served at `/admin-ui` when the package is installed. It pro
 The dashboard is auto-served from the `dist/admin-ui/` directory bundled with the npm package.
 No extra configuration is required — just start the server and open `http://localhost:3000/admin-ui`.
 
+### Screenshots
+
+| Dashboard | OAS Entries |
+|-----------|-------------|
+| ![Dashboard](../../docs/screenshots/02-dashboard.png) | ![OAS Entries](../../docs/screenshots/05-oas.png) |
+
+| MCP Servers | Tokens |
+|-------------|--------|
+| ![MCP Servers](../../docs/screenshots/07-mcp.png) | ![Tokens](../../docs/screenshots/09-tokens.png) |
+
+| Groups | Issue Token |
+|--------|-------------|
+| ![Groups](../../docs/screenshots/03-groups.png) | ![Issue Token](../../docs/screenshots/10-tokens-issued.png) |
+
 You can also point it at an existing dist directory:
 
 ```bash

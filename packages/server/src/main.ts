@@ -63,7 +63,7 @@ async function bootstrap() {
     const expressApp = app.getHttpAdapter().getInstance() as express.Application
     expressApp.use('/admin-ui', express.static(adminUiPath))
     // SPA fallback — return index.html for all /admin-ui/* routes
-    expressApp.get('/admin-ui/*', (_req: express.Request, res: express.Response) => {
+    expressApp.get('/admin-ui/*path', (_req: express.Request, res: express.Response) => {
       res.sendFile(join(adminUiPath, 'index.html'))
     })
   }
