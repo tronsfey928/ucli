@@ -295,3 +295,4 @@ Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`
 10. **Run lint before committing.** `pnpm lint` must produce no errors.
 11. **Use the branch specified in the task.** Never push to a different branch without explicit permission.
 12. **Update this file** when adding new conventions, tools, or workflows.
+13. **Keep README docs in sync.** Whenever you modify APIs, CLI commands, env vars, architecture, or package versions, update the relevant README sections (`README.md`, `packages/server/README.md`, `packages/cli/README.md`) in the same commit.

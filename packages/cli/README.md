@@ -2,46 +2,111 @@
   <img src="../../assets/logo.svg" alt="OAS Gateway" width="480" />
 </p>
 
-# @tronsfey/oas-cli
+<p align="center">
+  <a href="https://www.npmjs.com/package/@tronsfey/oas-cli"><img src="https://img.shields.io/npm/v/@tronsfey/oas-cli?color=2563eb" alt="npm version"/></a>
+  <img src="https://img.shields.io/badge/Commander.js-ESM-38bdf8" alt="Commander.js"/>
+  <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
+  <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
+</p>
 
-CLI client for the OAS Gateway server. Provides AI agents with authenticated access to OpenAPI-described APIs — without exposing credentials.
+<p align="center">
+  <a href="#english">English</a> | <a href="#chinese">中文</a>
+</p>
 
-## Quick Start
+---
 
-```bash
-# Install globally
-npm install -g @tronsfey/oas-cli
+<a id="english"></a>
 
-# Configure (get the server URL and JWT from your admin)
-oas-cli configure --server http://localhost:3000 --token <group-jwt>
+## English
 
-# List available services
-oas-cli services list
+### Overview
 
-# Run an operation (AI agent usage)
-oas-cli run --service payments --operation getPet --params '{"petId":42}'
+`@tronsfey/oas-cli` is the client component of OAS Gateway. It gives AI agents (and humans) a simple interface to:
+
+- **Discover** OpenAPI services registered on an OAS Gateway server
+- **Execute** API operations without ever handling credentials directly
+- **Cache** specs locally to reduce round-trips
+
+Auth credentials (bearer tokens, API keys, OAuth2 secrets) are stored encrypted on the server and injected as **environment variables** into the operation subprocess at runtime — they are **never written to disk** or visible in process listings.
+
+### How It Works
+
+```mermaid
+sequenceDiagram
+    participant Agent as AI Agent / User
+    participant CLI as oas-cli
+    participant Server as oas-server
+    participant Cache as Local Cache
+    participant API as Target API
+
+    Agent->>CLI: oas-cli configure --server URL --token JWT
+    CLI->>CLI: Save config (OS config dir)
+
+    Agent->>CLI: oas-cli services list
+    CLI->>Cache: Check local cache (TTL)
+    alt Cache miss
+        CLI->>Server: GET /api/v1/oas  (Bearer JWT)
+        Server-->>CLI: [ { name, description, ... } ]
+        CLI->>Cache: Write cache entry
+    end
+    Cache-->>CLI: OAS list
+    CLI-->>Agent: Table / JSON output
+
+    Agent->>CLI: oas-cli run --service payments --operation createPayment --params '{...}'
+    CLI->>Server: GET /api/v1/oas/payments  (Bearer JWT)
+    Server-->>CLI: OAS spec + decrypted authConfig (TLS)
+    CLI->>CLI: Inject authConfig as ENV vars
+    CLI->>API: spawn @tronsfey/openapi2cli (ENV: auth creds)
+    API-->>CLI: HTTP response
+    CLI-->>Agent: Formatted output (JSON / table / YAML)
 ```
 
-## Commands
+### Installation
 
-### `configure`
+```bash
+npm install -g @tronsfey/oas-cli
+# or
+pnpm add -g @tronsfey/oas-cli
+```
 
-Store the server URL and JWT token locally.
+### Quick Start
+
+```bash
+# 1. Configure (get server URL and JWT from your admin)
+oas-cli configure --server http://localhost:3000 --token <group-jwt>
+
+# 2. List available services
+oas-cli services list
+
+# 3. Inspect a service's operations
+oas-cli services info payments
+
+# 4. Run an operation
+oas-cli run --service payments --operation getPetById --params '{"petId": 42}'
+```
+
+### Command Reference
+
+#### `configure`
+
+Store the server URL and group JWT locally.
 
 ```bash
 oas-cli configure --server <url> --token <jwt>
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--server` | OAS Gateway server URL |
-| `--token` | Group JWT issued by the server admin |
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--server` | Yes | OAS Gateway server URL (e.g. `https://gateway.example.com`) |
+| `--token` | Yes | Group JWT issued by the server admin |
 
-Config is stored in the OS-appropriate config directory (e.g. `~/.config/oas-cli`).
+Config is stored in the OS-appropriate config directory:
+- Linux/macOS: `~/.config/oas-cli/`
+- Windows: `%APPDATA%\oas-cli\`
 
 ---
 
-### `services list`
+#### `services list`
 
 List all OpenAPI services available to your group.
 
@@ -51,32 +116,85 @@ oas-cli services list [--format table|json|yaml] [--refresh]
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--format` | `table` | Output format |
-| `--refresh` | `false` | Bypass local cache and fetch from server |
+| `--format` | `table` | Output format: `table`, `json`, or `yaml` |
+| `--refresh` | `false` | Bypass local cache and fetch fresh from server |
 
-Results are cached locally for the TTL specified by the server (per OAS entry).
+**Example output (table):**
+
+```
+NAME         DESCRIPTION              CACHE TTL
+payments     Payments service API     3600s
+inventory    Inventory management     1800s
+crm          CRM operations           7200s
+```
+
+**Example output (json):**
+
+```json
+[
+  { "name": "payments", "description": "Payments service API", "cacheTtl": 3600 },
+  { "name": "inventory", "description": "Inventory management", "cacheTtl": 1800 }
+]
+```
 
 ---
 
-### `run`
+#### `services info <name>`
+
+Show detailed information about a specific service, including its available operations.
+
+```bash
+oas-cli services info <service-name> [--format table|json|yaml]
+```
+
+| Argument/Flag | Description |
+|---------------|-------------|
+| `<name>` | Service name from `services list` |
+| `--format` | Output format (`table` default) |
+
+---
+
+#### `run`
 
 Execute a single API operation defined in an OpenAPI spec.
 
 ```bash
-oas-cli run --service <name> --operation <operationId> [--params <json>]
+oas-cli run --service <name> --operation <operationId> [options]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--service` | Service name (from `services list`) |
-| `--operation` | `operationId` from the OpenAPI spec |
-| `--params` | JSON string of parameters (path, query, body) |
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--service` | Yes | Service name (from `services list`) |
+| `--operation` | Yes | `operationId` from the OpenAPI spec |
+| `--params` | No | JSON string of parameters (path, query, body merged) |
+| `--format` | No | Output format: `json` (default), `table`, `yaml` |
+| `--query` | No | JMESPath expression to filter the response |
 
-Auth credentials are automatically injected from the server — the agent never sees tokens or API keys.
+**Examples:**
+
+```bash
+# GET with path parameter
+oas-cli run --service petstore --operation getPetById \
+  --params '{"petId": 42}'
+
+# POST with body
+oas-cli run --service payments --operation createPayment \
+  --params '{"amount": 100, "currency": "USD", "recipient": "acct_123"}' \
+  --format json
+
+# GET with query parameter + JMESPath filter
+oas-cli run --service inventory --operation listProducts \
+  --params '{"category": "electronics", "limit": 10}' \
+  --query 'items[?price < `50`].name'
+
+# POST with data from file
+oas-cli run --service crm --operation createContact \
+  --params "@./contact.json"
+```
 
 ---
 
-### `refresh`
+#### `refresh`
 
 Force-refresh the local OAS cache from the server.
 
@@ -84,9 +202,13 @@ Force-refresh the local OAS cache from the server.
 oas-cli refresh [--service <name>]
 ```
 
+| Flag | Description |
+|------|-------------|
+| `--service` | Refresh only a specific service (omit to refresh all) |
+
 ---
 
-### `help`
+#### `help`
 
 Show available commands and AI agent usage instructions.
 
@@ -94,47 +216,330 @@ Show available commands and AI agent usage instructions.
 oas-cli help
 ```
 
-## Configuration
+### Configuration
 
-Config is managed via the `configure` command. Stored values:
+Config is managed via the `configure` command. Values are stored in the OS config dir using [conf](https://github.com/sindresorhus/conf).
 
 | Key | Description |
 |-----|-------------|
 | `serverUrl` | OAS Gateway server URL |
-| `token` | Group JWT for authentication |
+| `token` | Group JWT for authenticating with the server |
 
-Config location follows the XDG spec on Linux/macOS and `%APPDATA%` on Windows.
+### Caching
 
-## Caching
+- OAS entries are cached locally as JSON files in the OS temp dir (`oas-cli/` subdirectory)
+- Cache TTL per entry is set by the server admin via the `cacheTtl` field (seconds)
+- Expired entries are automatically re-fetched on next access
+- Force a refresh: `oas-cli refresh` or use `--refresh` flag on `services list`
 
-- OAS entries are cached locally as JSON files
-- Cache TTL is set per-entry by the server admin (`cacheTtl` field in seconds)
-- Use `--refresh` or `oas-cli refresh` to bust the cache
-- Cache directory: OS temp dir under `oas-cli/`
+### Auth Handling
 
-## Auth Handling
+Credentials are **never exposed** to the agent or written to disk:
 
-Auth credentials (API keys, bearer tokens, OAuth2 client secrets) are stored on the server, encrypted at rest. When you run an operation:
+1. CLI fetches the OAS entry from the server over TLS (includes decrypted `authConfig`)
+2. `authConfig` is passed as **environment variables** to the `@tronsfey/openapi2cli` subprocess
+3. The subprocess uses the credentials to call the target API
+4. The in-memory `authConfig` is discarded after the subprocess exits
 
-1. CLI fetches the OAS entry (including decrypted auth config) over TLS
-2. Auth is injected as environment variables into the `@tronsfey/openapi2cli` subprocess
-3. The subprocess uses the credentials to call the real API
-4. Credentials are **never written to disk** or exposed to the AI agent process
+This means credentials never appear in:
+- Process listings (`ps aux`)
+- Shell history
+- Log files
+- The agent's context window
 
-## For AI Agents
+### For AI Agents
 
-When used as a skill by an AI agent, the recommended workflow is:
+The recommended workflow for AI agents using `oas-cli` as a skill:
 
 ```bash
-# 1. Discover available services
+# Step 1: Discover available services
 oas-cli services list --format json
 
-# 2. Inspect a service's operations
-oas-cli run --service <name> --operation listOperations
+# Step 2: Inspect a service to see available operations
+oas-cli services info <service-name> --format json
 
-# 3. Execute an operation
-oas-cli run --service payments --operation createPayment \
-  --params '{"amount": 100, "currency": "USD", "recipient": "acct_123"}'
+# Step 3: Execute an operation
+oas-cli run --service <name> --operation <operationId> \
+  --params '{ ... }' --format json
+
+# Step 4: Filter results with JMESPath
+oas-cli run --service inventory --operation listProducts \
+  --query 'items[?inStock == `true`] | [0:5]'
+
+# Step 5: Chain operations (use output from one as input to another)
+PRODUCT_ID=$(oas-cli run --service inventory --operation listProducts \
+  --query 'items[0].id' | tr -d '"')
+oas-cli run --service orders --operation createOrder \
+  --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
 ```
 
-See `skill.md` in this package for the full AI agent skill definition.
+**Tips for agents:**
+- Always run `services list` first to discover what's available
+- Use `--format json` for programmatic parsing
+- Use `--query` with JMESPath to extract specific fields
+- Check pagination fields (`nextPage`, `totalCount`) for list operations
+- If a service seems stale, run `oas-cli refresh --service <name>`
+
+### Error Reference
+
+| Error | Likely Cause | Resolution |
+|-------|-------------|------------|
+| `Unauthorized (401)` | JWT expired or revoked | Get a new token from the admin |
+| `Service not found` | Service name misspelled or not in group | Run `services list` to see available services |
+| `Operation not found` | Invalid `operationId` | Run `services info <name>` to see valid operations |
+| `Connection refused` | Server not running or wrong URL | Check server URL with `oas-cli configure` |
+| `Cache error` | Temp dir permissions issue | Run `oas-cli refresh` to reset cache |
+
+---
+
+<a id="chinese"></a>
+
+## 中文
+
+### 概述
+
+`@tronsfey/oas-cli` 是 OAS Gateway 的客户端组件，为 AI 智能体（和人类）提供简洁的接口来：
+
+- **发现** 注册在 OAS Gateway 服务端上的 OpenAPI 服务
+- **执行** API 操作，无需直接处理凭据
+- **本地缓存** 规范，减少网络请求
+
+认证凭据（Bearer Token、API 密钥、OAuth2 密钥）在服务端加密存储，运行时以**环境变量**方式注入操作子进程——**永不落盘**，也不会出现在进程列表中。
+
+### 工作原理
+
+```mermaid
+sequenceDiagram
+    participant Agent as AI 智能体 / 用户
+    participant CLI as oas-cli
+    participant Server as oas-server
+    participant Cache as 本地缓存
+    participant API as 目标 API
+
+    Agent->>CLI: oas-cli configure --server URL --token JWT
+    CLI->>CLI: 保存配置（OS 配置目录）
+
+    Agent->>CLI: oas-cli services list
+    CLI->>Cache: 检查本地缓存（TTL）
+    alt 缓存未命中
+        CLI->>Server: GET /api/v1/oas（Bearer JWT）
+        Server-->>CLI: [ { name, description, ... } ]
+        CLI->>Cache: 写入缓存
+    end
+    Cache-->>CLI: OAS 列表
+    CLI-->>Agent: 表格 / JSON 输出
+
+    Agent->>CLI: oas-cli run --service payments --operation createPayment --params '{...}'
+    CLI->>Server: GET /api/v1/oas/payments（Bearer JWT）
+    Server-->>CLI: OAS 规范 + 解密认证配置（TLS）
+    CLI->>CLI: 将认证配置注入 ENV 变量
+    CLI->>API: 启动 @tronsfey/openapi2cli（ENV 含认证凭据）
+    API-->>CLI: HTTP 响应
+    CLI-->>Agent: 格式化输出（JSON / 表格 / YAML）
+```
+
+### 安装
+
+```bash
+npm install -g @tronsfey/oas-cli
+# 或
+pnpm add -g @tronsfey/oas-cli
+```
+
+### 快速开始
+
+```bash
+# 1. 配置（从管理员获取服务器 URL 和 JWT）
+oas-cli configure --server http://localhost:3000 --token <group-jwt>
+
+# 2. 列出可用服务
+oas-cli services list
+
+# 3. 查看服务的操作列表
+oas-cli services info payments
+
+# 4. 执行操作
+oas-cli run --service payments --operation getPetById --params '{"petId": 42}'
+```
+
+### 命令参考
+
+#### `configure`
+
+将服务器 URL 和群组 JWT 保存到本地。
+
+```bash
+oas-cli configure --server <url> --token <jwt>
+```
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `--server` | 是 | OAS Gateway 服务器 URL（如 `https://gateway.example.com`） |
+| `--token` | 是 | 服务端管理员签发的群组 JWT |
+
+配置存储在 OS 对应的配置目录：
+- Linux/macOS：`~/.config/oas-cli/`
+- Windows：`%APPDATA%\oas-cli\`
+
+---
+
+#### `services list`
+
+列出当前群组可访问的所有 OpenAPI 服务。
+
+```bash
+oas-cli services list [--format table|json|yaml] [--refresh]
+```
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `--format` | `table` | 输出格式：`table`、`json` 或 `yaml` |
+| `--refresh` | `false` | 绕过本地缓存，从服务器重新拉取 |
+
+---
+
+#### `services info <name>`
+
+显示指定服务的详细信息（包括可用操作列表）。
+
+```bash
+oas-cli services info <service-name> [--format table|json|yaml]
+```
+
+---
+
+#### `run`
+
+执行 OpenAPI 规范中定义的单个 API 操作。
+
+```bash
+oas-cli run --service <name> --operation <operationId> [选项]
+```
+
+| 参数 | 必填 | 说明 |
+|------|------|------|
+| `--service` | 是 | 服务名称（来自 `services list`） |
+| `--operation` | 是 | OpenAPI 规范中的 `operationId` |
+| `--params` | 否 | JSON 字符串（路径参数、查询参数、请求体合并传入） |
+| `--format` | 否 | 输出格式：`json`（默认）、`table`、`yaml` |
+| `--query` | 否 | JMESPath 表达式，用于过滤响应 |
+
+**示例：**
+
+```bash
+# GET 带路径参数
+oas-cli run --service petstore --operation getPetById \
+  --params '{"petId": 42}'
+
+# POST 带请求体
+oas-cli run --service payments --operation createPayment \
+  --params '{"amount": 100, "currency": "CNY", "recipient": "acct_123"}' \
+  --format json
+
+# 使用 JMESPath 过滤结果
+oas-cli run --service inventory --operation listProducts \
+  --params '{"category": "electronics"}' \
+  --query 'items[?price < `500`].name'
+
+# 从文件读取参数
+oas-cli run --service crm --operation createContact \
+  --params "@./contact.json"
+```
+
+---
+
+#### `refresh`
+
+强制从服务器刷新本地 OAS 缓存。
+
+```bash
+oas-cli refresh [--service <name>]
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--service` | 仅刷新指定服务（不填则刷新所有） |
+
+---
+
+#### `help`
+
+显示命令列表及 AI 智能体使用说明。
+
+```bash
+oas-cli help
+```
+
+### 配置说明
+
+配置通过 `configure` 命令管理，使用 [conf](https://github.com/sindresorhus/conf) 存储到 OS 配置目录。
+
+| 键名 | 说明 |
+|------|------|
+| `serverUrl` | OAS Gateway 服务器 URL |
+| `token` | 用于与服务端认证的群组 JWT |
+
+### 缓存机制
+
+- OAS 条目以 JSON 文件形式缓存到 OS 临时目录（`oas-cli/` 子目录）
+- 每个条目的缓存 TTL 由服务端管理员通过 `cacheTtl` 字段设置（单位：秒）
+- 过期条目在下次访问时自动重新拉取
+- 强制刷新：`oas-cli refresh` 或在 `services list` 时添加 `--refresh`
+
+### 认证处理
+
+凭据**永不暴露**给智能体，也不会落盘：
+
+1. CLI 通过 TLS 从服务器获取 OAS 条目（含解密后的 `authConfig`）
+2. `authConfig` 以**环境变量**方式传递给 `@tronsfey/openapi2cli` 子进程
+3. 子进程使用凭据调用目标 API
+4. 子进程退出后，内存中的 `authConfig` 被丢弃
+
+凭据不会出现在：
+- 进程列表（`ps aux`）
+- Shell 历史记录
+- 日志文件
+- 智能体的上下文窗口
+
+### AI 智能体使用指南
+
+AI 智能体将 `oas-cli` 作为技能使用时，推荐的工作流程：
+
+```bash
+# 第一步：发现可用服务
+oas-cli services list --format json
+
+# 第二步：查看服务支持的操作
+oas-cli services info <service-name> --format json
+
+# 第三步：执行操作
+oas-cli run --service <name> --operation <operationId> \
+  --params '{ ... }' --format json
+
+# 第四步：用 JMESPath 过滤结果
+oas-cli run --service inventory --operation listProducts \
+  --query 'items[?inStock == `true`] | [0:5]'
+
+# 第五步：链式操作（将前一个结果作为下一个的输入）
+PRODUCT_ID=$(oas-cli run --service inventory --operation listProducts \
+  --query 'items[0].id' | tr -d '"')
+oas-cli run --service orders --operation createOrder \
+  --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
+```
+
+**智能体使用建议：**
+- 始终先运行 `services list` 发现可用服务
+- 使用 `--format json` 方便程序解析
+- 使用 `--query` 配合 JMESPath 提取特定字段
+- 注意列表操作的分页字段（`nextPage`、`totalCount`）
+- 若服务数据疑似过期，执行 `oas-cli refresh --service <name>`
+
+### 错误参考
+
+| 错误 | 可能原因 | 解决方法 |
+|------|---------|---------|
+| `Unauthorized (401)` | JWT 已过期或被吊销 | 联系管理员获取新令牌 |
+| `Service not found` | 服务名拼写错误或不在当前群组 | 运行 `services list` 查看可用服务 |
+| `Operation not found` | 无效的 `operationId` | 运行 `services info <name>` 查看有效操作 |
+| `Connection refused` | 服务器未运行或 URL 错误 | 用 `oas-cli configure` 检查服务器 URL |
+| `Cache error` | 临时目录权限问题 | 运行 `oas-cli refresh` 重置缓存 |
