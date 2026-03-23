@@ -1,7 +1,7 @@
 <h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?color=2563eb" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?color=2563eb" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/Commander.js-ESM-38bdf8" alt="Commander.js"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,7 +15,7 @@
 
 ## Overview
 
-`@ucli/cli` is the client component of ucli. It gives AI agents (and humans) a simple interface to:
+`@tronsfey/ucli` is the client component of ucli. It gives AI agents (and humans) a simple interface to:
 
 - **Discover** OpenAPI services registered on a ucli server
 - **Execute** API operations without ever handling credentials directly
@@ -67,9 +67,9 @@ sequenceDiagram
 ## Installation
 
 ```bash
-npm install -g @ucli/cli
+npm install -g @tronsfey/ucli
 # or
-pnpm add -g @ucli/cli
+pnpm add -g @tronsfey/ucli
 ```
 
 ## Quick Start

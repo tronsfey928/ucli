@@ -1,7 +1,7 @@
 <h1 align="center">ucli server</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?color=7c3aed" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?color=7c3aed" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/NestJS-v11-e0234e" alt="NestJS"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,7 +15,7 @@
 
 ## Overview
 
-`@ucli/server` is the server component of ucli. It provides:
+`@tronsfey/ucli-server` is the server component of ucli. It provides:
 
 - **Encrypted OAS storage** — OpenAPI specs with auth configs encrypted at rest (AES-256-GCM)
 - **Encrypted MCP server storage** — MCP server configs with auth (none / http_headers / env) encrypted at rest
@@ -71,9 +71,9 @@ graph TB
 ## Installation
 
 ```bash
-npm install -g @ucli/server
+npm install -g @tronsfey/ucli-server
 # or
-pnpm add -g @ucli/server
+pnpm add -g @tronsfey/ucli-server
 ```
 
 ## Quick Start (memory mode — no DB/Redis required)

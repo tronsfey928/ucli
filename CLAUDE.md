@@ -19,7 +19,7 @@ fantastic-potato/
 ├── package.json                     # pnpm workspace root
 ├── tsconfig.base.json               # Shared TypeScript config (CommonJS, decorators)
 └── packages/
-    ├── server/                      # @ucli/server (NestJS v11)
+    ├── server/                      # @tronsfey/ucli-server (NestJS v11)
     │   ├── src/
     │   │   ├── main.ts              # NestJS bootstrap entry point
     │   │   ├── app.module.ts        # Root module
@@ -50,7 +50,7 @@ fantastic-potato/
     │   ├── jest.config.js
     │   ├── jest-e2e.config.js
     │   └── tsconfig.json
-    ├── cli/                         # @ucli/cli (Commander.js + tsup/ESM)
+    ├── cli/                         # @tronsfey/ucli (Commander.js + tsup/ESM)
     │   ├── src/
     │   │   ├── index.ts             # CLI entry point
     │   │   ├── config.ts            # Conf-based local config store
@@ -63,7 +63,7 @@ fantastic-potato/
     │   ├── test/                    # Vitest unit tests
     │   ├── skill.md                 # Anthropic skill definition for AI agents
     │   └── tsconfig.json
-    └── admin/                       # @ucli/admin (private, bundled into server)
+    └── admin/                       # @tronsfey/ucli-admin (private, bundled into server)
         ├── src/
         │   ├── main.tsx             # React 18 entry point
         │   ├── App.tsx              # Router + RequireAuth wrapper
@@ -167,13 +167,13 @@ cd packages/cli && pnpm build
 pnpm test
 
 # Server E2E only (uses memory adapters — no DB/Redis required)
-pnpm --filter @ucli/server test:e2e
+pnpm --filter @tronsfey/ucli-server test:e2e
 
 # CLI unit tests only (Vitest)
-pnpm --filter @ucli/cli test
+pnpm --filter @tronsfey/ucli test
 
 # Server with coverage
-pnpm --filter @ucli/server test:coverage
+pnpm --filter @tronsfey/ucli-server test:coverage
 ```
 
 **AI assistants must run tests before committing.** Do not commit code that breaks existing tests.
@@ -189,8 +189,8 @@ E2E tests set `DB_TYPE=memory CACHE_TYPE=memory` in `packages/server/test/e2e/se
 pnpm lint
 
 # Per-package
-pnpm --filter @ucli/server lint
-pnpm --filter @ucli/cli lint
+pnpm --filter @tronsfey/ucli-server lint
+pnpm --filter @tronsfey/ucli lint
 ```
 
 Always run linting before committing. Fix all TypeScript type errors.

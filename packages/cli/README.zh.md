@@ -1,7 +1,7 @@
 <h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?color=2563eb" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?color=2563eb" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/Commander.js-ESM-38bdf8" alt="Commander.js"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,7 +15,7 @@
 
 ## 概述
 
-`@ucli/cli` 是 ucli 的客户端组件，为 AI 智能体（和人类）提供简洁的接口来：
+`@tronsfey/ucli` 是 ucli 的客户端组件，为 AI 智能体（和人类）提供简洁的接口来：
 
 - **发现** 注册在 ucli 服务端上的 OpenAPI 服务
 - **执行** API 操作，无需直接处理凭据
@@ -67,9 +67,9 @@ sequenceDiagram
 ## 安装
 
 ```bash
-npm install -g @ucli/cli
+npm install -g @tronsfey/ucli
 # 或
-pnpm add -g @ucli/cli
+pnpm add -g @tronsfey/ucli
 ```
 
 ## 快速开始

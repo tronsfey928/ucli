@@ -1,7 +1,7 @@
 <h1 align="center">ucli server</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?color=7c3aed" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?color=7c3aed" alt="npm version"/></a>
   <img src="https://img.shields.io/badge/NestJS-v11-e0234e" alt="NestJS"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
@@ -15,7 +15,7 @@
 
 ## 概述
 
-`@ucli/server` 是 ucli 的服务端组件，提供：
+`@tronsfey/ucli-server` 是 ucli 的服务端组件，提供：
 
 - **加密 OAS 存储** — OpenAPI 规范及认证配置以 AES-256-GCM 静态加密
 - **加密 MCP 服务器存储** — MCP 服务器配置及认证信息（none / http_headers / env）以 AES-256-GCM 静态加密
@@ -71,9 +71,9 @@ graph TB
 ## 安装
 
 ```bash
-npm install -g @ucli/server
+npm install -g @tronsfey/ucli-server
 # 或
-pnpm add -g @ucli/server
+pnpm add -g @tronsfey/ucli-server
 ```
 
 ## 快速开始（内存模式，无需 DB/Redis）

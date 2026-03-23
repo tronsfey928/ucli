@@ -1,5 +1,5 @@
 {
-  "name": "@ucli/cli",
+  "name": "@tronsfey/ucli",
   "version": "0.3.0",
   "description": "ucli — proxy OpenAPI and MCP services for AI agents",
   "keywords": ["openapi", "oas", "cli", "ai-agent", "api-client"],

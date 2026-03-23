@@ -1,5 +1,5 @@
 {
-  "name": "@ucli/server",
+  "name": "@tronsfey/ucli-server",
   "version": "0.5.0",
   "description": "ucli server — centralized OpenAPI and MCP management server with multi-database support",
   "keywords": ["openapi", "oas", "gateway", "nestjs", "jwt", "api-management"],
@@ -22,8 +22,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "build:full": "pnpm --filter @ucli/admin build && cp -r ../admin/dist ./dist/admin-ui && tsc -p tsconfig.json",
-    "prepack": "pnpm --filter @ucli/admin build && mkdir -p dist && cp -r ../admin/dist ./dist/admin-ui",
+    "build:full": "pnpm --filter @tronsfey/ucli-admin build && cp -r ../admin/dist ./dist/admin-ui && tsc -p tsconfig.json",
+    "prepack": "pnpm --filter @tronsfey/ucli-admin build && mkdir -p dist && cp -r ../admin/dist ./dist/admin-ui",
     "start": "node dist/main.js",
     "start:prod": "NODE_ENV=production node dist/main.js",
     "test": "jest --config jest.config.js",

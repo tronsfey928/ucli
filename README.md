@@ -1,8 +1,8 @@
 <h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
-  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
 </p>
@@ -17,8 +17,8 @@
 
 **ucli** is a centralized [OpenAPI Specification](https://swagger.io/specification/) management system built with a client/server architecture.
 
-- The **server** (`@ucli/server`) stores OpenAPI specs and **MCP server configs** (Model Context Protocol) with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
-- The **CLI** (`@ucli/cli`) lets AI agents discover and invoke API operations and MCP tools **without ever seeing credentials** — auth is injected as environment variables or headers at runtime.
+- The **server** (`@tronsfey/ucli-server`) stores OpenAPI specs and **MCP server configs** (Model Context Protocol) with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
+- The **CLI** (`@tronsfey/ucli`) lets AI agents discover and invoke API operations and MCP tools **without ever seeing credentials** — auth is injected as environment variables or headers at runtime.
 
 ## Architecture
 
@@ -28,7 +28,7 @@ graph TB
         ADM[curl / Admin Client]
     end
 
-    subgraph Server["🖥️  @ucli/server  ·  NestJS v11"]
+    subgraph Server["🖥️  @tronsfey/ucli-server  ·  NestJS v11"]
         SVC["REST API\nOAS · MCP\n(AdminGuard + GroupTokenGuard)"]
         ST[("Storage\nmemory · postgres · mysql")]
         CA[("Cache\nmemory · redis")]
@@ -38,7 +38,7 @@ graph TB
         SVC --- CR
     end
 
-    subgraph Client["💻  @ucli/cli  ·  Commander.js"]
+    subgraph Client["💻  @tronsfey/ucli  ·  Commander.js"]
         CLI[ucli]
         O2C["@tronsfey/openapi2cli\n(subprocess)"]
         M2C["@tronsfey/mcp2cli\n(programmatic)"]
@@ -115,7 +115,7 @@ fantastic-potato/
 ├── tsconfig.base.json               # Shared TS config
 ├── docker-compose.yml               # PostgreSQL + Redis for local dev
 └── packages/
-    ├── server/                      # @ucli/server (NestJS v11)
+    ├── server/                      # @tronsfey/ucli-server (NestJS v11)
     │   ├── src/
     │   │   ├── auth/                # AdminGuard + GroupTokenGuard
     │   │   ├── cache/               # Pluggable cache (memory | redis)
@@ -129,7 +129,7 @@ fantastic-potato/
     │   │   ├── storage/             # Pluggable storage (memory | postgres | mysql)
     │   │   └── tokens/              # Token issuance + revocation
     │   └── test/e2e/                # Jest E2E tests (memory adapters)
-    └── cli/                         # @ucli/cli (Commander.js + tsup/ESM)
+    └── cli/                         # @tronsfey/ucli (Commander.js + tsup/ESM)
         ├── src/
         │   ├── commands/            # configure, services, run, refresh, help, mcp
         │   └── lib/                 # server-client, cache, oas-runner, mcp-runner
@@ -141,7 +141,7 @@ fantastic-potato/
 **Step 1 — Start the server**
 
 ```bash
-npm install -g @ucli/server
+npm install -g @tronsfey/ucli-server
 
 # Generate a 32-byte encryption key
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -193,7 +193,7 @@ curl -s -X POST http://localhost:3000/admin/mcp \
 **Step 3 — Use the CLI**
 
 ```bash
-npm install -g @ucli/cli
+npm install -g @tronsfey/ucli
 
 ucli configure --server http://localhost:3000 --token $JWT
 ucli services list
@@ -209,9 +209,9 @@ ucli mcp run weather get_forecast --location "New York"
 
 | Package | Description | Docs |
 |---------|-------------|------|
-| [`@ucli/server`](./packages/server) | NestJS server — storage, crypto, auth, REST API, admin dashboard | [README](./packages/server/README.md) |
-| [`@ucli/cli`](./packages/cli) | Commander.js CLI — service discovery, operation runner | [README](./packages/cli/README.md) |
-| `@ucli/admin` *(private)* | React admin dashboard — bundled into `ucli-server` at `/admin-ui` | — |
+| [`@tronsfey/ucli-server`](./packages/server) | NestJS server — storage, crypto, auth, REST API, admin dashboard | [README](./packages/server/README.md) |
+| [`@tronsfey/ucli`](./packages/cli) | Commander.js CLI — service discovery, operation runner | [README](./packages/cli/README.md) |
+| `@tronsfey/ucli-admin` *(private)* | React admin dashboard — bundled into `ucli-server` at `/admin-ui` | — |
 
 ## Development
 

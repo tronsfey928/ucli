@@ -1,8 +1,8 @@
 <h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@ucli/server"><img src="https://img.shields.io/npm/v/@ucli/server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
-  <a href="https://www.npmjs.com/package/@ucli/cli"><img src="https://img.shields.io/npm/v/@ucli/cli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
 </p>
@@ -17,8 +17,8 @@
 
 **ucli** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 集中管理系统。
 
-- **服务端**（`@ucli/server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及 **MCP 服务器配置**（Model Context Protocol），并签发 **RS256 群组 JWT**。
-- **CLI**（`@ucli/cli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作和 MCP 工具——认证信息在运行时以环境变量或请求头方式注入，**永不落盘**。
+- **服务端**（`@tronsfey/ucli-server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及 **MCP 服务器配置**（Model Context Protocol），并签发 **RS256 群组 JWT**。
+- **CLI**（`@tronsfey/ucli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作和 MCP 工具——认证信息在运行时以环境变量或请求头方式注入，**永不落盘**。
 
 ## 架构图
 
@@ -28,7 +28,7 @@ graph TB
         ADM[curl / 管理客户端]
     end
 
-    subgraph Server["🖥️  @ucli/server  ·  NestJS v11"]
+    subgraph Server["🖥️  @tronsfey/ucli-server  ·  NestJS v11"]
         SVC["REST API\nOAS · MCP\n(AdminGuard + GroupTokenGuard)"]
         ST[("存储层\nmemory · postgres · mysql")]
         CA[("缓存层\nmemory · redis")]
@@ -38,7 +38,7 @@ graph TB
         SVC --- CR
     end
 
-    subgraph Client["💻  @ucli/cli  ·  Commander.js"]
+    subgraph Client["💻  @tronsfey/ucli  ·  Commander.js"]
         CLI[ucli]
         O2C["@tronsfey/openapi2cli\n（子进程）"]
         M2C["@tronsfey/mcp2cli\n（程序化调用）"]
@@ -115,7 +115,7 @@ fantastic-potato/
 ├── tsconfig.base.json               # 共享 TypeScript 配置
 ├── docker-compose.yml               # 本地开发用 PostgreSQL + Redis
 └── packages/
-    ├── server/                      # @ucli/server（NestJS v11）
+    ├── server/                      # @tronsfey/ucli-server（NestJS v11）
     │   ├── src/
     │   │   ├── auth/                # AdminGuard + GroupTokenGuard
     │   │   ├── cache/               # 可插拔缓存（memory | redis）
@@ -129,7 +129,7 @@ fantastic-potato/
     │   │   ├── storage/             # 可插拔存储（memory | postgres | mysql）
     │   │   └── tokens/              # 令牌签发 + 吊销
     │   └── test/e2e/                # Jest E2E 测试（内存适配器）
-    └── cli/                         # @ucli/cli（Commander.js + tsup/ESM）
+    └── cli/                         # @tronsfey/ucli（Commander.js + tsup/ESM）
         ├── src/
         │   ├── commands/            # configure、services、run、refresh、help、mcp
         │   └── lib/                 # server-client、cache、oas-runner、mcp-runner
@@ -141,7 +141,7 @@ fantastic-potato/
 **第一步 — 启动服务端**
 
 ```bash
-npm install -g @ucli/server
+npm install -g @tronsfey/ucli-server
 
 # 生成 32 字节加密密钥
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -193,7 +193,7 @@ curl -s -X POST http://localhost:3000/admin/mcp \
 **第三步 — 使用 CLI**
 
 ```bash
-npm install -g @ucli/cli
+npm install -g @tronsfey/ucli
 
 ucli configure --server http://localhost:3000 --token $JWT
 ucli services list
@@ -209,9 +209,9 @@ ucli mcp run weather get_forecast location="New York"
 
 | 包名 | 描述 | 文档 |
 |------|------|------|
-| [`@ucli/server`](./packages/server) | NestJS 服务端——存储、加密、认证、REST API、管理后台 | [README](./packages/server/README.zh.md) |
-| [`@ucli/cli`](./packages/cli) | Commander.js CLI——服务发现、操作执行 | [README](./packages/cli/README.zh.md) |
-| `@ucli/admin` *（私有）* | React 管理后台——随 `ucli-server` 打包，访问路径 `/admin-ui` | — |
+| [`@tronsfey/ucli-server`](./packages/server) | NestJS 服务端——存储、加密、认证、REST API、管理后台 | [README](./packages/server/README.zh.md) |
+| [`@tronsfey/ucli`](./packages/cli) | Commander.js CLI——服务发现、操作执行 | [README](./packages/cli/README.zh.md) |
+| `@tronsfey/ucli-admin` *（私有）* | React 管理后台——随 `ucli-server` 打包，访问路径 `/admin-ui` | — |
 
 ## 开发
 
