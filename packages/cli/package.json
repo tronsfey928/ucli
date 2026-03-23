@@ -1,6 +1,6 @@
 {
   "name": "@tronsfey/oas-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OAS Gateway CLI — proxy OpenAPI services for AI agents",
   "license": "MIT",
   "publishConfig": {
@@ -8,8 +8,10 @@
   },
   "files": [
     "dist/**",
+    "assets/**",
     "skill.md",
-    "README.md"
+    "README.md",
+    "README.zh.md"
   ],
   "type": "module",
   "bin": {

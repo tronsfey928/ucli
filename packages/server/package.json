@@ -1,6 +1,6 @@
 {
   "name": "@tronsfey/oas-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OAS Gateway — centralized OpenAPI management server with multi-database support",
   "license": "MIT",
   "publishConfig": {
@@ -8,7 +8,9 @@
   },
   "files": [
     "dist/**",
-    "README.md"
+    "assets/**",
+    "README.md",
+    "README.zh.md"
   ],
   "bin": {
     "oas-server": "./dist/main.js"
@@ -28,13 +30,18 @@
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
-    "@nestjs/swagger": "^8.1.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^8.1.0",
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/typeorm": "^11.0.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.71.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.213.0",
+    "@opentelemetry/resources": "^2.6.0",
+    "@opentelemetry/sdk-node": "^0.213.0",
+    "@opentelemetry/semantic-conventions": "^1.40.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "helmet": "^8.0.0",

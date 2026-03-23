@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../assets/logo.svg" alt="OAS Gateway" width="480" />
+  <img src="./assets/logo.svg" alt="OAS Gateway" width="480" />
 </p>
 
 <p align="center">

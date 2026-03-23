@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../assets/logo.svg" alt="OAS Gateway" width="480" />
+  <img src="./assets/logo.svg" alt="OAS Gateway" width="480" />
 </p>
 
 <p align="center">
@@ -24,6 +24,7 @@
 - **Token revocation** — blacklist via cache (JTI-based)
 - **Pluggable backends** — swap storage (memory / PostgreSQL / MySQL) and cache (memory / Redis) via env vars
 - **Observability** — structured JSON logging (Pino), Prometheus metrics, health/readiness probes
+- **Distributed tracing** — OpenTelemetry auto-instrumentation (HTTP, Express, PG, Redis) enabled by default
 
 ## Architecture
 
@@ -265,6 +266,53 @@ Client endpoints require `Authorization: Bearer <group-jwt>`.
 | `oauth2_cc` | `{ "type": "oauth2_cc", "tokenUrl": "...", "clientId": "...", "clientSecret": "...", "scopes": [] }` |
 
 Auth configs are encrypted with AES-256-GCM before storage. They are decrypted in-memory only at request time.
+
+## OpenTelemetry Tracing
+
+Distributed tracing is **enabled by default**. The OTEL SDK auto-instruments HTTP, Express, PostgreSQL, and Redis without any code changes.
+
+### How it coexists with Prometheus
+
+| Concern | Technology | Endpoint |
+|---------|-----------|---------|
+| Metrics (scraping) | `prom-client` | `GET /metrics` |
+| Distributed traces | OpenTelemetry | OTLP push to collector |
+
+They are independent — no conflict. Prometheus scrapes `/metrics` as usual; OTEL exports spans to your collector via OTLP.
+
+### OTEL environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OTEL_ENABLED` | `true` | Set `false` to disable entirely |
+| `OTEL_SERVICE_NAME` | `oas-server` | Service name tag on all spans |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | Collector URL (e.g. `http://otel-collector:4318`). When unset, spans are discarded locally (no-op) |
+| `OTEL_EXPORTER_OTLP_HEADERS` | — | Auth headers for the collector (e.g. `Authorization=Bearer token`) |
+| `OTEL_PROPAGATORS` | `tracecontext,baggage` | W3C trace context propagation (standard) |
+| `OTEL_TRACES_SAMPLER` | `parentbased_always_on` | Sampling strategy |
+
+### Quick setup with a local collector (docker)
+
+```bash
+# Start Jaeger all-in-one (OTLP + UI)
+docker run -d --name jaeger \
+  -p 4318:4318 \
+  -p 16686:16686 \
+  jaegertracing/all-in-one:latest
+
+# Start oas-server with tracing enabled
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> oas-server
+
+# Open Jaeger UI
+open http://localhost:16686
+```
+
+### Disabling OTEL
+
+```bash
+OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64-hex> oas-server
+```
 
 ## Health & Observability
 

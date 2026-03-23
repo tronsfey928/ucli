@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../assets/logo.svg" alt="OAS Gateway" width="480" />
+  <img src="./assets/logo.svg" alt="OAS Gateway" width="480" />
 </p>
 
 <p align="center">
@@ -24,6 +24,7 @@
 - **令牌吊销** — 基于 JTI 的缓存黑名单机制
 - **可插拔后端** — 通过环境变量切换存储（memory / PostgreSQL / MySQL）和缓存（memory / Redis）
 - **可观测性** — Pino 结构化 JSON 日志、Prometheus 指标、健康/就绪探针
+- **分布式追踪** — OpenTelemetry 自动埋点（HTTP、Express、PG、Redis），默认开启
 
 ## 架构图
 
@@ -265,6 +266,53 @@ curl -X DELETE http://localhost:3000/admin/oas/<oas-id> \
 | `oauth2_cc` | `{ "type": "oauth2_cc", "tokenUrl": "...", "clientId": "...", "clientSecret": "...", "scopes": [] }` |
 
 认证配置在存储前以 AES-256-GCM 加密，仅在请求处理时在内存中解密。
+
+## OpenTelemetry 分布式追踪
+
+分布式追踪**默认开启**。OTEL SDK 自动埋点 HTTP、Express、PostgreSQL 和 Redis，无需修改任何业务代码。
+
+### 与 Prometheus 的关系（不冲突）
+
+| 关注点 | 技术 | 方式 |
+|--------|------|------|
+| 指标采集（Scrape） | `prom-client` | `GET /metrics` 被动拉取 |
+| 分布式追踪（Trace） | OpenTelemetry | OTLP 主动推送到采集器 |
+
+两者完全独立，互不干扰。Prometheus 照常抓取 `/metrics`；OTEL 将 Span 推送到你的追踪后端。
+
+### OTEL 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `OTEL_ENABLED` | `true` | 设为 `false` 完全禁用 |
+| `OTEL_SERVICE_NAME` | `oas-server` | 所有 Span 上的服务名标签 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | — | 采集器 URL（如 `http://otel-collector:4318`）。不填则本地丢弃（no-op） |
+| `OTEL_EXPORTER_OTLP_HEADERS` | — | 采集器认证头（如 `Authorization=Bearer token`） |
+| `OTEL_PROPAGATORS` | `tracecontext,baggage` | W3C 上下文传播（标准） |
+| `OTEL_TRACES_SAMPLER` | `parentbased_always_on` | 采样策略 |
+
+### 本地快速体验（使用 Jaeger）
+
+```bash
+# 启动 Jaeger all-in-one（支持 OTLP + 自带 UI）
+docker run -d --name jaeger \
+  -p 4318:4318 \
+  -p 16686:16686 \
+  jaegertracing/all-in-one:latest
+
+# 启动 oas-server 并开启追踪
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
+ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> oas-server
+
+# 打开 Jaeger UI
+open http://localhost:16686
+```
+
+### 禁用 OTEL
+
+```bash
+OTEL_ENABLED=false ADMIN_SECRET=my-secret ENCRYPTION_KEY=<64位hex> oas-server
+```
 
 ## 健康检查与可观测性
 

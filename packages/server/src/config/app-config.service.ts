@@ -39,4 +39,15 @@ export class AppConfigService {
   get swaggerEnabled(): boolean {
     return this.config.get<string>('SWAGGER_ENABLED', 'true') !== 'false'
   }
+
+  // OpenTelemetry — read-only view of what otel.ts already consumed from process.env
+  get otelEnabled(): boolean {
+    return this.config.get<string>('OTEL_ENABLED', 'true') !== 'false'
+  }
+  get otelServiceName(): string {
+    return this.config.get<string>('OTEL_SERVICE_NAME', 'oas-server')
+  }
+  get otlpEndpoint(): string | undefined {
+    return this.config.get<string>('OTEL_EXPORTER_OTLP_ENDPOINT')
+  }
 }

@@ -1,3 +1,6 @@
+// OpenTelemetry MUST be initialized before any other imports so that
+// auto-instrumentation can patch modules (http, express, pg, ioredis…)
+import './otel/otel'
 import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
@@ -58,6 +61,7 @@ async function bootstrap() {
     logger.log(`OpenAPI JSON: http://${cfg.host}:${cfg.port}/api/openapi.json`)
   }
   logger.log(`Storage: ${cfg.dbType} | Cache: ${cfg.cacheType} | Env: ${cfg.nodeEnv}`)
+  logger.log(`OTel: ${cfg.otelEnabled ? `enabled (endpoint=${cfg.otlpEndpoint ?? 'none (no-op)'})` : 'disabled'}`)
 }
 
 void bootstrap()
