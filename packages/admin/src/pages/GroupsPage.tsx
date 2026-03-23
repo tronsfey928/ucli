@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { listGroups, createGroup, deleteGroup, type Group } from '@/lib/api'
+import { listGroups, createGroup, deleteGroup, getErrorMessage, type Group } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,8 +52,7 @@ export default function GroupsPage() {
       setDescription('')
       void load()
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Failed to create group')
+      toast.error(getErrorMessage(err, 'Failed to create group'))
     } finally {
       setSaving(false)
     }

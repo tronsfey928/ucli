@@ -26,12 +26,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    void Promise.all([getStats(), listOAS()])
-      .then(([s, entries]) => {
-        setStats(s)
-        setRecentOAS(entries.slice(0, 5))
-      })
-      .finally(() => setLoading(false))
+    void Promise.allSettled([getStats(), listOAS()]).then(([statsResult, oasResult]) => {
+      if (statsResult.status === 'fulfilled') setStats(statsResult.value)
+      if (oasResult.status === 'fulfilled') setRecentOAS(oasResult.value.slice(0, 5))
+      setLoading(false)
+    })
   }, [])
 
   if (loading) {

@@ -13,14 +13,24 @@ export default function LoginPage() {
   const [serverUrl, setServerUrl] = useState('http://localhost:3000')
   const [adminSecret, setAdminSecret] = useState('')
   const [loading, setLoading] = useState(false)
+  const [urlError, setUrlError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!serverUrl.trim() || !adminSecret.trim()) return
+    const url = serverUrl.trim().replace(/\/$/, '')
+    const secret = adminSecret.trim()
+    if (!url || !secret) return
+    try {
+      new URL(url)
+      setUrlError('')
+    } catch {
+      setUrlError('Please enter a valid URL (e.g. http://localhost:3000)')
+      return
+    }
     setLoading(true)
     try {
-      await ping(serverUrl.trim().replace(/\/$/, ''), adminSecret.trim())
-      setAuth({ serverUrl: serverUrl.trim().replace(/\/$/, ''), adminSecret: adminSecret.trim() })
+      await ping(url, secret)
+      setAuth({ serverUrl: url, adminSecret: secret })
       toast.success('Connected successfully')
       navigate('/dashboard', { replace: true })
     } catch {
@@ -57,10 +67,11 @@ export default function LoginPage() {
                   id="serverUrl"
                   placeholder="http://localhost:3000"
                   value={serverUrl}
-                  onChange={e => setServerUrl(e.target.value)}
+                  onChange={e => { setServerUrl(e.target.value); setUrlError('') }}
                   autoComplete="url"
                   required
                 />
+                {urlError && <p className="text-xs text-destructive">{urlError}</p>}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="adminSecret">Admin Secret</Label>

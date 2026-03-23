@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios'
-import { getAuth } from './auth'
+import { getAuth, clearAuth } from './auth'
 
 // ── Types mirrored from server domain model ──────────────────────────────
 
@@ -43,18 +43,41 @@ export interface IssueTokenResult {
   jwt: string
 }
 
+// ── Error helper ──────────────────────────────────────────────────────────
+
+export function getErrorMessage(err: unknown, fallback = 'An unexpected error occurred'): string {
+  const axiosErr = err as { response?: { data?: { message?: string | string[] } } }
+  const msg = axiosErr?.response?.data?.message
+  if (Array.isArray(msg)) return msg.join('; ')
+  return msg ?? fallback
+}
+
 // ── API client factory ────────────────────────────────────────────────────
 
 function client(): AxiosInstance {
   const auth = getAuth()
   if (!auth) throw new Error('Not authenticated')
-  return axios.create({
+  const instance = axios.create({
     baseURL: auth.serverUrl,
+    timeout: 30000,
     headers: {
       'X-Admin-Secret': auth.adminSecret,
       'Content-Type': 'application/json',
     },
   })
+  // Auto-logout on 401 (e.g. admin secret was changed on the server)
+  instance.interceptors.response.use(
+    res => res,
+    (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 401) {
+        clearAuth()
+        window.location.href = '/admin-ui/'
+      }
+      return Promise.reject(err)
+    },
+  )
+  return instance
 }
 
 // Verify connectivity — used at login time

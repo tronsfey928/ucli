@@ -49,18 +49,34 @@ fantastic-potato/
     │   ├── jest.config.js
     │   ├── jest-e2e.config.js
     │   └── tsconfig.json
-    └── cli/                         # @tronsfey/oas-cli (Commander.js + tsup/ESM)
+    ├── cli/                         # @tronsfey/oas-cli (Commander.js + tsup/ESM)
+    │   ├── src/
+    │   │   ├── index.ts             # CLI entry point
+    │   │   ├── config.ts            # Conf-based local config store
+    │   │   ├── commands/            # configure, services, run, refresh, help
+    │   │   └── lib/
+    │   │       ├── server-client.ts # Axios HTTP client for /api/v1/oas
+    │   │       ├── cache.ts         # OS temp dir file cache with TTL
+    │   │       └── oas-runner.ts    # Spawns @tronsfey/openapi2cli with injected auth
+    │   ├── test/                    # Vitest unit tests
+    │   ├── skill.md                 # Anthropic skill definition for AI agents
+    │   └── tsconfig.json
+    └── admin/                       # @tronsfey/oas-admin (private, bundled into server)
         ├── src/
-        │   ├── index.ts             # CLI entry point
-        │   ├── config.ts            # Conf-based local config store
-        │   ├── commands/            # configure, services, run, refresh, help
-        │   └── lib/
-        │       ├── server-client.ts # Axios HTTP client for /api/v1/oas
-        │       ├── cache.ts         # OS temp dir file cache with TTL
-        │       └── oas-runner.ts    # Spawns @tronsfey/openapi2cli with injected auth
-        ├── test/                    # Vitest unit tests
-        ├── skill.md                 # Anthropic skill definition for AI agents
-        └── tsconfig.json
+        │   ├── main.tsx             # React 18 entry point
+        │   ├── App.tsx              # Router + RequireAuth wrapper
+        │   ├── index.css            # Tailwind + Remixicon + CSS variables
+        │   ├── lib/
+        │   │   ├── api.ts           # Axios client (timeout, 401 interceptor, helpers)
+        │   │   ├── auth.ts          # sessionStorage auth store
+        │   │   └── utils.ts         # cn(), formatDate(), relativeTime()
+        │   ├── components/
+        │   │   ├── Layout.tsx       # Sidebar navigation
+        │   │   └── ui/              # shadcn-style components (Radix UI primitives)
+        │   └── pages/               # Login, Dashboard, Groups, OASPage, Tokens
+        ├── vite.config.ts           # base: '/admin-ui/', proxy to :3000
+        ├── tailwind.config.ts       # Tailwind v3 + CSS variable color system
+        └── package.json             # private: true, not published independently
 ```
 
 ---
@@ -114,6 +130,13 @@ node dist/index.js services list
 | `JWT_PUBLIC_KEY` | Prod | auto-gen | Base64 SPKI PEM |
 | `JWT_DEFAULT_TTL` | No | `86400` | Token TTL in seconds (0 = no expiry) |
 | `LOG_LEVEL` | No | `info` | `trace\|debug\|info\|warn\|error\|fatal` |
+| `OTEL_ENABLED` | No | `true` | Set `false` to disable OpenTelemetry tracing |
+| `OTEL_SERVICE_NAME` | No | `oas-server` | Service name on all trace spans |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OTLP collector URL; unset = no-op exporter |
+| `RATE_LIMIT_TTL` | No | `60000` | Rate limit window in milliseconds |
+| `RATE_LIMIT_LIMIT` | No | `100` | Max requests per window per IP |
+| `METRICS_ALLOWED_IPS` | No | `127.0.0.1,::1` | Comma-separated IPs allowed to scrape `/metrics` |
+| `ADMIN_UI_PATH` | No | auto | Override path to admin dashboard static files |
 
 ---
 
@@ -224,6 +247,7 @@ The CLI uses `"type": "module"` (ESM) in its own `package.json` with `tsup` for 
 | `POST` | `/admin/groups` | Create group |
 | `GET` | `/admin/groups` | List groups |
 | `POST` | `/admin/groups/:id/tokens` | Issue JWT for group |
+| `GET` | `/admin/groups/:id/tokens` | List tokens for group (metadata only — JWTs not stored) |
 | `DELETE` | `/admin/tokens/:id` | Revoke token |
 | `POST` | `/admin/oas` | Register OAS entry |
 | `GET` | `/admin/oas` | List all OAS entries |

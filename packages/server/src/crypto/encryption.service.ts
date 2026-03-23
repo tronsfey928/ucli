@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, InternalServerErrorException } from '@nestjs/common'
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import { AppConfigService } from '../config/app-config.service'
 import type { AuthConfig } from '../storage/interfaces/repos.interface'
@@ -40,6 +40,10 @@ export class EncryptionService {
     decipher.setAuthTag(tag)
 
     const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()])
-    return JSON.parse(decrypted.toString('utf8')) as AuthConfig
+    try {
+      return JSON.parse(decrypted.toString('utf8')) as AuthConfig
+    } catch {
+      throw new InternalServerErrorException('Failed to decrypt auth configuration — data may be corrupted')
+    }
   }
 }

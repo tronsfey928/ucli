@@ -1,8 +1,10 @@
 {
   "name": "@tronsfey/oas-server",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "OAS Gateway — centralized OpenAPI management server with multi-database support",
+  "keywords": ["openapi", "oas", "gateway", "nestjs", "jwt", "api-management"],
   "license": "MIT",
+  "engines": { "node": ">=18" },
   "publishConfig": {
     "access": "public"
   },

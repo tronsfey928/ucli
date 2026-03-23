@@ -59,4 +59,73 @@ describe('Admin Tokens (e2e)', () => {
 
     expect(res.status).toBe(404)
   })
+
+  describe('GET /admin/groups/:id/tokens', () => {
+    it('returns empty array for group with no tokens', async () => {
+      const grp = await request(app.getHttpServer())
+        .post('/admin/groups')
+        .set(ADMIN_HEADERS)
+        .send({ name: 'token-list-empty' })
+      const res = await request(app.getHttpServer())
+        .get(`/admin/groups/${grp.body.id}/tokens`)
+        .set(ADMIN_HEADERS)
+      expect(res.status).toBe(200)
+      expect(res.body).toEqual([])
+    })
+
+    it('returns issued tokens for the group', async () => {
+      const grp = await request(app.getHttpServer())
+        .post('/admin/groups')
+        .set(ADMIN_HEADERS)
+        .send({ name: 'token-list-group' })
+      const gid: string = grp.body.id
+      await request(app.getHttpServer())
+        .post(`/admin/groups/${gid}/tokens`)
+        .set(ADMIN_HEADERS)
+        .send({ name: 'list-token-a' })
+      await request(app.getHttpServer())
+        .post(`/admin/groups/${gid}/tokens`)
+        .set(ADMIN_HEADERS)
+        .send({ name: 'list-token-b' })
+
+      const res = await request(app.getHttpServer())
+        .get(`/admin/groups/${gid}/tokens`)
+        .set(ADMIN_HEADERS)
+      expect(res.status).toBe(200)
+      expect(res.body).toHaveLength(2)
+      expect(res.body.map((t: { name: string }) => t.name)).toEqual(
+        expect.arrayContaining(['list-token-a', 'list-token-b']),
+      )
+      // JWT must NOT be in the list response
+      expect(res.body[0]).not.toHaveProperty('jwt')
+    })
+
+    it('does not include tokens from other groups', async () => {
+      const grpA = await request(app.getHttpServer())
+        .post('/admin/groups')
+        .set(ADMIN_HEADERS)
+        .send({ name: 'isolation-a' })
+      const grpB = await request(app.getHttpServer())
+        .post('/admin/groups')
+        .set(ADMIN_HEADERS)
+        .send({ name: 'isolation-b' })
+      await request(app.getHttpServer())
+        .post(`/admin/groups/${grpA.body.id}/tokens`)
+        .set(ADMIN_HEADERS)
+        .send({ name: 'a-token' })
+
+      const res = await request(app.getHttpServer())
+        .get(`/admin/groups/${grpB.body.id}/tokens`)
+        .set(ADMIN_HEADERS)
+      expect(res.status).toBe(200)
+      expect(res.body).toEqual([])
+    })
+
+    it('returns 404 for unknown group', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/admin/groups/00000000-0000-0000-0000-000000000000/tokens')
+        .set(ADMIN_HEADERS)
+      expect(res.status).toBe(404)
+    })
+  })
 })

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { listGroups, listTokens, issueToken, revokeToken, type Group, type Token } from '@/lib/api'
+import { listGroups, listTokens, issueToken, revokeToken, getErrorMessage, type Group, type Token } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -72,9 +72,7 @@ export default function TokensPage() {
       const updated = await listTokens(selectedGroupId)
       setTokens(updated)
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Failed to issue token')
-      setIssueOpen(false)
+      toast.error(getErrorMessage(err, 'Failed to issue token'))
     } finally {
       setIssuing(false)
     }
@@ -96,12 +94,15 @@ export default function TokensPage() {
     }
   }
 
+  useEffect(() => {
+    if (!copied) return
+    const timer = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(timer)
+  }, [copied])
+
   function handleCopy() {
     if (!issuedJwt) return
-    void navigator.clipboard.writeText(issuedJwt).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+    void navigator.clipboard.writeText(issuedJwt).then(() => setCopied(true))
   }
 
   function closeIssueDialog() {

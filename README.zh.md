@@ -177,8 +177,9 @@ oas-cli run --service petstore --operation getPetById --params '{"petId": 1}'
 
 | 包名 | 描述 | 文档 |
 |------|------|------|
-| [`@tronsfey/oas-server`](./packages/server) | NestJS 服务端——存储、加密、认证、REST API | [README](./packages/server/README.zh.md) |
+| [`@tronsfey/oas-server`](./packages/server) | NestJS 服务端——存储、加密、认证、REST API、管理后台 | [README](./packages/server/README.zh.md) |
 | [`@tronsfey/oas-cli`](./packages/cli) | Commander.js CLI——服务发现、操作执行 | [README](./packages/cli/README.zh.md) |
+| `@tronsfey/oas-admin` *（私有）* | React 管理后台——随 `oas-server` 打包，访问路径 `/admin-ui` | — |
 
 ## 开发
 

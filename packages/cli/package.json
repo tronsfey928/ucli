@@ -2,7 +2,9 @@
   "name": "@tronsfey/oas-cli",
   "version": "0.2.1",
   "description": "OAS Gateway CLI — proxy OpenAPI services for AI agents",
+  "keywords": ["openapi", "oas", "cli", "ai-agent", "api-client"],
   "license": "MIT",
+  "engines": { "node": ">=18" },
   "publishConfig": {
     "access": "public"
   },

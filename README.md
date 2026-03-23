@@ -177,8 +177,9 @@ oas-cli run --service petstore --operation getPetById --params '{"petId": 1}'
 
 | Package | Description | Docs |
 |---------|-------------|------|
-| [`@tronsfey/oas-server`](./packages/server) | NestJS server — storage, crypto, auth, REST API | [README](./packages/server/README.md) |
+| [`@tronsfey/oas-server`](./packages/server) | NestJS server — storage, crypto, auth, REST API, admin dashboard | [README](./packages/server/README.md) |
 | [`@tronsfey/oas-cli`](./packages/cli) | Commander.js CLI — service discovery, operation runner | [README](./packages/cli/README.md) |
+| `@tronsfey/oas-admin` *(private)* | React admin dashboard — bundled into `oas-server` at `/admin-ui` | — |
 
 ## Development
 

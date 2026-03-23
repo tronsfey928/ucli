@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  listOAS, listGroups, createOAS, updateOAS, deleteOAS,
+  listOAS, listGroups, createOAS, updateOAS, deleteOAS, getErrorMessage,
   type OASEntry, type Group, type AuthType,
 } from '@/lib/api'
 import { Button } from '@/components/ui/button'
@@ -150,8 +150,7 @@ export default function OASPage() {
       setDialogOpen(false)
       void load()
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? `Failed to ${mode} OAS entry`)
+      toast.error(getErrorMessage(err, `Failed to ${mode} OAS entry`))
     } finally {
       setSaving(false)
     }
