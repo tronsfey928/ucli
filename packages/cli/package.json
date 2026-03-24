@@ -1,6 +1,6 @@
 {
   "name": "@tronsfey/ucli",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "ucli — proxy OpenAPI and MCP services for AI agents",
   "keywords": ["openapi", "oas", "cli", "ai-agent", "api-client"],
   "license": "MIT",
@@ -28,13 +28,13 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@tronsfey/openapi2cli": "1.0.12",
+    "@tronsfey/openapi2cli": "1.0.13",
     "axios": "^1.8.4",
     "commander": "^12.1.0",
     "conf": "^13.1.0"
   },
   "devDependencies": {
-    "@tronsfey/mcp2cli": "1.0.0",
+    "@tronsfey/mcp2cli": "1.0.1",
     "@types/node": "^22.14.0",
     "tsx": "^4.19.3",
     "tsup": "^8.4.0",

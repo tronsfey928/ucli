@@ -84,12 +84,9 @@ importers:
 
   packages/cli:
     dependencies:
-      '@tronsfey/mcp2cli':
-        specifier: ^1.0.0
-        version: 1.0.0(zod@4.3.6)
       '@tronsfey/openapi2cli':
-        specifier: ^1.0.12
-        version: 1.0.12
+        specifier: 1.0.13
+        version: 1.0.13
       axios:
         specifier: ^1.8.4
         version: 1.13.6
@@ -100,6 +97,9 @@ importers:
         specifier: ^13.1.0
         version: 13.1.0
     devDependencies:
+      '@tronsfey/mcp2cli':
+        specifier: 1.0.1
+        version: 1.0.1(zod@4.3.6)
       '@types/node':
         specifier: ^22.14.0
         version: 22.19.15
@@ -163,6 +163,9 @@ importers:
       class-validator:
         specifier: ^0.14.1
         version: 0.14.4
+      express:
+        specifier: ^5.0.0
+        version: 5.2.1
       helmet:
         specifier: ^8.0.0
         version: 8.1.0
@@ -2097,13 +2100,13 @@ packages:
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
 
-  '@tronsfey/mcp2cli@1.0.0':
-    resolution: {integrity: sha512-CqRzXovGArZRGfrIx0LC7ni3QRA06xtRWXXSgnFPjnqS5InjmCbBOHHG/rl/FOk0L4oOGWxn/xdeeYVJMKcfvA==}
+  '@tronsfey/mcp2cli@1.0.1':
+    resolution: {integrity: sha512-YuH62CWdigUHEkM1NgNguX3W61qKCKwDddMWLIvfQ4R0Y41D3pjXJiZScNHGXZJ8MhCODZo2buMmAEbduNjGqg==}
     engines: {node: '>=18'}
     hasBin: true
 
-  '@tronsfey/openapi2cli@1.0.12':
-    resolution: {integrity: sha512-0dcSLztosFijqhCVp/3NFCTtPK3SalyGkk+OCUnwckUgFbY301t4+VKVIdSYlSvEI3aIMVoLuBBRFSR1nC4NVw==}
+  '@tronsfey/openapi2cli@1.0.13':
+    resolution: {integrity: sha512-DepXiBR/xj7wKaJTFxL+54Xi1q9kbFEFpdaO2uvoMRMEWN4fqlqbL5cKogznLl8zgqyZWG8u+lur1aL3NfGTkA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -3182,8 +3185,8 @@ packages:
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
-  hono@4.12.8:
-    resolution: {integrity: sha512-VJCEvtrezO1IAR+kqEYnxUOoStaQPGrCmX3j4wDTNOcD1uRPFpGlwQUIW8niPuvHXaTUxeOUl5MMDGrl+tmO9A==}
+  hono@4.12.9:
+    resolution: {integrity: sha512-wy3T8Zm2bsEvxKZM5w21VdHDDcwVS1yUFFY6i8UobSsKfFceT7TOwhbhfKsDyx7tYQlmRM5FLpIuYvNFyjctiA==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@2.0.2:
@@ -5354,9 +5357,9 @@ snapshots:
     dependencies:
       '@hapi/hoek': 9.3.0
 
-  '@hono/node-server@1.19.11(hono@4.12.8)':
+  '@hono/node-server@1.19.11(hono@4.12.9)':
     dependencies:
-      hono: 4.12.8
+      hono: 4.12.9
 
   '@ioredis/commands@1.5.1': {}
 
@@ -5575,7 +5578,7 @@ snapshots:
 
   '@modelcontextprotocol/sdk@1.27.1(zod@4.3.6)':
     dependencies:
-      '@hono/node-server': 1.19.11(hono@4.12.8)
+      '@hono/node-server': 1.19.11(hono@4.12.9)
       ajv: 8.18.0
       ajv-formats: 3.0.1(ajv@8.18.0)
       content-type: 1.0.5
@@ -5585,7 +5588,7 @@ snapshots:
       eventsource-parser: 3.0.6
       express: 5.2.1
       express-rate-limit: 8.3.1(express@5.2.1)
-      hono: 4.12.8
+      hono: 4.12.9
       jose: 6.2.2
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
@@ -6831,7 +6834,7 @@ snapshots:
 
   '@tokenizer/token@0.3.0': {}
 
-  '@tronsfey/mcp2cli@1.0.0(zod@4.3.6)':
+  '@tronsfey/mcp2cli@1.0.1(zod@4.3.6)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.27.1(zod@4.3.6)
       chalk: 4.1.2
@@ -6845,7 +6848,7 @@ snapshots:
       - supports-color
       - zod
 
-  '@tronsfey/openapi2cli@1.0.12':
+  '@tronsfey/openapi2cli@1.0.13':
     dependencies:
       '@apidevtools/swagger-parser': 10.1.1(openapi-types@12.1.3)
       axios: 1.13.6
@@ -8043,7 +8046,7 @@ snapshots:
 
   help-me@5.0.0: {}
 
-  hono@4.12.8: {}
+  hono@4.12.9: {}
 
   html-escaper@2.0.2: {}
 
