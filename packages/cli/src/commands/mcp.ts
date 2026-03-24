@@ -12,13 +12,20 @@ export function registerMcp(program: Command): void {
   mcp
     .command('list')
     .description('List all MCP servers available in the current group')
-    .action(async () => {
+    .option('--format <fmt>', 'Output format: table | json | yaml', 'table')
+    .action(async (opts: { format?: string }) => {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
       const entries = await client.listMCP()
 
       if (entries.length === 0) {
         console.log('No MCP servers registered in this group.')
+        return
+      }
+
+      const format = (opts.format ?? 'table').toLowerCase()
+      if (format === 'json') {
+        console.log(JSON.stringify(entries, null, 2))
         return
       }
 
@@ -36,7 +43,8 @@ export function registerMcp(program: Command): void {
   mcp
     .command('tools <server>')
     .description('List tools available on a MCP server')
-    .action(async (serverName: string) => {
+    .option('--format <fmt>', 'Output format: table | json', 'table')
+    .action(async (serverName: string, opts: { format?: string }) => {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
 
@@ -59,6 +67,12 @@ export function registerMcp(program: Command): void {
 
       if (tools.length === 0) {
         console.log(`No tools found on MCP server "${serverName}".`)
+        return
+      }
+
+      const format = (opts.format ?? 'table').toLowerCase()
+      if (format === 'json') {
+        console.log(JSON.stringify(tools, null, 2))
         return
       }
 
