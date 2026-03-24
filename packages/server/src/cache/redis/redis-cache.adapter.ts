@@ -23,7 +23,14 @@ export class RedisCacheAdapter implements ICacheAdapter, OnModuleDestroy {
 
   async get<T>(key: string): Promise<T | null> {
     const raw = await this.client.get(key)
-    return raw !== null ? (JSON.parse(raw) as T) : null
+    if (raw === null) return null
+    try {
+      return JSON.parse(raw) as T
+    } catch {
+      this.logger.warn({ key }, 'Corrupted cache entry, deleting')
+      await this.client.del(key)
+      return null
+    }
   }
 
   async set<T>(key: string, value: T, ttlSec?: number): Promise<void> {

@@ -121,4 +121,11 @@ describe('Client MCP API (e2e)', () => {
     expect(names).not.toContain('disabled-mcp')
     expect(names).toContain('weather-mcp')
   })
+
+  it('disabled MCP entry returns 404 on GET /api/v1/mcp/:name', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/mcp/disabled-mcp')
+      .set('Authorization', `Bearer ${groupAToken}`)
+    expect(res.status).toBe(404)
+  })
 })

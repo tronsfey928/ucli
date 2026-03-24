@@ -24,7 +24,7 @@ async function bootstrap() {
   app.use(helmet({
     contentSecurityPolicy: cfg.swaggerEnabled ? false : undefined,
   }))
-  app.enableCors({ origin: !cfg.isProd })
+  app.enableCors({ origin: cfg.isProd ? false : true })
 
   // Swagger / OpenAPI
   if (cfg.swaggerEnabled) {

@@ -33,6 +33,7 @@ export class OASService {
     const entry = await this.oasRepo.findByName(name)
     if (!entry) throw new NotFoundException(`OAS not found: ${name}`)
     if (groupId && entry.groupId !== groupId) throw new NotFoundException(`OAS not found: ${name}`)
+    if (groupId && !entry.enabled) throw new NotFoundException(`OAS not found: ${name}`)
     return this.decrypt(entry)
   }
 

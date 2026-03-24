@@ -11,7 +11,7 @@
     "build": "pnpm -r build",
     "dev:server": "pnpm --filter @tronsfey/ucli-server dev",
     "dev:cli": "pnpm --filter @tronsfey/ucli dev",
-    "test": "pnpm -r test",
+    "test": "pnpm --filter @tronsfey/ucli-server test:e2e && pnpm --filter @tronsfey/ucli test",
     "test:coverage": "pnpm -r test:coverage",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r clean && rm -rf node_modules"

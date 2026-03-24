@@ -8,6 +8,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   dts: false,
+  noExternal: ['@tronsfey/mcp2cli'],
   banner: {
     js: '#!/usr/bin/env node',
   },

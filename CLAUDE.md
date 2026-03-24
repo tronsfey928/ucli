@@ -176,9 +176,17 @@ pnpm --filter @tronsfey/ucli test
 pnpm --filter @tronsfey/ucli-server test:coverage
 ```
 
-**AI assistants must run tests before committing.** Do not commit code that breaks existing tests.
-
 E2E tests set `DB_TYPE=memory CACHE_TYPE=memory` in `packages/server/test/e2e/setup.ts` — no external dependencies required for testing.
+
+### MANDATORY Pre-Push Rules (non-negotiable)
+
+> These rules apply to every AI assistant and every human contributor. Violations must be reverted before the branch can be merged.
+
+1. **`pnpm test` must pass (all tests, zero failures) before every `git push`.**
+2. **`pnpm lint` must produce zero TypeScript errors before every `git push`.**
+3. **Every new endpoint, feature, or behavioral change must include a corresponding E2E or unit test in the same commit.** Code without tests will not be merged.
+4. **Every command example added to any README or documentation must be verified to run successfully in a local environment before committing.**
+5. **All `ADMIN_SECRET` values in documentation examples must be ≥ 8 characters** (Joi enforces `min(8)` — shorter values will crash the server on startup).
 
 ---
 
@@ -193,7 +201,7 @@ pnpm --filter @tronsfey/ucli-server lint
 pnpm --filter @tronsfey/ucli lint
 ```
 
-Always run linting before committing. Fix all TypeScript type errors.
+Fix all TypeScript type errors before committing. No exceptions.
 
 ---
 
