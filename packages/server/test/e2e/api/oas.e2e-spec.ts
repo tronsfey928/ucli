@@ -87,4 +87,29 @@ describe('Client OAS API (e2e)', () => {
       .set('Authorization', 'Bearer invalid.jwt.here')
     expect(res.status).toBe(401)
   })
+
+  it('disabled OAS entry does not appear in GET /api/v1/oas list', async () => {
+    const server = app.getHttpServer()
+    const created = await request(server).post('/admin/oas').set(ADMIN_HEADERS).send({
+      groupId: groupAId,
+      name: 'disabled-svc',
+      remoteUrl: 'https://example.com/oas.json',
+      authType: 'none',
+      authConfig: { type: 'none' },
+      cacheTtl: 60,
+    })
+    const entryId = created.body.id
+    await request(server).put(`/admin/oas/${entryId}`).set(ADMIN_HEADERS).send({ enabled: false })
+
+    const res = await request(server).get('/api/v1/oas').set('Authorization', `Bearer ${groupAToken}`)
+    expect(res.status).toBe(200)
+    expect(res.body.find((e: { name: string }) => e.name === 'disabled-svc')).toBeUndefined()
+  })
+
+  it('disabled OAS entry returns 404 on GET /api/v1/oas/:name', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/oas/disabled-svc')
+      .set('Authorization', `Bearer ${groupAToken}`)
+    expect(res.status).toBe(404)
+  })
 })

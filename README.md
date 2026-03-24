@@ -227,5 +227,5 @@ pnpm lint
 
 # Start server in dev mode (hot-reload)
 cd packages/server
-ADMIN_SECRET=dev ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") pnpm dev
+ADMIN_SECRET=dev-secret ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") pnpm dev
 ```

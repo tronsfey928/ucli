@@ -39,6 +39,7 @@ export class MCPService {
     const entry = await this.mcpRepo.findByName(name)
     if (!entry) throw new NotFoundException(`MCP server not found: ${name}`)
     if (groupId && entry.groupId !== groupId) throw new NotFoundException(`MCP server not found: ${name}`)
+    if (groupId && !entry.enabled) throw new NotFoundException(`MCP server not found: ${name}`)
     return this.decrypt(entry)
   }
 
