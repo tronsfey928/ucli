@@ -205,6 +205,78 @@ ucli mcp tools weather
 ucli mcp run weather get_forecast --location "New York"
 ```
 
+## Using with OpenClaw
+
+[OpenClaw](https://docs.openclaw.ai/) is an open-source autonomous AI agent platform. You can integrate ucli as a skill so that OpenClaw agents can discover and invoke your registered APIs and MCP tools.
+
+### Step 1 — Install and configure ucli
+
+```bash
+npm install -g @tronsfey/ucli
+ucli configure --server https://your-ucli-server.example.com --token <group-jwt>
+```
+
+### Step 2 — Add the ucli skill to OpenClaw
+
+Copy the bundled skill file into your OpenClaw skills directory:
+
+```bash
+# Find the installed skill.md
+SKILL_PATH=$(node -e "console.log(require.resolve('@tronsfey/ucli/skill.md'))")
+
+# Copy to OpenClaw skills directory
+mkdir -p ~/.openclaw/skills/ucli
+cp "$SKILL_PATH" ~/.openclaw/skills/ucli/SKILL.md
+```
+
+Or create the skill manually — add `~/.openclaw/skills/ucli/SKILL.md` with the following frontmatter header, then paste the content from [`packages/cli/skill.md`](./packages/cli/skill.md):
+
+```markdown
+---
+name: ucli
+description: Discover and invoke external OpenAPI services and MCP server tools via ucli.
+tags: [api, openapi, mcp, tools]
+---
+
+(paste the content of skill.md here)
+```
+
+### Step 3 — (Optional) Register ucli-server as an MCP server
+
+If your ucli-server also acts as an MCP proxy, you can register it directly in OpenClaw's `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "mcpServers": {
+    "ucli-proxy": {
+      "command": "npx",
+      "args": ["-y", "@tronsfey/ucli", "mcp", "run", "your-mcp-server", "{{toolName}}"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+### Step 4 — Use it
+
+Once configured, the OpenClaw agent can:
+
+```
+> List available API services
+  → Agent runs: ucli services list
+
+> Call the petstore API to get pet #1
+  → Agent runs: ucli run petstore getPetById --petId 1
+
+> List MCP tools on the weather server
+  → Agent runs: ucli mcp tools weather
+
+> Get the weather forecast for New York
+  → Agent runs: ucli mcp run weather get_forecast location="New York"
+```
+
+The agent handles service discovery, operation lookup, and credential injection automatically — credentials are **never exposed** to the agent.
+
 ## Packages
 
 | Package | Description | Docs |

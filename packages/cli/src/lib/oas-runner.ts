@@ -6,7 +6,6 @@
  */
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { fileURLToPath } from 'node:url'
 import { join, dirname } from 'node:path'
 import type { OASEntryPublic } from './server-client.js'
 

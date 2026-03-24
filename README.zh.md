@@ -205,6 +205,78 @@ ucli mcp tools weather
 ucli mcp run weather get_forecast location="New York"
 ```
 
+## 在 OpenClaw 中使用
+
+[OpenClaw](https://docs.openclaw.ai/) 是一个开源的自主 AI 智能体平台。你可以将 ucli 注册为一个技能（Skill），让 OpenClaw 智能体自动发现并调用你注册的 API 和 MCP 工具。
+
+### 第一步 — 安装并配置 ucli
+
+```bash
+npm install -g @tronsfey/ucli
+ucli configure --server https://your-ucli-server.example.com --token <group-jwt>
+```
+
+### 第二步 — 将 ucli 技能添加到 OpenClaw
+
+将内置的 skill 文件复制到 OpenClaw 的技能目录：
+
+```bash
+# 找到已安装的 skill.md 路径
+SKILL_PATH=$(node -e "console.log(require.resolve('@tronsfey/ucli/skill.md'))")
+
+# 复制到 OpenClaw 技能目录
+mkdir -p ~/.openclaw/skills/ucli
+cp "$SKILL_PATH" ~/.openclaw/skills/ucli/SKILL.md
+```
+
+或者手动创建——新建 `~/.openclaw/skills/ucli/SKILL.md` 文件，添加以下 frontmatter 头部，然后粘贴 [`packages/cli/skill.md`](./packages/cli/skill.md) 的内容：
+
+```markdown
+---
+name: ucli
+description: 通过 ucli 发现并调用外部 OpenAPI 服务和 MCP 服务器工具。
+tags: [api, openapi, mcp, tools]
+---
+
+（在此粘贴 skill.md 的内容）
+```
+
+### 第三步 —（可选）将 ucli-server 注册为 MCP 服务器
+
+如果你的 ucli-server 同时作为 MCP 代理使用，可以直接在 OpenClaw 的 `~/.openclaw/openclaw.json` 中注册：
+
+```json
+{
+  "mcpServers": {
+    "ucli-proxy": {
+      "command": "npx",
+      "args": ["-y", "@tronsfey/ucli", "mcp", "run", "your-mcp-server", "{{toolName}}"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+### 第四步 — 开始使用
+
+配置完成后，OpenClaw 智能体可以：
+
+```
+> 列出可用的 API 服务
+  → 智能体执行：ucli services list
+
+> 调用 petstore API 获取宠物 #1
+  → 智能体执行：ucli run petstore getPetById --petId 1
+
+> 列出 weather 服务器上的 MCP 工具
+  → 智能体执行：ucli mcp tools weather
+
+> 获取纽约的天气预报
+  → 智能体执行：ucli mcp run weather get_forecast location="New York"
+```
+
+智能体会自动完成服务发现、操作查找和凭据注入——凭据**永远不会暴露**给智能体。
+
 ## 子包说明
 
 | 包名 | 描述 | 文档 |
@@ -227,5 +299,5 @@ pnpm lint
 
 # 服务端开发模式（热重载）
 cd packages/server
-ADMIN_SECRET=dev ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") pnpm dev
+ADMIN_SECRET=dev-secret ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") pnpm dev
 ```
