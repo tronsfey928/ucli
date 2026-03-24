@@ -1,3 +1,20 @@
+---
+name: ucli
+description: Proxy OpenAPI and MCP services for AI agents — discover, inspect, and invoke APIs with automatic credential injection.
+version: 0.4.1
+metadata:
+  openclaw:
+    emoji: "🔗"
+    homepage: https://github.com/tronsfey928/ucli
+    requires:
+      bins:
+        - ucli
+    install:
+      - kind: node
+        package: "@tronsfey/ucli"
+        bins: [ucli]
+---
+
 # ucli Skill
 
 ## Overview

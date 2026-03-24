@@ -1,0 +1,16 @@
+# Build artifacts
+dist/
+node_modules/
+
+# Source code (not needed for skill)
+src/
+test/
+
+# Config files
+tsconfig.json
+tsup.config.ts
+package.json
+pnpm-lock.yaml
+
+# Assets (binary files not allowed by ClawHub)
+assets/
