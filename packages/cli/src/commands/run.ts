@@ -5,17 +5,26 @@ import { runOperation } from '../lib/oas-runner.js'
 
 export function registerRun(program: Command): void {
   program
-    .command('run <service> [args...]')
+    .command('run [service] [args...]')
     .description('Execute an operation on a service')
+    .option('--service <name>', 'Service name (from `services list`)')
+    .option('--operation <id>', 'OperationId to execute')
+    .option('--params <json>', 'JSON string of operation parameters')
     .option('--format <fmt>', 'Output format: json | table | yaml', 'json')
     .option('--query <jmespath>', 'Filter response with JMESPath expression')
     .option('--data <json>', 'Request body (JSON string or @filename)')
     .allowUnknownOption(true)
     .action(async (
-      service: string,
+      serviceArg: string | undefined,
       args: string[],
-      opts: { format?: string; query?: string; data?: string; args?: string[] },
+      opts: { service?: string; operation?: string; params?: string; format?: string; query?: string; data?: string; args?: string[] },
     ) => {
+      const service = opts.service ?? serviceArg
+      if (!service) {
+        console.error('Missing service. Use positional <service> or --service <name>.')
+        process.exit(1)
+      }
+
       const cfg = getConfig()
       const client = new ServerClient(cfg)
 
@@ -30,11 +39,31 @@ export function registerRun(program: Command): void {
 
       // Collect extra args (pass-through to openapi2cli)
       const extraArgs = opts.args ?? []
-      const operationArgs = [
-        ...args,
-        ...extraArgs,
-        ...(opts.data ? ['--data', opts.data] : []),
-      ]
+      const operationArgs = [...args, ...extraArgs]
+
+      if (opts.operation) {
+        operationArgs.unshift(opts.operation)
+      }
+
+      if (opts.params) {
+        let parsed: unknown
+        try {
+          parsed = JSON.parse(opts.params)
+        } catch {
+          console.error('Invalid --params JSON. Example: --params \'{"petId": 1}\'')
+          process.exit(1)
+        }
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+            if (v === undefined || v === null) continue
+            operationArgs.push(`--${k}`, String(v))
+          }
+        }
+      }
+
+      if (opts.data) {
+        operationArgs.push('--data', opts.data)
+      }
 
       const format = opts.format as 'json' | 'table' | 'yaml' | undefined
       const query = opts.query as string | undefined

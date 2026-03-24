@@ -35,17 +35,40 @@ export async function listMcpTools(entry: McpEntryPublic): Promise<{ name: strin
   const { createMcpClient, getTools } = await getMcp2cli()
   const config = buildMcpConfig(entry)
   const client = await createMcpClient(config)
-  const tools = await getTools(client, config, { noCache: true })
-  return tools
+  try {
+    const tools = await getTools(client, config, { noCache: true })
+    return tools
+  } finally {
+    if (typeof (client as { close?: unknown }).close === 'function') {
+      await (client as { close: () => Promise<void> }).close()
+    }
+  }
 }
 
 export async function runMcpTool(entry: McpEntryPublic, toolName: string, rawArgs: string[]): Promise<void> {
   const { createMcpClient, getTools, runTool } = await getMcp2cli()
   const config = buildMcpConfig(entry)
   const client = await createMcpClient(config)
-  const tools = await getTools(client, config, { noCache: false, cacheTtl: 3600 })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tool = tools.find((t: any) => t.name === toolName)
-  if (!tool) throw new Error(`Tool "${toolName}" not found on MCP server "${entry.name}"`)
-  await runTool(client, tool, rawArgs, {})
+  try {
+    const tools = await getTools(client, config, { noCache: false, cacheTtl: 3600 })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tool = tools.find((t: any) => t.name === toolName)
+    if (!tool) throw new Error(`Tool "${toolName}" not found on MCP server "${entry.name}"`)
+    const normalizedArgs: string[] = []
+    for (const arg of rawArgs) {
+      if (arg.includes('=') && !arg.startsWith('--')) {
+        const idx = arg.indexOf('=')
+        const key = arg.slice(0, idx)
+        const value = arg.slice(idx + 1)
+        normalizedArgs.push(`--${key}`, value)
+      } else {
+        normalizedArgs.push(arg)
+      }
+    }
+    await runTool(client, tool, normalizedArgs, {})
+  } finally {
+    if (typeof (client as { close?: unknown }).close === 'function') {
+      await (client as { close: () => Promise<void> }).close()
+    }
+  }
 }

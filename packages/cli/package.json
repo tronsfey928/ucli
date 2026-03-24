@@ -2,9 +2,17 @@
   "name": "@tronsfey/ucli",
   "version": "0.3.0",
   "description": "ucli — proxy OpenAPI and MCP services for AI agents",
-  "keywords": ["openapi", "oas", "cli", "ai-agent", "api-client"],
+  "keywords": [
+    "openapi",
+    "oas",
+    "cli",
+    "ai-agent",
+    "api-client"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -35,10 +43,11 @@
     "conf": "^13.1.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/server-filesystem": "2026.1.14",
     "@types/node": "^22.14.0",
-    "tsx": "^4.19.3",
     "tsup": "^8.4.0",
-    "vitest": "^3.1.1",
-    "typescript": "^5.7.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.1.1"
   }
 }

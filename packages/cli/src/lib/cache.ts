@@ -44,3 +44,7 @@ export async function clearOASListCache(): Promise<void> {
     // ignore if not found
   }
 }
+
+export async function clearOASCache(_name: string): Promise<void> {
+  await clearOASListCache()
+}

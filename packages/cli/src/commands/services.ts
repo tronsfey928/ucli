@@ -13,12 +13,15 @@ export function registerServices(program: Command): void {
   services
     .command('list')
     .description('List all OAS services available in the current group')
+    .option('--refresh', 'Bypass local cache and fetch fresh from server')
+    .option('--format <fmt>', 'Output format: table | json | yaml', 'table')
     .option('--no-cache', 'Bypass local cache and fetch fresh from server')
-    .action(async (opts: { cache: boolean }) => {
+    .action(async (opts: { cache: boolean; refresh?: boolean; format?: string }) => {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
 
-      let entries = opts.cache ? await readOASListCache() : null
+      const useCache = opts.cache && !opts.refresh
+      let entries = useCache ? await readOASListCache() : null
 
       if (!entries) {
         entries = await client.listOAS()
@@ -28,8 +31,15 @@ export function registerServices(program: Command): void {
         }
       }
 
+      const format = (opts.format ?? 'table').toLowerCase()
+
       if (entries.length === 0) {
         console.log('No services registered in this group.')
+        return
+      }
+
+      if (format === 'json') {
+        console.log(JSON.stringify(entries, null, 2))
         return
       }
 
@@ -48,7 +58,8 @@ export function registerServices(program: Command): void {
   services
     .command('info <name>')
     .description('Show detailed information and available operations for a service')
-    .action(async (name: string) => {
+    .option('--format <fmt>', 'Output format: table | json | yaml', 'table')
+    .action(async (name: string, opts: { format?: string }) => {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
 
@@ -61,17 +72,24 @@ export function registerServices(program: Command): void {
         process.exit(1)
       }
 
+      const help = await getServiceHelp(entry)
+      const format = (opts.format ?? 'table').toLowerCase()
+      if (format === 'json') {
+        console.log(JSON.stringify({
+          ...entry,
+          operationsHelp: help,
+        }, null, 2))
+        return
+      }
+
       console.log(`\nService: ${entry.name}`)
       console.log(`Description: ${entry.description || '(none)'}`)
       console.log(`OAS URL: ${entry.remoteUrl}`)
       if (entry.baseEndpoint) console.log(`Base endpoint: ${entry.baseEndpoint}`)
       console.log(`Auth type: ${entry.authType}`)
       console.log(`Cache TTL: ${entry.cacheTtl}s`)
-
       console.log('\nAvailable operations:')
       console.log('─'.repeat(60))
-
-      const help = await getServiceHelp(entry)
       console.log(help)
     })
 }
