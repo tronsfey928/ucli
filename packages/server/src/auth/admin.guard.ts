@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
-import { timingSafeEqual } from 'node:crypto'
+import { createHmac } from 'node:crypto'
 import { Request } from 'express'
 import { AppConfigService } from '../config/app-config.service'
 
@@ -16,14 +16,13 @@ export class AdminGuard implements CanActivate {
     return true
   }
 
+  /**
+   * Constant-time comparison that does not leak string length.
+   * Both inputs are hashed to a fixed 32-byte digest before comparison.
+   */
   private constantTimeEqual(a: string, b: string): boolean {
-    const bufA = Buffer.from(a)
-    const bufB = Buffer.from(b)
-    if (bufA.length !== bufB.length) {
-      // Compare against self to keep constant time regardless of length mismatch
-      timingSafeEqual(bufA, bufA)
-      return false
-    }
-    return timingSafeEqual(bufA, bufB)
+    const ha = createHmac('sha256', 'admin-guard').update(a).digest()
+    const hb = createHmac('sha256', 'admin-guard').update(b).digest()
+    return ha.equals(hb)
   }
 }

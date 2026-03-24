@@ -27,7 +27,7 @@ export class RedisCacheAdapter implements ICacheAdapter, OnModuleDestroy {
     try {
       return JSON.parse(raw) as T
     } catch {
-      this.logger.warn(`Corrupted cache entry for key "${key}", deleting`)
+      this.logger.warn({ key }, 'Corrupted cache entry, deleting')
       await this.client.del(key)
       return null
     }
