@@ -15,6 +15,12 @@ async function getMcp2cli() {
   return { createMcpClient: clientMod.createMcpClient, getTools: runnerMod.getTools, runTool: runnerMod.runTool }
 }
 
+async function closeClient(client: unknown): Promise<void> {
+  if (typeof (client as { close?: unknown }).close === 'function') {
+    await (client as { close: () => Promise<void> }).close()
+  }
+}
+
 function buildMcpConfig(entry: McpEntryPublic): Record<string, unknown> {
   const base: Record<string, unknown> = { type: entry.transport }
   if (entry.transport === 'http') {
@@ -39,9 +45,7 @@ export async function listMcpTools(entry: McpEntryPublic): Promise<{ name: strin
     const tools = await getTools(client, config, { noCache: true })
     return tools
   } finally {
-    if (typeof (client as { close?: unknown }).close === 'function') {
-      await (client as { close: () => Promise<void> }).close()
-    }
+    await closeClient(client)
   }
 }
 
@@ -67,8 +71,6 @@ export async function runMcpTool(entry: McpEntryPublic, toolName: string, rawArg
     }
     await runTool(client, tool, normalizedArgs, {})
   } finally {
-    if (typeof (client as { close?: unknown }).close === 'function') {
-      await (client as { close: () => Promise<void> }).close()
-    }
+    await closeClient(client)
   }
 }

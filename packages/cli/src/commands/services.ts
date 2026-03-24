@@ -20,6 +20,10 @@ export function registerServices(program: Command): void {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
 
+      if (!opts.cache) {
+        process.emitWarning('The --no-cache flag is deprecated. Please use --refresh instead.')
+      }
+
       const useCache = opts.cache && !opts.refresh
       let entries = useCache ? await readOASListCache() : null
 

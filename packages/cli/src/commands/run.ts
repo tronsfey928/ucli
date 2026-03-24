@@ -19,9 +19,14 @@ export function registerRun(program: Command): void {
       args: string[],
       opts: { service?: string; operation?: string; params?: string; format?: string; query?: string; data?: string; args?: string[] },
     ) => {
+      if (serviceArg && opts.service && serviceArg !== opts.service) {
+        console.error(`Conflicting service values: positional "${serviceArg}" and --service "${opts.service}". Use either the positional argument or --service flag, not both.`)
+        process.exit(1)
+      }
+
       const service = opts.service ?? serviceArg
       if (!service) {
-        console.error('Missing service. Use positional <service> or --service <name>.')
+        console.error('Missing service name. Use positional <service> or --service <name>.')
         process.exit(1)
       }
 

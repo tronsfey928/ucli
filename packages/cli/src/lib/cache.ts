@@ -45,6 +45,22 @@ export async function clearOASListCache(): Promise<void> {
   }
 }
 
-export async function clearOASCache(_name: string): Promise<void> {
-  await clearOASListCache()
+export async function clearOASCache(name: string): Promise<void> {
+  try {
+    const raw = await readFile(LIST_CACHE_FILE, 'utf8')
+    const cached: CacheFile = JSON.parse(raw)
+    const entries = Array.isArray(cached.entries) ? cached.entries.filter((e) => e.name !== name) : []
+    if (entries.length === 0) {
+      await clearOASListCache()
+      return
+    }
+    const next: CacheFile = {
+      entries,
+      fetchedAt: cached.fetchedAt ?? Date.now(),
+      ttlSec: cached.ttlSec ?? 0,
+    }
+    await writeFile(LIST_CACHE_FILE, JSON.stringify(next, null, 2), 'utf8')
+  } catch {
+    await clearOASListCache()
+  }
 }

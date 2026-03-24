@@ -67,7 +67,7 @@ describe('CLI + Server integration (e2e)', () => {
   let cliDist: string
   let fsMcpBin: string
 
-  const repoRoot = '/home/runner/work/ucli/ucli'
+  const repoRoot = join(process.cwd(), '..', '..')
 
   async function runCli(args: string[]): Promise<CliResult> {
     try {
@@ -212,7 +212,6 @@ describe('CLI + Server integration (e2e)', () => {
     if (mcpTools.code !== 0) {
       throw new Error(`mcp tools exit=${mcpTools.code} signal=${mcpTools.signal ?? 'none'} timeout=${mcpTools.timedOut === true}\nstdout:\n${mcpTools.stdout}\nstderr:\n${mcpTools.stderr}`)
     }
-    expect(mcpTools.code).toBe(0)
     expect(mcpTools.stdout).toContain('"name": "list_directory"')
 
     const mcpRun = await runCli(['mcp', 'run', 'filesystem-local', 'list_directory', `path=${mcpAllowedDir}`])
