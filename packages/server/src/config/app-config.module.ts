@@ -38,8 +38,8 @@ import { AppConfigService } from './app-config.service'
           .required()
           .messages({ 'string.pattern.base': 'ENCRYPTION_KEY must be a 64-char hex string' }),
 
-        RATE_LIMIT_TTL: Joi.number().default(60000),
-        RATE_LIMIT_LIMIT: Joi.number().default(100),
+        RATE_LIMIT_TTL: Joi.number().min(1).default(60000),
+        RATE_LIMIT_LIMIT: Joi.number().min(1).default(100),
 
         METRICS_ALLOWED_IPS: Joi.string().default('127.0.0.1,::1'),
         SWAGGER_ENABLED: Joi.string().valid('true', 'false').default('true'),

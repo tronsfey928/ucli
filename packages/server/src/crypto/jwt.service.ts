@@ -54,8 +54,9 @@ export class JwtService implements OnModuleInit {
 
       const privPem = await exportPKCS8(privateKey)
       const pubPem = await exportSPKI(publicKey)
-      this.logger.debug(`JWT_PRIVATE_KEY=${Buffer.from(privPem).toString('base64')}`)
-      this.logger.debug(`JWT_PUBLIC_KEY=${Buffer.from(pubPem).toString('base64')}`)
+      this.logger.debug('Ephemeral JWT keys generated (set JWT_PRIVATE_KEY/JWT_PUBLIC_KEY to persist)')
+      this.logger.verbose(`JWT_PRIVATE_KEY=${Buffer.from(privPem).toString('base64')}`)
+      this.logger.verbose(`JWT_PUBLIC_KEY=${Buffer.from(pubPem).toString('base64')}`)
     }
   }
 
