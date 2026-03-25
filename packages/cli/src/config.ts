@@ -28,7 +28,8 @@ function hardenConfigPermissions(): void {
     chmodSync(configDir, 0o700)
     chmodSync(configPath, 0o600)
   } catch {
-    // Best-effort: permission enforcement may fail on some platforms (e.g., Windows)
+    // Permission enforcement may fail on some platforms (e.g., Windows)
+    console.warn('Warning: Could not enforce restrictive file permissions on config. Token is encrypted but file permissions may be permissive.')
   }
 }
 
