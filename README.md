@@ -15,7 +15,7 @@
 
 ## What is ucli?
 
-**ucli** is a centralized [OpenAPI Specification](https://swagger.io/specification/) management system built with a client/server architecture.
+**ucli** is a centralized [OpenAPI Specification](https://swagger.io/specification/) and [MCP Server](https://modelcontextprotocol.io/) management system built with a client/server architecture.
 
 - The **server** (`@tronsfey/ucli-server`) stores OpenAPI specs and **MCP server configs** (Model Context Protocol) with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
 - The **CLI** (`@tronsfey/ucli`) lets AI agents discover and invoke API operations and MCP tools **without ever seeing credentials** — auth is injected as environment variables or headers at runtime.

@@ -15,7 +15,7 @@
 
 ## ucli 是什么？
 
-**ucli** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 集中管理系统。
+**ucli** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 与 [MCP Server](https://modelcontextprotocol.io/)（Model Context Protocol）集中管理系统。
 
 - **服务端**（`@tronsfey/ucli-server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及 **MCP 服务器配置**（Model Context Protocol），并签发 **RS256 群组 JWT**。
 - **CLI**（`@tronsfey/ucli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作和 MCP 工具——认证信息在运行时以环境变量或请求头方式注入，**永不落盘**。
