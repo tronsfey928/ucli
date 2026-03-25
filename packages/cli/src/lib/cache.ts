@@ -26,7 +26,7 @@ async function ensureCacheDir(): Promise<void> {
 function redactEntries(entries: OASEntryPublic[]): OASEntryPublic[] {
   return entries.map((e) => ({
     ...e,
-    authConfig: { type: (e.authConfig as Record<string, unknown>)['type'] ?? 'none' },
+    authConfig: { type: (e.authConfig as Record<string, unknown>)['type'] ?? e.authType },
   }))
 }
 
@@ -46,6 +46,7 @@ export async function writeOASListCache(entries: OASEntryPublic[], ttlSec: numbe
   await ensureCacheDir()
   const cached: CacheFile = { entries: redactEntries(entries), fetchedAt: Date.now(), ttlSec }
   await writeFile(LIST_CACHE_FILE, JSON.stringify(cached, null, 2), { encoding: 'utf8', mode: 0o600 })
+  await chmod(LIST_CACHE_FILE, 0o600)
 }
 
 export async function clearOASListCache(): Promise<void> {
