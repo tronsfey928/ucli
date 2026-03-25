@@ -25,7 +25,12 @@ export function registerMcp(program: Command): void {
 
       const format = (opts.format ?? 'table').toLowerCase()
       if (format === 'json') {
-        console.log(JSON.stringify(entries, null, 2))
+        // Strip authConfig secrets from JSON output — only expose { type }
+        const safe = entries.map(({ authConfig, ...rest }) => ({
+          ...rest,
+          authConfig: { type: authConfig.type },
+        }))
+        console.log(JSON.stringify(safe, null, 2))
         return
       }
 

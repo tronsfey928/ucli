@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { GroupTokenGuard } from '../auth/group-token.guard'
 import { JwtPayloadParam } from '../auth/decorators/jwt-payload.decorator'
 import type { JwtPayload } from '../crypto/jwt.service'
+import type { OASEntry } from '../storage/interfaces/repos.interface'
 import { OASService } from './oas.service'
 
 @ApiTags('Client / OAS')
@@ -13,11 +14,12 @@ export class ClientOASController {
   constructor(private readonly oasService: OASService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List OAS entries for the authenticated group' })
-  @ApiResponse({ status: 200, description: 'List of OAS entries for the group' })
+  @ApiOperation({ summary: 'List OAS entries for the authenticated group (credentials redacted)' })
+  @ApiResponse({ status: 200, description: 'List of OAS entries with authConfig redacted to type only' })
   @ApiResponse({ status: 401, description: 'Invalid or expired token' })
-  findByGroup(@JwtPayloadParam() payload: JwtPayload) {
-    return this.oasService.findByGroup(payload.sub)
+  async findByGroup(@JwtPayloadParam() payload: JwtPayload) {
+    const entries = await this.oasService.findByGroup(payload.sub)
+    return entries.map((e) => ClientOASController.redact(e))
   }
 
   @Get(':name')
@@ -27,5 +29,10 @@ export class ClientOASController {
   @ApiResponse({ status: 404, description: 'OAS entry not found' })
   findByName(@Param('name') name: string, @JwtPayloadParam() payload: JwtPayload) {
     return this.oasService.findByName(name, payload.sub)
+  }
+
+  /** Strip credential values from authConfig — only expose { type } for discovery. */
+  private static redact(entry: OASEntry): Omit<OASEntry, 'authConfig'> & { authConfig: { type: string } } {
+    return { ...entry, authConfig: { type: entry.authType } }
   }
 }

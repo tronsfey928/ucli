@@ -36,7 +36,7 @@ describe('Client MCP API (e2e)', () => {
 
   afterAll(async () => { await app.close() })
 
-  it('GET /api/v1/mcp → 200 returns group A MCP servers with decrypted authConfig', async () => {
+  it('GET /api/v1/mcp → 200 returns group A MCP servers with redacted authConfig', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/mcp')
       .set('Authorization', `Bearer ${groupAToken}`)
@@ -45,7 +45,9 @@ describe('Client MCP API (e2e)', () => {
     expect(Array.isArray(res.body)).toBe(true)
     expect(res.body.length).toBe(1)
     expect(res.body[0].name).toBe('weather-mcp')
-    expect(res.body[0].authConfig).toMatchObject({ type: 'http_headers', headers: { Authorization: 'Bearer secret-weather-token' } })
+    // List endpoint redacts credentials — only type is exposed
+    expect(res.body[0].authConfig).toEqual({ type: 'http_headers' })
+    expect(res.body[0].authConfig.headers).toBeUndefined()
   })
 
   it('GET /api/v1/mcp → group B sees empty list (group isolation)', async () => {
@@ -57,13 +59,14 @@ describe('Client MCP API (e2e)', () => {
     expect(res.body).toEqual([])
   })
 
-  it('GET /api/v1/mcp/:name → 200 returns named entry with decrypted authConfig', async () => {
+  it('GET /api/v1/mcp/:name → 200 returns named entry with full decrypted authConfig', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/mcp/weather-mcp')
       .set('Authorization', `Bearer ${groupAToken}`)
 
     expect(res.status).toBe(200)
     expect(res.body.name).toBe('weather-mcp')
+    // Single-entry endpoint returns full decrypted auth for execution
     expect(res.body.authConfig).toMatchObject({ type: 'http_headers', headers: { Authorization: 'Bearer secret-weather-token' } })
   })
 
