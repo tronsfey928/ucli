@@ -8,6 +8,8 @@ import type { ICacheAdapter } from '../cache/cache.interface'
 import type { ITokenRepo, Token } from '../storage/interfaces/repos.interface'
 
 const BLACKLIST_PREFIX = 'jti:blacklist:'
+/** Blacklist TTL for non-expiring tokens (30 days). */
+const DEFAULT_REVOCATION_TTL_SEC = 60 * 60 * 24 * 30
 
 export interface IssueTokenResult { token: Token; jwt: string }
 
@@ -44,7 +46,7 @@ export class TokensService {
 
     const ttlSec = token.expiresAt
       ? Math.max(1, Math.floor((token.expiresAt.getTime() - Date.now()) / 1000))
-      : 60 * 60 * 24 * 30
+      : DEFAULT_REVOCATION_TTL_SEC
     // Blacklist first so the token is immediately unusable even if the DB write fails
     await this.cache.set(`${BLACKLIST_PREFIX}${token.jti}`, true, ttlSec)
     await this.tokenRepo.revoke(tokenId, new Date())

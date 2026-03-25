@@ -8,6 +8,7 @@ interface Entry<T> {
 }
 
 const MAX_CACHE_SIZE = 100_000
+const EVICTION_HEADROOM_RATIO = 0.1
 
 @Injectable()
 export class MemoryCacheAdapter implements ICacheAdapter, OnModuleDestroy {
@@ -56,7 +57,7 @@ export class MemoryCacheAdapter implements ICacheAdapter, OnModuleDestroy {
 
   /** Evict least-recently-accessed entries to bring size back under the limit. */
   private evict(): void {
-    const toEvict = this.store.size - MAX_CACHE_SIZE + Math.floor(MAX_CACHE_SIZE * 0.1) // evict 10% headroom
+    const toEvict = this.store.size - MAX_CACHE_SIZE + Math.floor(MAX_CACHE_SIZE * EVICTION_HEADROOM_RATIO)
     const sorted = [...this.store.entries()].sort((a, b) => a[1].lastAccessedAt - b[1].lastAccessedAt)
     for (let i = 0; i < toEvict && i < sorted.length; i++) {
       this.store.delete(sorted[i][0])
