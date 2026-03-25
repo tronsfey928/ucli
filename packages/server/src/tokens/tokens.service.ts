@@ -42,10 +42,11 @@ export class TokensService {
     if (!token) throw new NotFoundException(`Token not found: ${tokenId}`)
     if (token.revokedAt) return
 
-    await this.tokenRepo.revoke(tokenId, new Date())
     const ttlSec = token.expiresAt
       ? Math.max(1, Math.floor((token.expiresAt.getTime() - Date.now()) / 1000))
-      : 60 * 60 * 24 * 365
+      : 60 * 60 * 24 * 30
+    // Blacklist first so the token is immediately unusable even if the DB write fails
     await this.cache.set(`${BLACKLIST_PREFIX}${token.jti}`, true, ttlSec)
+    await this.tokenRepo.revoke(tokenId, new Date())
   }
 }

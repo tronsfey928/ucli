@@ -36,7 +36,7 @@ export class McpEntryEntity {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date
 
-  @ManyToOne(() => GroupEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(() => GroupEntity, g => g.mcpEntries, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'group_id' })
   group!: GroupEntity
 }

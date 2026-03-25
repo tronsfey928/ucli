@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsEnum, IsOptional, IsUrl, Length, Matches, IsObject } from 'class-validator'
+import { IsString, IsUUID, IsEnum, IsOptional, IsUrl, IsNotEmpty, Length, Matches, IsObject, ValidateIf } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import type { McpAuthConfig } from '../../storage/interfaces/repos.interface'
 
@@ -24,12 +24,14 @@ export class CreateMcpDto {
   transport!: 'http' | 'stdio'
 
   @ApiPropertyOptional({ example: 'https://mcp.example.com/sse', description: 'Server URL (required for http transport)' })
-  @IsOptional()
+  @ValidateIf(o => o.transport === 'http')
+  @IsNotEmpty({ message: 'serverUrl is required when transport is http' })
   @IsUrl()
   serverUrl?: string
 
   @ApiPropertyOptional({ example: 'npx -y my-mcp-server', description: 'Command to run (required for stdio transport)' })
-  @IsOptional()
+  @ValidateIf(o => o.transport === 'stdio')
+  @IsNotEmpty({ message: 'command is required when transport is stdio' })
   @IsString()
   @Length(1, 2048)
   command?: string

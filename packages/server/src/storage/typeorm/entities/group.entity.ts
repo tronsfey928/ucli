@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm'
 import { TokenEntity } from './token.entity'
 import { OASEntryEntity } from './oas-entry.entity'
+import { McpEntryEntity } from './mcp-entry.entity'
 
 @Entity('groups')
 export class GroupEntity {
@@ -24,4 +25,7 @@ export class GroupEntity {
 
   @OneToMany(() => OASEntryEntity, o => o.group, { cascade: true })
   oasEntries!: OASEntryEntity[]
+
+  @OneToMany(() => McpEntryEntity, m => m.group, { cascade: true })
+  mcpEntries!: McpEntryEntity[]
 }

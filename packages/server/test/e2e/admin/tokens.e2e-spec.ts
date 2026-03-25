@@ -128,4 +128,25 @@ describe('Admin Tokens (e2e)', () => {
       expect(res.status).toBe(404)
     })
   })
+
+  describe('scope validation', () => {
+    it('POST /admin/groups/:id/tokens → 400 when scope is empty string', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/admin/groups/${groupId}/tokens`)
+        .set(ADMIN_HEADERS)
+        .send({ name: 'bad-scope', scopes: [''] })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('POST /admin/groups/:id/tokens → 201 with valid scopes', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/admin/groups/${groupId}/tokens`)
+        .set(ADMIN_HEADERS)
+        .send({ name: 'valid-scope-token', scopes: ['oas:read', 'mcp:read'] })
+
+      expect(res.status).toBe(201)
+      expect(res.body.token.scopes).toEqual(['oas:read', 'mcp:read'])
+    })
+  })
 })
