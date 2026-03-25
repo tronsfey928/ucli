@@ -64,6 +64,38 @@ function buildAuthEnv(entry: OASEntryPublic): Record<string, string> {
   }
 }
 
+/**
+ * Environment variable allowlist for subprocess execution.
+ * Only these variables (when present in the parent) are forwarded to the
+ * child process.  This prevents leakage of secrets such as cloud credentials,
+ * encryption keys, or database passwords that may be in the parent env.
+ */
+const SAFE_ENV_KEYS: readonly string[] = [
+  // System essentials
+  'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'TMPDIR', 'TMP', 'TEMP',
+  // Terminal / display
+  'TERM', 'COLORTERM', 'NO_COLOR', 'FORCE_COLOR', 'LANG', 'LC_ALL',
+  'LC_CTYPE', 'LC_MESSAGES', 'LC_COLLATE',
+  // Node.js
+  'NODE_ENV', 'NODE_PATH', 'NODE_OPTIONS', 'NODE_EXTRA_CA_CERTS',
+  // Network proxy (required for tools behind corporate proxies)
+  'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY',
+  'http_proxy', 'https_proxy', 'no_proxy',
+  // OS-specific
+  'SYSTEMROOT', 'COMSPEC', 'APPDATA', 'LOCALAPPDATA', 'PROGRAMFILES',
+  'XDG_RUNTIME_DIR', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME',
+]
+
+function buildSafeEnv(authEnv: Record<string, string>): Record<string, string> {
+  const safe: Record<string, string> = {}
+  for (const key of SAFE_ENV_KEYS) {
+    if (process.env[key] !== undefined) {
+      safe[key] = process.env[key]!
+    }
+  }
+  return { ...safe, ...authEnv }
+}
+
 export async function runOperation(opts: RunOptions): Promise<void> {
   const bin = resolveOpenapi2CliBin()
   const { entry, operationArgs, format, query } = opts
@@ -83,10 +115,7 @@ export async function runOperation(opts: RunOptions): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const child = spawn(process.execPath, [bin, ...args], {
       stdio: 'inherit',
-      env: {
-        ...process.env,
-        ...authEnv,  // inject auth — not visible to parent shell
-      },
+      env: buildSafeEnv(authEnv),
     })
 
     child.on('close', (code) => {

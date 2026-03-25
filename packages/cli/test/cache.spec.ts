@@ -56,4 +56,37 @@ describe('CLI cache', () => {
     const result = await readOASListCache()
     expect(result).toBeNull()
   })
+
+  it('strips credential secrets from cached entries (security)', async () => {
+    const { readOASListCache, writeOASListCache } = await import('../src/lib/cache.js')
+    const entries = [{
+      id: '1', name: 'svc', description: 'test', remoteUrl: 'https://example.com',
+      baseEndpoint: null, authType: 'bearer' as const,
+      authConfig: { type: 'bearer' as const, token: 'super-secret-token' },
+      cacheTtl: 3600,
+    }]
+
+    await writeOASListCache(entries, 3600)
+    const result = await readOASListCache()
+    expect(result).not.toBeNull()
+    // Only { type } should be persisted, no secret values
+    expect(result![0]!.authConfig).toEqual({ type: 'bearer' })
+    expect((result![0]!.authConfig as Record<string, unknown>)['token']).toBeUndefined()
+  })
+
+  it('writes cache files with restrictive permissions (security)', async () => {
+    const { writeOASListCache } = await import('../src/lib/cache.js')
+    const { stat } = await import('node:fs/promises')
+    const { join } = await import('node:path')
+    const entries = [{
+      id: '1', name: 'svc', description: 'test', remoteUrl: 'https://example.com',
+      baseEndpoint: null, authType: 'none' as const, authConfig: { type: 'none' as const }, cacheTtl: 3600,
+    }]
+
+    await writeOASListCache(entries, 3600)
+    const fileStat = await stat(join(tempDir, 'oas-list.json'))
+    // File should be owner-only readable (0o600 = 33216 in decimal, mode & 0o777 = 0o600)
+    const perms = fileStat.mode & 0o777
+    expect(perms).toBe(0o600)
+  })
 })
