@@ -1,6 +1,8 @@
 import Conf from 'conf'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
+import { chmodSync, mkdirSync } from 'node:fs'
+import { encryptValue, decryptValue, isEncrypted } from './lib/config-encryption.js'
 
 export interface CLIConfig {
   serverUrl: string
@@ -17,13 +19,34 @@ const conf = new Conf<CLIConfig>({
 
 export const cacheDir = join(homedir(), '.cache', 'ucli')
 
+/** Ensure the config file and its directory have restrictive permissions. */
+function hardenConfigPermissions(): void {
+  try {
+    const configPath = conf.path
+    const configDir = dirname(configPath)
+    mkdirSync(configDir, { recursive: true, mode: 0o700 })
+    chmodSync(configDir, 0o700)
+    chmodSync(configPath, 0o600)
+  } catch {
+    // Best-effort: permission enforcement may fail on some platforms (e.g., Windows)
+  }
+}
+
 export function getConfig(): CLIConfig {
   const serverUrl = conf.get('serverUrl')
-  const token = conf.get('token')
+  const rawToken = conf.get('token')
 
-  if (!serverUrl || !token) {
+  if (!serverUrl || !rawToken) {
     console.error('ucli is not configured. Run: ucli configure --server <url> --token <jwt>')
     process.exit(1)
+  }
+
+  const token = decryptValue(rawToken)
+
+  // Auto-migrate: re-encrypt legacy plaintext tokens on read
+  if (!isEncrypted(rawToken)) {
+    conf.set('token', encryptValue(token))
+    hardenConfigPermissions()
   }
 
   return { serverUrl, token }
@@ -31,7 +54,8 @@ export function getConfig(): CLIConfig {
 
 export function saveConfig(cfg: CLIConfig): void {
   conf.set('serverUrl', cfg.serverUrl)
-  conf.set('token', cfg.token)
+  conf.set('token', encryptValue(cfg.token))
+  hardenConfigPermissions()
 }
 
 export function isConfigured(): boolean {
