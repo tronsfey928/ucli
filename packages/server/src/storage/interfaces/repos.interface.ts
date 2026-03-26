@@ -103,7 +103,7 @@ export interface IOASRepo {
   findAll(): Promise<OASEntry[]>
   findByGroup(groupId: string): Promise<OASEntry[]>
   findById(id: string): Promise<OASEntry | null>
-  findByName(name: string): Promise<OASEntry | null>
+  findByName(name: string, groupId?: string): Promise<OASEntry | null>
   update(id: string, data: UpdateOASInput): Promise<OASEntry>
   delete(id: string): Promise<void>
 }
@@ -155,7 +155,7 @@ export interface IMCPRepo {
   findAll(): Promise<McpEntry[]>
   findByGroup(groupId: string): Promise<McpEntry[]>
   findById(id: string): Promise<McpEntry | null>
-  findByName(name: string): Promise<McpEntry | null>
+  findByName(name: string, groupId?: string): Promise<McpEntry | null>
   update(id: string, data: UpdateMcpInput): Promise<McpEntry>
   delete(id: string): Promise<void>
 }

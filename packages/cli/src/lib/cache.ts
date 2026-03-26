@@ -2,7 +2,7 @@
  * Local file cache for OAS entries.
  * Stored at ~/.cache/oas-cli/<name>.json with TTL metadata.
  */
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, unlink } from 'node:fs/promises'
 import { join } from 'node:path'
 import { cacheDir } from '../config.js'
 import type { OASEntryPublic } from './server-client.js'
@@ -39,7 +39,7 @@ export async function writeOASListCache(entries: OASEntryPublic[], ttlSec: numbe
 
 export async function clearOASListCache(): Promise<void> {
   try {
-    await writeFile(LIST_CACHE_FILE, '{}', 'utf8')
+    await unlink(LIST_CACHE_FILE)
   } catch {
     // ignore if not found
   }

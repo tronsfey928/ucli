@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { MCP_REPO } from '../storage/storage.tokens'
 import { EncryptionService } from '../crypto/encryption.service'
 import type { IMCPRepo, McpEntry, CreateMcpInput, UpdateMcpInput, McpAuthConfig } from '../storage/interfaces/repos.interface'
@@ -11,7 +11,8 @@ export class MCPService {
   ) {}
 
   async create(data: CreateMcpInput): Promise<McpEntry> {
-    const existing = await this.mcpRepo.findByName(data.name)
+    this.validateTransport(data.transport, data.serverUrl, data.command)
+    const existing = await this.mcpRepo.findByName(data.name, data.groupId)
     if (existing) throw new ConflictException(`MCP server name already exists: ${data.name}`)
     const entry = await this.mcpRepo.create({
       ...data,
@@ -36,7 +37,7 @@ export class MCPService {
   }
 
   async findByName(name: string, groupId?: string): Promise<McpEntry> {
-    const entry = await this.mcpRepo.findByName(name)
+    const entry = await this.mcpRepo.findByName(name, groupId)
     if (!entry) throw new NotFoundException(`MCP server not found: ${name}`)
     if (groupId && entry.groupId !== groupId) throw new NotFoundException(`MCP server not found: ${name}`)
     if (groupId && !entry.enabled) throw new NotFoundException(`MCP server not found: ${name}`)
@@ -44,6 +45,21 @@ export class MCPService {
   }
 
   async update(id: string, data: UpdateMcpInput): Promise<McpEntry> {
+    const current = await this.mcpRepo.findById(id)
+    if (!current) throw new NotFoundException(`MCP server not found: ${id}`)
+
+    // Validate transport configuration against merged state
+    const transport = data.transport ?? current.transport
+    const serverUrl = data.serverUrl !== undefined ? data.serverUrl : current.serverUrl
+    const command = data.command !== undefined ? data.command : current.command
+    this.validateTransport(transport, serverUrl, command)
+
+    // Validate name uniqueness within the same group on rename
+    if (data.name && data.name !== current.name) {
+      const conflict = await this.mcpRepo.findByName(data.name, current.groupId)
+      if (conflict) throw new ConflictException(`MCP server name already exists: ${data.name}`)
+    }
+
     const updateData = Object.fromEntries(
       Object.entries(data).filter(([, v]) => v !== undefined)
     ) as UpdateMcpInput
@@ -60,5 +76,14 @@ export class MCPService {
 
   private decrypt(entry: McpEntry): McpEntry {
     return { ...entry, authConfig: this.encryption.decrypt(entry.authConfig as unknown as string) as McpAuthConfig }
+  }
+
+  private validateTransport(transport: string, serverUrl?: string | null, command?: string | null): void {
+    if (transport === 'http' && !serverUrl) {
+      throw new BadRequestException('serverUrl is required for http transport')
+    }
+    if (transport === 'stdio' && !command) {
+      throw new BadRequestException('command is required for stdio transport')
+    }
   }
 }

@@ -42,8 +42,10 @@ export class TypeORMOASRepo implements IOASRepo {
     return e ? toEntry(e) : null
   }
 
-  async findByName(name: string): Promise<OASEntry | null> {
-    const e = await this.repo.findOneBy({ name })
+  async findByName(name: string, groupId?: string): Promise<OASEntry | null> {
+    const where: Record<string, string> = { name }
+    if (groupId) where.groupId = groupId
+    const e = await this.repo.findOneBy(where)
     return e ? toEntry(e) : null
   }
 

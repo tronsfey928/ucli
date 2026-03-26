@@ -40,8 +40,10 @@ export class TypeORMMCPRepo implements IMCPRepo {
     return e ? toEntry(e) : null
   }
 
-  async findByName(name: string): Promise<McpEntry | null> {
-    const e = await this.repo.findOneBy({ name })
+  async findByName(name: string, groupId?: string): Promise<McpEntry | null> {
+    const where: Record<string, string> = { name }
+    if (groupId) where.groupId = groupId
+    const e = await this.repo.findOneBy(where)
     return e ? toEntry(e) : null
   }
 

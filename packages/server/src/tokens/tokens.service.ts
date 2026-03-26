@@ -44,7 +44,7 @@ export class TokensService {
 
     await this.tokenRepo.revoke(tokenId, new Date())
     const ttlSec = token.expiresAt
-      ? Math.max(1, Math.floor((token.expiresAt.getTime() - Date.now()) / 1000))
+      ? Math.max(60, Math.floor((token.expiresAt.getTime() - Date.now()) / 1000))
       : 60 * 60 * 24 * 365
     await this.cache.set(`${BLACKLIST_PREFIX}${token.jti}`, true, ttlSec)
   }

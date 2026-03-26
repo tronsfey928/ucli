@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm'
 import { GroupEntity } from './group.entity'
 
 @Entity('oas_entries')
+@Unique(['groupId', 'name'])
 export class OASEntryEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string
@@ -9,7 +10,7 @@ export class OASEntryEntity {
   @Column({ name: 'group_id' })
   groupId!: string
 
-  @Column({ length: 100, unique: true })
+  @Column({ length: 100 })
   name!: string
 
   @Column({ type: 'text', default: '' })
