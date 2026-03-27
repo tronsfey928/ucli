@@ -10,9 +10,14 @@ import {
   DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from '@/components/ui/alert-dialog'
+import {
   Table, TableBody, TableCell, TableHead,
   TableHeader, TableRow,
 } from '@/components/ui/table'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { formatDate } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
 
@@ -115,14 +120,19 @@ export default function GroupsPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-xs">{formatDate(g.createdAt)}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => setDeleteTarget(g)}
-                    >
-                      <i className="ri-delete-bin-line" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteTarget(g)}
+                        >
+                          <i className="ri-delete-bin-line" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t('common_delete')}</TooltipContent>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
@@ -172,23 +182,27 @@ export default function GroupsPage() {
       </Dialog>
 
       {/* Delete confirm dialog */}
-      <Dialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('groups_delete_title')}</DialogTitle>
-            <DialogDescription>
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('groups_delete_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
               {t('groups_delete_warning')} <strong>{deleteTarget?.name}</strong> {t('groups_delete_desc')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common_cancel')}</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common_cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
               {deleting && <i className="ri-loader-4-line animate-spin" />}
               {t('common_delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

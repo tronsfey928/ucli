@@ -175,6 +175,7 @@ export const en = {
 
   // Common
   common_cancel: 'Cancel',
+  common_edit: 'Edit',
   common_delete: 'Delete',
   common_create: 'Create',
   common_save: 'Save changes',

@@ -10,10 +10,16 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from '@/components/ui/alert-dialog'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
@@ -239,17 +245,27 @@ export default function OASPage() {
                   <TableCell className="text-xs text-muted-foreground">{formatDate(entry.updatedAt)}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}>
-                        <i className="ri-edit-line" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteTarget(entry)}
-                      >
-                        <i className="ri-delete-bin-line" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(entry)}>
+                            <i className="ri-edit-line" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('common_edit')}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteTarget(entry)}
+                          >
+                            <i className="ri-delete-bin-line" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{t('common_delete')}</TooltipContent>
+                      </Tooltip>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -371,12 +387,10 @@ export default function OASPage() {
 
             {mode === 'edit' && (
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+                <Switch
                   id="oenabled"
                   checked={form.enabled}
-                  onChange={e => setField('enabled', e.target.checked)}
-                  className="h-4 w-4 rounded"
+                  onCheckedChange={v => setField('enabled', v)}
                 />
                 <Label htmlFor="oenabled" className="cursor-pointer">{t('oas_field_enabled')}</Label>
               </div>
@@ -401,23 +415,27 @@ export default function OASPage() {
       </Dialog>
 
       {/* Delete confirm */}
-      <Dialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('oas_delete_title')}</DialogTitle>
-            <DialogDescription>
+      <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('oas_delete_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
               This will permanently delete <strong>{deleteTarget?.name}</strong>. {t('oas_delete_desc')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common_cancel')}</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common_cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
               {deleting && <i className="ri-loader-4-line animate-spin" />}
               {t('common_delete')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

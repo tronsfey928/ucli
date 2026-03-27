@@ -177,6 +177,7 @@ export const zh: Record<TranslationKey, string> = {
 
   // 通用
   common_cancel: '取消',
+  common_edit: '编辑',
   common_delete: '删除',
   common_create: '创建',
   common_save: '保存更改',

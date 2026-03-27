@@ -11,6 +11,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
   DialogFooter, DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from '@/components/ui/alert-dialog'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDate } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
@@ -191,14 +196,19 @@ export default function TokensPage() {
                         <TableCell className="text-xs text-muted-foreground">{formatDate(tk.createdAt)}</TableCell>
                         <TableCell>
                           {!tk.revokedAt && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => setRevokeTarget(tk)}
-                            >
-                              <i className="ri-forbid-line" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => setRevokeTarget(tk)}
+                                >
+                                  <i className="ri-forbid-line" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('common_revoke')}</TooltipContent>
+                            </Tooltip>
                           )}
                         </TableCell>
                       </TableRow>
@@ -286,23 +296,27 @@ export default function TokensPage() {
       </Dialog>
 
       {/* Revoke confirm */}
-      <Dialog open={!!revokeTarget} onOpenChange={open => !open && setRevokeTarget(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('tokens_revoke_title')}</DialogTitle>
-            <DialogDescription>
+      <AlertDialog open={!!revokeTarget} onOpenChange={open => !open && setRevokeTarget(null)}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('tokens_revoke_title')}</AlertDialogTitle>
+            <AlertDialogDescription>
               {t('tokens_revoke_desc_prefix')} <strong>{revokeTarget?.name}</strong>{t('tokens_revoke_desc_suffix')}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRevokeTarget(null)}>{t('common_cancel')}</Button>
-            <Button variant="destructive" onClick={handleRevoke} disabled={revoking}>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common_cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleRevoke}
+              disabled={revoking}
+            >
               {revoking && <i className="ri-loader-4-line animate-spin" />}
               {t('common_revoke')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
