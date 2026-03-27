@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // OpenTelemetry MUST be initialized before any other imports so that
 // auto-instrumentation can patch modules (http, express, pg, ioredis…)
 import './otel/otel'
