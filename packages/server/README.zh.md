@@ -112,10 +112,22 @@ ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY ucli-server
 | `DB_TYPE` | 驱动 | 说明 |
 |-----------|------|------|
 | `memory` | — | 默认。无持久化，重启后数据丢失。 |
-| `postgres` | `pg` | PostgreSQL 12+ |
+| `postgres` | `pg` | PostgreSQL 13+ |
 | `mysql` | `mysql2` | MySQL 5.7+ / MariaDB 10.3+ |
 
-首次运行时自动建表。
+**开发环境**（`NODE_ENV != production`）下，TypeORM `synchronize: true` 会自动建表。
+
+**生产环境**需手动初始化数据库结构，使用项目提供的 SQL 文件：
+
+```bash
+# PostgreSQL
+psql -U oas_gateway -d oas_gateway -f packages/server/db/init.postgres.sql
+
+# MySQL
+mysql -u<用户名> -p<密码> oas_gateway < packages/server/db/init.mysql.sql
+```
+
+初始化完成后启动服务：
 
 ```bash
 # PostgreSQL
