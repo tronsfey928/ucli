@@ -5,7 +5,12 @@ import type { McpEntry, IMCPRepo, CreateMcpInput, UpdateMcpInput } from '../inte
 @Injectable()
 export class MemoryMCPRepo implements IMCPRepo {
   private store = new Map<string, McpEntry>()
+  /** Key: `${groupId}:${name}` → entry id */
   private nameIndex = new Map<string, string>()
+
+  private nameKey(groupId: string, name: string): string {
+    return `${groupId}:${name}`
+  }
 
   async create(data: CreateMcpInput): Promise<McpEntry> {
     const now = new Date()
@@ -16,7 +21,7 @@ export class MemoryMCPRepo implements IMCPRepo {
       authConfig: data.authConfig, enabled: true, createdAt: now, updatedAt: now,
     }
     this.store.set(entry.id, entry)
-    this.nameIndex.set(entry.name, entry.id)
+    this.nameIndex.set(this.nameKey(entry.groupId, entry.name), entry.id)
     return entry
   }
 
@@ -28,17 +33,23 @@ export class MemoryMCPRepo implements IMCPRepo {
 
   async findById(id: string): Promise<McpEntry | null> { return this.store.get(id) ?? null }
 
-  async findByName(name: string): Promise<McpEntry | null> {
-    const id = this.nameIndex.get(name)
-    return id ? (this.store.get(id) ?? null) : null
+  async findByName(name: string, groupId?: string): Promise<McpEntry | null> {
+    if (groupId) {
+      const id = this.nameIndex.get(this.nameKey(groupId, name))
+      return id ? (this.store.get(id) ?? null) : null
+    }
+    for (const entry of this.store.values()) {
+      if (entry.name === name) return entry
+    }
+    return null
   }
 
   async update(id: string, data: UpdateMcpInput): Promise<McpEntry> {
     const entry = this.store.get(id)
     if (!entry) throw Object.assign(new Error(`McpEntry not found: ${id}`), { code: 'NOT_FOUND' })
     if (data.name && data.name !== entry.name) {
-      this.nameIndex.delete(entry.name)
-      this.nameIndex.set(data.name, id)
+      this.nameIndex.delete(this.nameKey(entry.groupId, entry.name))
+      this.nameIndex.set(this.nameKey(entry.groupId, data.name), id)
     }
     const updated: McpEntry = {
       ...entry, ...data,
@@ -52,6 +63,6 @@ export class MemoryMCPRepo implements IMCPRepo {
 
   async delete(id: string): Promise<void> {
     const e = this.store.get(id)
-    if (e) { this.nameIndex.delete(e.name); this.store.delete(id) }
+    if (e) { this.nameIndex.delete(this.nameKey(e.groupId, e.name)); this.store.delete(id) }
   }
 }

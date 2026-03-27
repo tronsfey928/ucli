@@ -45,7 +45,7 @@ export class TokensService {
     if (token.revokedAt) return
 
     const ttlSec = token.expiresAt
-      ? Math.max(1, Math.floor((token.expiresAt.getTime() - Date.now()) / 1000))
+      ? Math.max(60, Math.floor((token.expiresAt.getTime() - Date.now()) / 1000))
       : DEFAULT_REVOCATION_TTL_SEC
     // Blacklist first so the token is immediately unusable even if the DB write fails
     await this.cache.set(`${BLACKLIST_PREFIX}${token.jti}`, true, ttlSec)

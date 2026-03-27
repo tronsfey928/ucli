@@ -5,7 +5,7 @@
  * Security: authConfig credential values are stripped before writing.
  * Only { type } is persisted — full secrets are never written to disk.
  */
-import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, unlink, chmod } from 'node:fs/promises'
 import { join } from 'node:path'
 import { cacheDir } from '../config.js'
 import type { OASEntryPublic } from './server-client.js'
@@ -51,7 +51,7 @@ export async function writeOASListCache(entries: OASEntryPublic[], ttlSec: numbe
 
 export async function clearOASListCache(): Promise<void> {
   try {
-    await writeFile(LIST_CACHE_FILE, '{}', { encoding: 'utf8', mode: 0o600 })
+    await unlink(LIST_CACHE_FILE)
   } catch {
     // ignore if not found
   }

@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { OAS_REPO } from '../storage/storage.tokens'
 import { EncryptionService } from '../crypto/encryption.service'
 import type { IOASRepo, OASEntry, CreateOASInput, UpdateOASInput, AuthConfig } from '../storage/interfaces/repos.interface'
@@ -11,7 +11,7 @@ export class OASService {
   ) {}
 
   async create(data: CreateOASInput): Promise<OASEntry> {
-    const existing = await this.oasRepo.findByName(data.name)
+    const existing = await this.oasRepo.findByName(data.name, data.groupId)
     if (existing) throw new ConflictException(`OAS name already exists: ${data.name}`)
     const entry = await this.oasRepo.create({
       ...data,
@@ -30,7 +30,7 @@ export class OASService {
   }
 
   async findByName(name: string, groupId?: string): Promise<OASEntry> {
-    const entry = await this.oasRepo.findByName(name)
+    const entry = await this.oasRepo.findByName(name, groupId)
     if (!entry) throw new NotFoundException(`OAS not found: ${name}`)
     if (groupId && entry.groupId !== groupId) throw new NotFoundException(`OAS not found: ${name}`)
     if (groupId && !entry.enabled) throw new NotFoundException(`OAS not found: ${name}`)
@@ -44,6 +44,15 @@ export class OASService {
   }
 
   async update(id: string, data: UpdateOASInput): Promise<OASEntry> {
+    // Validate name uniqueness within the same group on rename
+    if (data.name) {
+      const current = await this.oasRepo.findById(id)
+      if (!current) throw new NotFoundException(`OAS not found: ${id}`)
+      if (data.name !== current.name) {
+        const conflict = await this.oasRepo.findByName(data.name, current.groupId)
+        if (conflict) throw new ConflictException(`OAS name already exists: ${data.name}`)
+      }
+    }
     // Strip undefined values so partial updates don't overwrite stored fields
     const updateData = Object.fromEntries(
       Object.entries(data).filter(([, v]) => v !== undefined)

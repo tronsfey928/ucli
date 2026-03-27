@@ -61,7 +61,8 @@ export function registerRun(program: Command): void {
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
             if (v === undefined || v === null) continue
-            operationArgs.push(`--${k}`, String(v))
+            const strVal = typeof v === 'object' ? JSON.stringify(v) : String(v)
+            operationArgs.push(`--${k}`, strVal)
           }
         }
       }

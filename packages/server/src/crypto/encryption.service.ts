@@ -31,6 +31,10 @@ export class EncryptionService {
     const key = this.getKey()
     const combined = Buffer.from(encoded, 'base64url')
 
+    if (combined.length < IV_LENGTH + TAG_LENGTH + 1) {
+      throw new InternalServerErrorException('Failed to decrypt auth configuration — data may be corrupted')
+    }
+
     const iv = combined.subarray(0, IV_LENGTH)
     const tag = combined.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH)
     const ciphertext = combined.subarray(IV_LENGTH + TAG_LENGTH)
