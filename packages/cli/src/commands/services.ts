@@ -43,7 +43,12 @@ export function registerServices(program: Command): void {
       }
 
       if (format === 'json') {
-        console.log(JSON.stringify(entries, null, 2))
+        // Strip authConfig secrets from JSON output — only expose { type }
+        const safe = entries.map(({ authConfig, ...rest }) => ({
+          ...rest,
+          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
+        }))
+        console.log(JSON.stringify(safe, null, 2))
         return
       }
 
@@ -79,10 +84,14 @@ export function registerServices(program: Command): void {
       const help = await getServiceHelp(entry)
       const format = (opts.format ?? 'table').toLowerCase()
       if (format === 'json') {
-        console.log(JSON.stringify({
-          ...entry,
+        // Strip authConfig secrets from JSON output
+        const { authConfig, ...rest } = entry
+        const safe = {
+          ...rest,
+          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
           operationsHelp: help,
-        }, null, 2))
+        }
+        console.log(JSON.stringify(safe, null, 2))
         return
       }
 

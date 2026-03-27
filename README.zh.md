@@ -15,7 +15,7 @@
 
 ## ucli 是什么？
 
-**ucli** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 集中管理系统。
+**ucli** 是一个基于客户端/服务端架构的 [OpenAPI Specification](https://swagger.io/specification/) 与 [MCP Server](https://modelcontextprotocol.io/)（Model Context Protocol）集中管理系统。
 
 - **服务端**（`@tronsfey/ucli-server`）以 **AES-256-GCM** 加密存储 OpenAPI 规范及 **MCP 服务器配置**（Model Context Protocol），并签发 **RS256 群组 JWT**。
 - **CLI**（`@tronsfey/ucli`）让 AI 智能体无需接触凭据即可发现并调用 API 操作和 MCP 工具——认证信息在运行时以环境变量或请求头方式注入，**永不落盘**。
@@ -105,7 +105,7 @@ sequenceDiagram
 ## 仓库结构
 
 ```
-fantastic-potato/
+ucli/
 ├── README.md                        # 英文文档
 ├── README.zh.md                     # 本文件（中文）
 ├── CLAUDE.md                        # AI 助手指南
@@ -276,6 +276,41 @@ tags: [api, openapi, mcp, tools]
 ```
 
 智能体会自动完成服务发现、操作查找和凭据注入——凭据**永远不会暴露**给智能体。
+
+## 在 Claude Desktop 中使用（macOS）
+
+macOS 上的 [Claude Desktop](https://claude.ai/download) 原生支持 MCP 服务器。你可以将 ucli 中注册的任意 MCP 服务器直接暴露给 Claude Desktop 使用。
+
+### 第一步 — 安装并配置 ucli
+
+```bash
+npm install -g @tronsfey/ucli
+ucli configure --server https://your-ucli-server.example.com --token <group-jwt>
+```
+
+### 第二步 — 编辑 Claude Desktop 配置文件
+
+打开 `~/Library/Application Support/Claude/claude_desktop_config.json`（不存在则新建），在 `mcpServers` 字段下添加 MCP 服务器：
+
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "ucli",
+      "args": ["mcp", "proxy", "weather"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+将 `"weather"` 替换为你在 ucli 中注册的 MCP 服务器名称（使用 `ucli mcp list` 查看已注册服务器列表）。
+
+### 第三步 — 重启 Claude Desktop
+
+退出并重新启动 Claude Desktop，已注册的 MCP 工具会自动出现在工具选择器中。
+
+> **凭据永不暴露。** ucli 在运行时以 headers/env 方式注入认证信息——Claude Desktop 永远看不到你的 API 密钥或令牌。
 
 ## 子包说明
 

@@ -6,13 +6,27 @@
  */
 import type { McpEntryPublic } from './server-client.js'
 
-// Dynamic imports to avoid top-level await in ESM
+/**
+ * Resolve a named export from a module that may be CJS-wrapped (exports live
+ * under `module.default`) or a plain ESM module (named exports at top level).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function resolve(mod: any, name: string): unknown {
+  if (typeof mod[name] === 'function') return mod[name]
+  if (mod.default && typeof mod.default[name] === 'function') return mod.default[name]
+  throw new Error(`Cannot resolve export "${name}" from module`)
+}
+
 async function getMcp2cli() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientMod = await import('@tronsfey/mcp2cli/dist/client/index.js') as any
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const runnerMod = await import('@tronsfey/mcp2cli/dist/runner/index.js') as any
-  return { createMcpClient: clientMod.createMcpClient, getTools: runnerMod.getTools, runTool: runnerMod.runTool }
+  return {
+    createMcpClient: resolve(clientMod, 'createMcpClient') as (...args: unknown[]) => Promise<unknown>,
+    getTools: resolve(runnerMod, 'getTools') as (...args: unknown[]) => Promise<{ name: string; description?: string }[]>,
+    runTool: resolve(runnerMod, 'runTool') as (...args: unknown[]) => Promise<void>,
+  }
 }
 
 async function closeClient(client: unknown): Promise<void> {

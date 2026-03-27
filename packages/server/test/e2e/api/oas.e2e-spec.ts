@@ -37,7 +37,7 @@ describe('Client OAS API (e2e)', () => {
 
   afterAll(async () => { await app.close() })
 
-  it('GET /api/v1/oas → 200 returns group A OAS entries', async () => {
+  it('GET /api/v1/oas → 200 returns group A OAS entries with redacted authConfig', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/oas')
       .set('Authorization', `Bearer ${groupAToken}`)
@@ -46,8 +46,9 @@ describe('Client OAS API (e2e)', () => {
     expect(Array.isArray(res.body)).toBe(true)
     expect(res.body.length).toBe(1)
     expect(res.body[0].name).toBe('petstore')
-    // authConfig is decrypted and returned to CLI
-    expect(res.body[0].authConfig).toMatchObject({ type: 'bearer', token: 'secret-token' })
+    // List endpoint redacts credentials — only type is exposed
+    expect(res.body[0].authConfig).toEqual({ type: 'bearer' })
+    expect(res.body[0].authConfig.token).toBeUndefined()
   })
 
   it('GET /api/v1/oas → group B sees empty list (group isolation)', async () => {
@@ -59,13 +60,15 @@ describe('Client OAS API (e2e)', () => {
     expect(res.body).toEqual([])
   })
 
-  it('GET /api/v1/oas/:name → 200 returns named entry', async () => {
+  it('GET /api/v1/oas/:name → 200 returns named entry with full decrypted authConfig', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/oas/petstore')
       .set('Authorization', `Bearer ${groupAToken}`)
 
     expect(res.status).toBe(200)
     expect(res.body.name).toBe('petstore')
+    // Single-entry endpoint returns full decrypted auth for execution
+    expect(res.body.authConfig).toMatchObject({ type: 'bearer', token: 'secret-token' })
   })
 
   it('GET /api/v1/oas/:name → 404 for unknown name', async () => {

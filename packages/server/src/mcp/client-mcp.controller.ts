@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { GroupTokenGuard } from '../auth/group-token.guard'
 import { JwtPayloadParam } from '../auth/decorators/jwt-payload.decorator'
 import type { JwtPayload } from '../crypto/jwt.service'
+import type { McpEntry } from '../storage/interfaces/repos.interface'
 import { MCPService } from './mcp.service'
 
 @ApiTags('Client / MCP')
@@ -13,11 +14,12 @@ export class ClientMCPController {
   constructor(private readonly mcpService: MCPService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List MCP servers for the authenticated group' })
-  @ApiResponse({ status: 200, description: 'List of MCP servers for the group (decrypted auth)' })
+  @ApiOperation({ summary: 'List MCP servers for the authenticated group (credentials redacted)' })
+  @ApiResponse({ status: 200, description: 'List of MCP servers with authConfig redacted to type only' })
   @ApiResponse({ status: 401, description: 'Invalid or expired token' })
-  findByGroup(@JwtPayloadParam() payload: JwtPayload) {
-    return this.mcpService.findByGroup(payload.sub)
+  async findByGroup(@JwtPayloadParam() payload: JwtPayload) {
+    const entries = await this.mcpService.findByGroup(payload.sub)
+    return entries.map((e) => ClientMCPController.redact(e))
   }
 
   @Get(':name')
@@ -27,5 +29,10 @@ export class ClientMCPController {
   @ApiResponse({ status: 404, description: 'MCP server not found' })
   findByName(@Param('name') name: string, @JwtPayloadParam() payload: JwtPayload) {
     return this.mcpService.findByName(name, payload.sub)
+  }
+
+  /** Strip credential values from authConfig — only expose { type } for discovery. */
+  private static redact(entry: McpEntry): Omit<McpEntry, 'authConfig'> & { authConfig: { type: string } } {
+    return { ...entry, authConfig: { type: entry.authConfig.type } }
   }
 }

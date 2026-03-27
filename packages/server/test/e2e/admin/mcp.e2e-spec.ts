@@ -106,6 +106,55 @@ describe('Admin MCP (e2e)', () => {
     expect(res.status).toBe(401)
   })
 
+  it('POST /admin/mcp → 400 when http transport missing serverUrl', async () => {
+    const payload = {
+      groupId,
+      name: `mcp-http-nourl-${Date.now()}`,
+      description: 'Missing serverUrl',
+      transport: 'http',
+      authConfig: { type: 'none' },
+    }
+    const res = await request(app.getHttpServer())
+      .post('/admin/mcp')
+      .set(ADMIN_HEADERS)
+      .send(payload)
+
+    expect(res.status).toBe(400)
+  })
+
+  it('POST /admin/mcp → 400 when stdio transport missing command', async () => {
+    const payload = {
+      groupId,
+      name: `mcp-stdio-nocmd-${Date.now()}`,
+      description: 'Missing command',
+      transport: 'stdio',
+      authConfig: { type: 'none' },
+    }
+    const res = await request(app.getHttpServer())
+      .post('/admin/mcp')
+      .set(ADMIN_HEADERS)
+      .send(payload)
+
+    expect(res.status).toBe(400)
+  })
+
+  it('POST /admin/mcp → 201 when http transport has serverUrl but no command', async () => {
+    const payload = {
+      groupId,
+      name: `mcp-http-ok-${Date.now()}`,
+      description: 'Http with serverUrl only',
+      transport: 'http',
+      serverUrl: 'https://mcp.example.com/sse',
+      authConfig: { type: 'none' },
+    }
+    const res = await request(app.getHttpServer())
+      .post('/admin/mcp')
+      .set(ADMIN_HEADERS)
+      .send(payload)
+
+    expect(res.status).toBe(201)
+  })
+
   it('POST /admin/mcp with stdio transport → 201 using command field', async () => {
     const payload = {
       groupId,

@@ -15,7 +15,7 @@
 
 ## What is ucli?
 
-**ucli** is a centralized [OpenAPI Specification](https://swagger.io/specification/) management system built with a client/server architecture.
+**ucli** is a centralized [OpenAPI Specification](https://swagger.io/specification/) and [MCP Server](https://modelcontextprotocol.io/) management system built with a client/server architecture.
 
 - The **server** (`@tronsfey/ucli-server`) stores OpenAPI specs and **MCP server configs** (Model Context Protocol) with **encrypted auth configs** (AES-256-GCM) and issues **group-scoped JWTs** (RS256).
 - The **CLI** (`@tronsfey/ucli`) lets AI agents discover and invoke API operations and MCP tools **without ever seeing credentials** — auth is injected as environment variables or headers at runtime.
@@ -105,7 +105,7 @@ sequenceDiagram
 ## Repository Structure
 
 ```
-fantastic-potato/
+ucli/
 ├── README.md                        # This file (English)
 ├── README.zh.md                     # Chinese docs
 ├── CLAUDE.md                        # AI assistant guidance
@@ -276,6 +276,41 @@ Once configured, the OpenClaw agent can:
 ```
 
 The agent handles service discovery, operation lookup, and credential injection automatically — credentials are **never exposed** to the agent.
+
+## Using with Claude Desktop (macOS)
+
+[Claude Desktop](https://claude.ai/download) on macOS supports MCP servers natively. You can expose any MCP server registered in ucli directly to Claude Desktop.
+
+### Step 1 — Install and configure ucli
+
+```bash
+npm install -g @tronsfey/ucli
+ucli configure --server https://your-ucli-server.example.com --token <group-jwt>
+```
+
+### Step 2 — Edit Claude Desktop config
+
+Open `~/Library/Application Support/Claude/claude_desktop_config.json` (create it if it does not exist) and add your MCP servers under `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "weather": {
+      "command": "ucli",
+      "args": ["mcp", "proxy", "weather"],
+      "transport": "stdio"
+    }
+  }
+}
+```
+
+Replace `"weather"` with the name of any MCP server you have registered in ucli (`ucli mcp list` to see available servers).
+
+### Step 3 — Restart Claude Desktop
+
+Quit and relaunch Claude Desktop. The registered MCP tools will appear automatically in the tool selector.
+
+> **Credentials are never exposed.** ucli injects auth headers/env at runtime — Claude Desktop never sees your API keys or tokens.
 
 ## Packages
 
