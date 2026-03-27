@@ -2,6 +2,7 @@ import type { Command } from 'commander'
 import { getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { runOperation } from '../lib/oas-runner.js'
+import { ExitCode } from '../lib/exit-codes.js'
 
 export function registerRun(program: Command): void {
   program
@@ -21,13 +22,13 @@ export function registerRun(program: Command): void {
     ) => {
       if (serviceArg && opts.service && serviceArg !== opts.service) {
         console.error(`Conflicting service values: positional "${serviceArg}" and --service "${opts.service}". Use either the positional argument or --service flag, not both.`)
-        process.exit(1)
+        process.exit(ExitCode.USAGE_ERROR)
       }
 
       const service = opts.service ?? serviceArg
       if (!service) {
         console.error('Missing service name. Use positional <service> or --service <name>.')
-        process.exit(1)
+        process.exit(ExitCode.USAGE_ERROR)
       }
 
       const cfg = getConfig()
@@ -39,7 +40,7 @@ export function registerRun(program: Command): void {
       } catch {
         console.error(`Unknown service: ${service}`)
         console.error('Run `ucli services list` to see available services.')
-        process.exit(1)
+        process.exit(ExitCode.NOT_FOUND)
       }
 
       // Collect extra args (pass-through to openapi2cli)
@@ -56,7 +57,7 @@ export function registerRun(program: Command): void {
           parsed = JSON.parse(opts.params)
         } catch {
           console.error('Invalid --params JSON. Example: --params \'{"petId": 1}\'')
-          process.exit(1)
+          process.exit(ExitCode.USAGE_ERROR)
         }
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
@@ -83,7 +84,7 @@ export function registerRun(program: Command): void {
         })
       } catch (err) {
         console.error('Operation failed:', (err as Error).message)
-        process.exit(1)
+        process.exit(ExitCode.GENERAL_ERROR)
       }
     })
 }

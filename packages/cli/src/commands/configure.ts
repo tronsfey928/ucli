@@ -1,6 +1,7 @@
 import type { Command } from 'commander'
 import { saveConfig, isConfigured } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
+import { ExitCode } from '../lib/exit-codes.js'
 
 export function registerConfigure(program: Command): void {
   program
@@ -25,7 +26,7 @@ export function registerConfigure(program: Command): void {
       } catch (err) {
         console.error('Connection failed:', (err as Error).message)
         console.error('Please check the server URL and token.')
-        process.exit(1)
+        process.exit(ExitCode.CONNECTIVITY_ERROR)
       }
     })
 }

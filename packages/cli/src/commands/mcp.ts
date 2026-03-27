@@ -2,6 +2,8 @@ import type { Command } from 'commander'
 import { getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { listMcpTools, runMcpTool } from '../lib/mcp-runner.js'
+import { toYaml } from '../lib/yaml.js'
+import { ExitCode } from '../lib/exit-codes.js'
 
 export function registerMcp(program: Command): void {
   const mcp = program
@@ -34,6 +36,15 @@ export function registerMcp(program: Command): void {
         return
       }
 
+      if (format === 'yaml') {
+        const safe = entries.map(({ authConfig, ...rest }) => ({
+          ...rest,
+          authConfig: { type: authConfig.type },
+        }))
+        console.log(toYaml(safe))
+        return
+      }
+
       const nameWidth = Math.max(10, ...entries.map(e => e.name.length))
       console.log(`\n${'SERVER'.padEnd(nameWidth)}  TRANSPORT  DESCRIPTION`)
       console.log(`${'-'.repeat(nameWidth)}  ---------  ${'-'.repeat(40)}`)
@@ -48,7 +59,7 @@ export function registerMcp(program: Command): void {
   mcp
     .command('tools <server>')
     .description('List tools available on a MCP server')
-    .option('--format <fmt>', 'Output format: table | json', 'table')
+    .option('--format <fmt>', 'Output format: table | json | yaml', 'table')
     .action(async (serverName: string, opts: { format?: string }) => {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
@@ -59,7 +70,7 @@ export function registerMcp(program: Command): void {
       } catch {
         console.error(`Unknown MCP server: ${serverName}`)
         console.error('Run `ucli mcp list` to see available servers.')
-        process.exit(1)
+        process.exit(ExitCode.NOT_FOUND)
       }
 
       let tools
@@ -67,7 +78,7 @@ export function registerMcp(program: Command): void {
         tools = await listMcpTools(entry)
       } catch (err) {
         console.error('Failed to fetch tools:', (err as Error).message)
-        process.exit(1)
+        process.exit(ExitCode.GENERAL_ERROR)
       }
 
       if (tools.length === 0) {
@@ -78,6 +89,11 @@ export function registerMcp(program: Command): void {
       const format = (opts.format ?? 'table').toLowerCase()
       if (format === 'json') {
         console.log(JSON.stringify(tools, null, 2))
+        return
+      }
+
+      if (format === 'yaml') {
+        console.log(toYaml(tools))
         return
       }
 
@@ -104,14 +120,14 @@ export function registerMcp(program: Command): void {
       } catch {
         console.error(`Unknown MCP server: ${serverName}`)
         console.error('Run `ucli mcp list` to see available servers.')
-        process.exit(1)
+        process.exit(ExitCode.NOT_FOUND)
       }
 
       try {
         await runMcpTool(entry, toolName, args)
       } catch (err) {
         console.error('Tool execution failed:', (err as Error).message)
-        process.exit(1)
+        process.exit(ExitCode.GENERAL_ERROR)
       }
     })
 }

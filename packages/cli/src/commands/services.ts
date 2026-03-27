@@ -3,6 +3,8 @@ import { getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { readOASListCache, writeOASListCache } from '../lib/cache.js'
 import { getServiceHelp } from '../lib/oas-runner.js'
+import { toYaml } from '../lib/yaml.js'
+import { ExitCode } from '../lib/exit-codes.js'
 
 export function registerServices(program: Command): void {
   const services = program
@@ -52,6 +54,15 @@ export function registerServices(program: Command): void {
         return
       }
 
+      if (format === 'yaml') {
+        const safe = entries.map(({ authConfig, ...rest }) => ({
+          ...rest,
+          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
+        }))
+        console.log(toYaml(safe))
+        return
+      }
+
       const nameWidth = Math.max(10, ...entries.map((e) => e.name.length))
       console.log(`\n${'SERVICE'.padEnd(nameWidth)}  AUTH      DESCRIPTION`)
       console.log(`${'-'.repeat(nameWidth)}  --------  ${'-'.repeat(40)}`)
@@ -78,7 +89,7 @@ export function registerServices(program: Command): void {
       } catch (err) {
         console.error(`Service not found: ${name}`)
         console.error('Run `ucli services list` to see available services.')
-        process.exit(1)
+        process.exit(ExitCode.NOT_FOUND)
       }
 
       const help = await getServiceHelp(entry)
@@ -92,6 +103,17 @@ export function registerServices(program: Command): void {
           operationsHelp: help,
         }
         console.log(JSON.stringify(safe, null, 2))
+        return
+      }
+
+      if (format === 'yaml') {
+        const { authConfig, ...rest } = entry
+        const safe = {
+          ...rest,
+          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
+          operationsHelp: help,
+        }
+        console.log(toYaml(safe))
         return
       }
 

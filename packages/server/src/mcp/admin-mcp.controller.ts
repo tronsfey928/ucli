@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { AdminGuard } from '../auth/admin.guard'
 import { MCPService } from './mcp.service'
 import { CreateMcpDto } from './dto/create-mcp.dto'
 import { UpdateMcpDto } from './dto/update-mcp.dto'
+import { PaginationQueryDto, paginate } from '../common'
 
 @ApiTags('Admin / MCP')
 @ApiSecurity('AdminSecret')
@@ -30,9 +31,15 @@ export class AdminMCPController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all MCP servers' })
+  @ApiOperation({ summary: 'List all MCP servers (supports optional pagination via ?page=&limit=)' })
   @ApiResponse({ status: 200, description: 'List of MCP servers' })
-  findAll() { return this.mcpService.findAll() }
+  async findAll(@Query() query: PaginationQueryDto) {
+    const all = await this.mcpService.findAll()
+    if (query.page != null || query.limit != null) {
+      return paginate(all, query)
+    }
+    return all
+  }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single MCP server by ID' })
