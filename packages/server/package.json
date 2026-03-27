@@ -1,6 +1,6 @@
 {
   "name": "@tronsfey/ucli-server",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "ucli server — centralized OpenAPI and MCP management server with multi-database support",
   "keywords": ["openapi", "oas", "gateway", "nestjs", "jwt", "api-management"],
   "license": "MIT",

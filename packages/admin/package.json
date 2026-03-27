@@ -1,6 +1,6 @@
 {
   "name": "@tronsfey/ucli-admin",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "ucli admin dashboard",
   "private": true,
   "type": "module",
