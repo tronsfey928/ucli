@@ -336,3 +336,33 @@ pnpm lint
 cd packages/server
 ADMIN_SECRET=dev-secret ENCRYPTION_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") pnpm dev
 ```
+
+## CI / CD
+
+### Continuous Integration
+
+Every push to `main` and every pull request targeting `main` triggers the [CI workflow](.github/workflows/ci.yml), which runs:
+
+1. `pnpm lint` — TypeScript type-check for all packages
+2. `pnpm test` — server E2E tests + CLI unit tests (memory adapters, no external deps)
+
+### Publishing to npm
+
+Both `@tronsfey/ucli-server` and `@tronsfey/ucli` are published to the npm public registry automatically via the [Publish workflow](.github/workflows/publish.yml) whenever a **GitHub Release** is published.
+
+#### Setup (one-time)
+
+Add an npm access token as a repository secret named **`NPM_TOKEN`**:
+
+1. Generate a token at <https://www.npmjs.com/settings/~/tokens> (select **Automation** type).
+2. In the GitHub repository go to **Settings → Secrets and variables → Actions → New repository secret**.
+3. Name: `NPM_TOKEN`, Value: the token from step 1.
+
+#### Release process
+
+1. Bump the version in the relevant `package.json` files (`packages/server/package.json` and/or `packages/cli/package.json`).
+2. Commit and push to `main`.
+3. Create a **GitHub Release** (tag it `vX.Y.Z` or any tag you choose, e.g. `server-v0.6.3`).
+4. Publishing **both** packages to npm starts automatically once the release is published.
+
+> `@tronsfey/ucli-admin` is `private: true` and is **never published** to npm — it is bundled into `@tronsfey/ucli-server` at build time.

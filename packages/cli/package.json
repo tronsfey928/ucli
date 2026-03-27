@@ -30,6 +30,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsup && chmod +x dist/index.js",
+    "prepack": "tsup && chmod +x dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
