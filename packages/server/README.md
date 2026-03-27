@@ -116,10 +116,22 @@ ADMIN_SECRET=my-secret ENCRYPTION_KEY=$ENCRYPTION_KEY ucli-server
 | `DB_TYPE` | Driver | Notes |
 |-----------|--------|-------|
 | `memory` | — | Default. No persistence. Data lost on restart. |
-| `postgres` | `pg` | PostgreSQL 12+ |
+| `postgres` | `pg` | PostgreSQL 13+ |
 | `mysql` | `mysql2` | MySQL 5.7+ / MariaDB 10.3+ |
 
-Tables are auto-created on first run.
+In **development** (`NODE_ENV != production`), TypeORM `synchronize: true` creates tables automatically.
+
+In **production**, initialize the schema manually using the provided SQL files:
+
+```bash
+# PostgreSQL
+psql -U oas_gateway -d oas_gateway -f packages/server/db/init.postgres.sql
+
+# MySQL
+mysql -u<user> -p<password> oas_gateway < packages/server/db/init.mysql.sql
+```
+
+Then start the server:
 
 ```bash
 # PostgreSQL
