@@ -1,10 +1,11 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { GroupTokenGuard } from '../auth/group-token.guard'
 import { JwtPayloadParam } from '../auth/decorators/jwt-payload.decorator'
 import type { JwtPayload } from '../crypto/jwt.service'
 import type { OASEntry } from '../storage/interfaces/repos.interface'
 import { OASService } from './oas.service'
+import { PaginationQueryDto, paginate } from '../common'
 
 @ApiTags('Client / OAS')
 @ApiBearerAuth('GroupJWT')
@@ -17,9 +18,13 @@ export class ClientOASController {
   @ApiOperation({ summary: 'List OAS entries for the authenticated group (credentials redacted)' })
   @ApiResponse({ status: 200, description: 'List of OAS entries with authConfig redacted to type only' })
   @ApiResponse({ status: 401, description: 'Invalid or expired token' })
-  async findByGroup(@JwtPayloadParam() payload: JwtPayload) {
+  async findByGroup(@JwtPayloadParam() payload: JwtPayload, @Query() query: PaginationQueryDto) {
     const entries = await this.oasService.findByGroup(payload.sub)
-    return entries.map((e) => ClientOASController.redact(e))
+    const redacted = entries.map((e) => ClientOASController.redact(e))
+    if (query.page != null || query.limit != null) {
+      return paginate(redacted, query)
+    }
+    return redacted
   }
 
   @Get(':name')

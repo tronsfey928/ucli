@@ -3,6 +3,7 @@ import { getConfig, isConfigured } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { readOASListCache, writeOASListCache } from '../lib/cache.js'
 import { getServiceHelp } from '../lib/oas-runner.js'
+import { ExitCode } from '../lib/exit-codes.js'
 
 export function registerHelp(program: Command): void {
   program
@@ -45,7 +46,7 @@ export function registerHelp(program: Command): void {
       } catch {
         console.error(`Unknown service: ${service}`)
         console.error('Run `ucli services list` to see available services.')
-        process.exit(1)
+        process.exit(ExitCode.NOT_FOUND)
       }
 
       console.log(`\n=== ${entry.name} ===`)
@@ -96,6 +97,18 @@ EXECUTION
 MAINTENANCE
   ucli refresh
       Force-refresh the local OAS cache from the server.
+
+  ucli doctor
+      Check configuration, server connectivity, and token validity.
+
+SHELL COMPLETIONS
+  eval "$(ucli completions bash)"
+  eval "$(ucli completions zsh)"
+  ucli completions fish | source
+
+GLOBAL FLAGS
+  --debug                          Enable verbose debug logging
+  -v, --version                    Show version number
 
 ERRORS
   401 Unauthorized  → Run: ucli configure --server <url> --token <jwt>

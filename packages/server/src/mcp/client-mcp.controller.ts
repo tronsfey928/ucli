@@ -1,10 +1,11 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { GroupTokenGuard } from '../auth/group-token.guard'
 import { JwtPayloadParam } from '../auth/decorators/jwt-payload.decorator'
 import type { JwtPayload } from '../crypto/jwt.service'
 import type { McpEntry } from '../storage/interfaces/repos.interface'
 import { MCPService } from './mcp.service'
+import { PaginationQueryDto, paginate } from '../common'
 
 @ApiTags('Client / MCP')
 @ApiBearerAuth('GroupJWT')
@@ -17,9 +18,13 @@ export class ClientMCPController {
   @ApiOperation({ summary: 'List MCP servers for the authenticated group (credentials redacted)' })
   @ApiResponse({ status: 200, description: 'List of MCP servers with authConfig redacted to type only' })
   @ApiResponse({ status: 401, description: 'Invalid or expired token' })
-  async findByGroup(@JwtPayloadParam() payload: JwtPayload) {
+  async findByGroup(@JwtPayloadParam() payload: JwtPayload, @Query() query: PaginationQueryDto) {
     const entries = await this.mcpService.findByGroup(payload.sub)
-    return entries.map((e) => ClientMCPController.redact(e))
+    const redacted = entries.map((e) => ClientMCPController.redact(e))
+    if (query.page != null || query.limit != null) {
+      return paginate(redacted, query)
+    }
+    return redacted
   }
 
   @Get(':name')

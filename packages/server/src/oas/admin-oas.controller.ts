@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query, UseGuards } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { AdminGuard } from '../auth/admin.guard'
 import { OASService } from './oas.service'
 import { CreateOASDto } from './dto/create-oas.dto'
 import { UpdateOASDto } from './dto/update-oas.dto'
+import { PaginationQueryDto, paginate } from '../common'
 
 @ApiTags('Admin / OAS')
 @ApiSecurity('AdminSecret')
@@ -31,9 +32,15 @@ export class AdminOASController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all OAS entries' })
+  @ApiOperation({ summary: 'List all OAS entries (supports optional pagination via ?page=&limit=)' })
   @ApiResponse({ status: 200, description: 'List of OAS entries' })
-  findAll() { return this.oasService.findAll() }
+  async findAll(@Query() query: PaginationQueryDto) {
+    const all = await this.oasService.findAll()
+    if (query.page != null || query.limit != null) {
+      return paginate(all, query)
+    }
+    return all
+  }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an OAS entry' })
