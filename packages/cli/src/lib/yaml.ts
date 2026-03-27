@@ -38,7 +38,7 @@ export function toYaml(value: unknown, indent = 0): string {
           // Object items: put the first key on the same line as the dash
           const firstNewline = serialised.indexOf('\n')
           if (firstNewline === -1) {
-            return `${prefix}- ${serialised}`
+            return `${prefix}- ${serialised.trimStart()}`
           }
           const firstLine = serialised.slice(0, firstNewline)
           const rest = serialised.slice(firstNewline + 1)
