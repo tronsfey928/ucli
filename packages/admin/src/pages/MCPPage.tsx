@@ -7,7 +7,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
@@ -24,11 +23,39 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatDate } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
 
-const AUTH_PLACEHOLDERS: Record<string, string> = {
-  none: '{"type":"none"}',
-  http_headers: '{"type":"http_headers","headers":{"Authorization":"Bearer YOUR_TOKEN"}}',
-  env: '{"type":"env","env":{"API_KEY":"YOUR_API_KEY"}}',
+// ─── Auth types & KV pairs ───────────────────────────────────────────────────
+
+type McpAuthType = 'none' | 'http_headers' | 'env'
+
+interface KVPair { key: string; value: string }
+
+function parseAuthConfig(config: McpAuthConfig): { authType: McpAuthType; kvPairs: KVPair[] } {
+  if (config.type === 'http_headers') {
+    return {
+      authType: 'http_headers',
+      kvPairs: Object.entries(config.headers ?? {}).map(([key, value]) => ({ key, value })),
+    }
+  }
+  if (config.type === 'env') {
+    return {
+      authType: 'env',
+      kvPairs: Object.entries(config.env ?? {}).map(([key, value]) => ({ key, value })),
+    }
+  }
+  return { authType: 'none', kvPairs: [] }
 }
+
+function buildAuthConfig(authType: McpAuthType, kvPairs: KVPair[]): McpAuthConfig {
+  const entries = kvPairs.filter(p => p.key.trim()).reduce<Record<string, string>>((acc, p) => {
+    acc[p.key.trim()] = p.value
+    return acc
+  }, {})
+  if (authType === 'http_headers') return { type: 'http_headers', headers: entries }
+  if (authType === 'env') return { type: 'env', env: entries }
+  return { type: 'none' }
+}
+
+// ─── Form ────────────────────────────────────────────────────────────────────
 
 type FormMode = 'create' | 'edit'
 
@@ -39,7 +66,8 @@ interface MCPForm {
   transport: McpTransport
   serverUrl: string
   command: string
-  authConfig: string
+  authType: McpAuthType
+  authKvPairs: KVPair[]
   enabled: boolean
 }
 
@@ -50,7 +78,8 @@ const EMPTY_FORM: MCPForm = {
   transport: 'http',
   serverUrl: '',
   command: '',
-  authConfig: '{"type":"none"}',
+  authType: 'none',
+  authKvPairs: [],
   enabled: true,
 }
 
@@ -95,6 +124,7 @@ export default function MCPPage() {
   function openEdit(entry: McpEntry) {
     setMode('edit')
     setEditId(entry.id)
+    const { authType, kvPairs } = parseAuthConfig(entry.authConfig)
     setForm({
       groupId: entry.groupId,
       name: entry.name,
@@ -102,7 +132,8 @@ export default function MCPPage() {
       transport: entry.transport,
       serverUrl: entry.serverUrl ?? '',
       command: entry.command ?? '',
-      authConfig: JSON.stringify(entry.authConfig, null, 2),
+      authType,
+      authKvPairs: kvPairs,
       enabled: entry.enabled,
     })
     setFormError('')
@@ -110,21 +141,31 @@ export default function MCPPage() {
   }
 
   function setField<K extends keyof MCPForm>(key: K, value: MCPForm[K]) {
-    setForm(f => ({ ...f, [key]: value }))
+    if (key === 'authType') {
+      setForm(f => ({ ...f, authType: value as McpAuthType, authKvPairs: [] }))
+    } else {
+      setForm(f => ({ ...f, [key]: value }))
+    }
+  }
+
+  function addKvRow() {
+    setForm(f => ({ ...f, authKvPairs: [...f.authKvPairs, { key: '', value: '' }] }))
+  }
+
+  function removeKvRow(i: number) {
+    setForm(f => ({ ...f, authKvPairs: f.authKvPairs.filter((_, idx) => idx !== i) }))
+  }
+
+  function setKvRow(i: number, field: 'key' | 'value', val: string) {
+    setForm(f => {
+      const pairs = f.authKvPairs.map((p, idx) => idx === i ? { ...p, [field]: val } : p)
+      return { ...f, authKvPairs: pairs }
+    })
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError('')
-
-    let parsedAuthConfig: McpAuthConfig
-    try {
-      parsedAuthConfig = JSON.parse(form.authConfig) as McpAuthConfig
-    } catch {
-      setFormError(t('mcp_auth_config_error'))
-      return
-    }
-
     setSaving(true)
     try {
       const payload = {
@@ -134,7 +175,7 @@ export default function MCPPage() {
         transport: form.transport,
         serverUrl: form.serverUrl.trim() || undefined,
         command: form.command.trim() || undefined,
-        authConfig: parsedAuthConfig,
+        authConfig: buildAuthConfig(form.authType, form.authKvPairs),
       }
 
       if (mode === 'create') {
@@ -349,23 +390,61 @@ export default function MCPPage() {
               </div>
             )}
 
+            {/* ── Auth type ── */}
             <div className="space-y-1.5">
-              <Label htmlFor="mauth">
-                {t('mcp_field_auth_config')} <span className="text-destructive">{t('common_required')}</span>
-                <span className="text-muted-foreground ml-1 font-normal text-xs">
-                  {t('mcp_auth_types_hint')}
-                </span>
-              </Label>
-              <Textarea
-                id="mauth"
-                placeholder={form.transport === 'http' ? AUTH_PLACEHOLDERS.http_headers : AUTH_PLACEHOLDERS.env}
-                value={form.authConfig}
-                onChange={e => setField('authConfig', e.target.value)}
-                rows={4}
-                className="font-mono text-xs"
-                required
-              />
+              <Label>{t('mcp_field_auth_type')} <span className="text-destructive">{t('common_required')}</span></Label>
+              <Select value={form.authType} onValueChange={v => setField('authType', v as McpAuthType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t('mcp_auth_none')}</SelectItem>
+                  <SelectItem value="http_headers">{t('mcp_auth_http_headers')}</SelectItem>
+                  <SelectItem value="env">{t('mcp_auth_env')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* ── KV editor for http_headers / env ── */}
+            {(form.authType === 'http_headers' || form.authType === 'env') && (
+              <div className="space-y-2">
+                {form.authKvPairs.map((pair, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <Input
+                      placeholder={t('mcp_auth_kv_key')}
+                      value={pair.key}
+                      onChange={e => setKvRow(i, 'key', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder={t('mcp_auth_kv_value')}
+                      value={pair.value}
+                      onChange={e => setKvRow(i, 'value', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeKvRow(i)}
+                    >
+                      <i className="ri-delete-bin-line" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addKvRow}
+                  className="w-full"
+                >
+                  <i className="ri-add-line" />
+                  {t('mcp_auth_add_row')}
+                </Button>
+              </div>
+            )}
 
             {mode === 'edit' && (
               <div className="flex items-center gap-2">
