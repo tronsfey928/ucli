@@ -11,6 +11,7 @@ import { isConfigured, getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { ExitCode } from '../lib/exit-codes.js'
 import { debug } from '../lib/errors.js'
+import { isJsonOutput, outputSuccess, outputError } from '../lib/output.js'
 import axios from 'axios'
 
 interface CheckResult {
@@ -34,6 +35,11 @@ export function registerDoctor(program: Command): void {
           ok: false,
           detail: 'Not configured. Run: ucli configure --server <url> --token <jwt>',
         })
+        if (isJsonOutput()) {
+          outputError(ExitCode.CONFIG_ERROR,
+            'Not configured',
+            'Run: ucli configure --server <url> --token <jwt>')
+        }
         printResults(results)
         process.exit(ExitCode.CONFIG_ERROR)
       }
@@ -52,6 +58,11 @@ export function registerDoctor(program: Command): void {
           ok: false,
           detail: `Failed to read config: ${(err as Error).message}`,
         })
+        if (isJsonOutput()) {
+          outputError(ExitCode.CONFIG_ERROR,
+            `Failed to read config: ${(err as Error).message}`,
+            'Run: ucli configure --server <url> --token <jwt>')
+        }
         printResults(results)
         process.exit(ExitCode.CONFIG_ERROR)
       }
@@ -98,9 +109,17 @@ export function registerDoctor(program: Command): void {
         })
       }
 
-      printResults(results)
-
       const allOk = results.every((r) => r.ok)
+
+      if (isJsonOutput()) {
+        outputSuccess({
+          healthy: allOk,
+          checks: results,
+        })
+        process.exit(allOk ? ExitCode.SUCCESS : ExitCode.GENERAL_ERROR)
+      }
+
+      printResults(results)
       process.exit(allOk ? ExitCode.SUCCESS : ExitCode.GENERAL_ERROR)
     })
 }

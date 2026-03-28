@@ -4,8 +4,12 @@
  * Provides a unified error output with actionable hints so that both
  * humans and AI agents can quickly understand what went wrong and how
  * to fix it.
+ *
+ * When `--output json` is active, errors are emitted as structured JSON
+ * to stdout (via outputError) so that agents can parse them reliably.
  */
 import { ExitCode, type ExitCodeValue } from './exit-codes.js'
+import { isJsonOutput, outputError } from './output.js'
 
 let debugEnabled = false
 
@@ -30,7 +34,7 @@ export interface FormattedError {
   hint?: string
 }
 
-const HINT_MAP: Record<number, string> = {
+export const HINT_MAP: Record<number, string> = {
   [ExitCode.CONFIG_ERROR]:
     'Run: ucli configure --server <url> --token <jwt>',
   [ExitCode.AUTH_ERROR]:
@@ -45,12 +49,20 @@ const HINT_MAP: Record<number, string> = {
 
 /**
  * Print a formatted error to stderr and exit with the given code.
- * When --debug is active, the full stack trace is also printed.
+ *
+ * When `--output json` is active, emits structured JSON to stdout
+ * instead of human-readable text to stderr.
+ * When --debug is active, the full stack trace is also printed (text mode only).
  */
 export function formatError(err: unknown, code?: ExitCodeValue): never {
   const exitCode = code ?? classifyError(err)
   const message = err instanceof Error ? err.message : String(err)
   const hint = HINT_MAP[exitCode]
+
+  // In JSON output mode, delegate to the structured envelope emitter
+  if (isJsonOutput()) {
+    outputError(exitCode, message, hint)
+  }
 
   console.error(`\n✖ Error: ${message}`)
   if (hint) {
@@ -65,7 +77,7 @@ export function formatError(err: unknown, code?: ExitCodeValue): never {
 }
 
 /** Classify an error into an exit code based on common patterns. */
-function classifyError(err: unknown): ExitCodeValue {
+export function classifyError(err: unknown): ExitCodeValue {
   if (!(err instanceof Error)) return ExitCode.GENERAL_ERROR
 
   const msg = err.message.toLowerCase()

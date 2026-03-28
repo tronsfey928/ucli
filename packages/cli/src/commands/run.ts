@@ -3,6 +3,7 @@ import { getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { runOperation } from '../lib/oas-runner.js'
 import { ExitCode } from '../lib/exit-codes.js'
+import { isJsonOutput, outputError } from '../lib/output.js'
 
 export function registerRun(program: Command): void {
   program
@@ -21,12 +22,21 @@ export function registerRun(program: Command): void {
       opts: { service?: string; operation?: string; params?: string; format?: string; query?: string; data?: string; args?: string[] },
     ) => {
       if (serviceArg && opts.service && serviceArg !== opts.service) {
+        if (isJsonOutput()) {
+          outputError(ExitCode.USAGE_ERROR,
+            `Conflicting service values: positional "${serviceArg}" and --service "${opts.service}". Use either the positional argument or --service flag, not both.`)
+        }
         console.error(`Conflicting service values: positional "${serviceArg}" and --service "${opts.service}". Use either the positional argument or --service flag, not both.`)
         process.exit(ExitCode.USAGE_ERROR)
       }
 
       const service = opts.service ?? serviceArg
       if (!service) {
+        if (isJsonOutput()) {
+          outputError(ExitCode.USAGE_ERROR,
+            'Missing service name. Use positional <service> or --service <name>.',
+            'Run: ucli services list  to see available services')
+        }
         console.error('Missing service name. Use positional <service> or --service <name>.')
         process.exit(ExitCode.USAGE_ERROR)
       }
@@ -38,6 +48,11 @@ export function registerRun(program: Command): void {
       try {
         entry = await client.getOAS(service)
       } catch {
+        if (isJsonOutput()) {
+          outputError(ExitCode.NOT_FOUND,
+            `Unknown service: ${service}`,
+            'Run: ucli services list  to see available services')
+        }
         console.error(`Unknown service: ${service}`)
         console.error('Run `ucli services list` to see available services.')
         process.exit(ExitCode.NOT_FOUND)
@@ -56,6 +71,11 @@ export function registerRun(program: Command): void {
         try {
           parsed = JSON.parse(opts.params)
         } catch {
+          if (isJsonOutput()) {
+            outputError(ExitCode.USAGE_ERROR,
+              'Invalid --params JSON.',
+              'Example: --params \'{"petId": 1}\'')
+          }
           console.error('Invalid --params JSON. Example: --params \'{"petId": 1}\'')
           process.exit(ExitCode.USAGE_ERROR)
         }
@@ -83,6 +103,10 @@ export function registerRun(program: Command): void {
           ...(query !== undefined ? { query } : {}),
         })
       } catch (err) {
+        if (isJsonOutput()) {
+          outputError(ExitCode.GENERAL_ERROR,
+            `Operation failed: ${(err as Error).message}`)
+        }
         console.error('Operation failed:', (err as Error).message)
         process.exit(ExitCode.GENERAL_ERROR)
       }

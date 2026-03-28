@@ -225,5 +225,44 @@ describe('CLI + Server integration (e2e)', () => {
     const refreshOne = await runCli(['refresh', '--service', 'demo'])
     expect(refreshOne.code).toBe(0)
     expect(refreshOne.stdout).toContain('Refreshed 1 service(s)')
+
+    // introspect — returns complete capability manifest
+    const introspect = await runCli(['introspect'])
+    expect(introspect.code).toBe(0)
+    const manifest = JSON.parse(introspect.stdout)
+    expect(manifest.version).toBe('1')
+    expect(manifest.services).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'demo' })]),
+    )
+    expect(manifest.mcpServers).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'filesystem-local' })]),
+    )
+    expect(manifest.commands.length).toBeGreaterThan(0)
+
+    // --output json wraps results in { success, data } envelope
+    const jsonList = await runCli(['--output', 'json', 'services', 'list'])
+    expect(jsonList.code).toBe(0)
+    const envelope = JSON.parse(jsonList.stdout)
+    expect(envelope.success).toBe(true)
+    expect(Array.isArray(envelope.data)).toBe(true)
+    expect(envelope.data).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'demo' })]),
+    )
+
+    // --output json doctor
+    const jsonDoctor = await runCli(['--output', 'json', 'doctor'])
+    expect(jsonDoctor.code).toBe(0)
+    const doctorEnvelope = JSON.parse(jsonDoctor.stdout)
+    expect(doctorEnvelope.success).toBe(true)
+    expect(doctorEnvelope.data.healthy).toBe(true)
+
+    // --output json introspect
+    const jsonIntrospect = await runCli(['--output', 'json', 'introspect'])
+    expect(jsonIntrospect.code).toBe(0)
+    const introspectEnvelope = JSON.parse(jsonIntrospect.stdout)
+    expect(introspectEnvelope.success).toBe(true)
+    expect(introspectEnvelope.data.services).toBeDefined()
+    expect(introspectEnvelope.data.mcpServers).toBeDefined()
+    expect(introspectEnvelope.data.commands).toBeDefined()
   }, 120000)
 })

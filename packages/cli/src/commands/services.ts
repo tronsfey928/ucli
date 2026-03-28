@@ -5,6 +5,7 @@ import { readOASListCache, writeOASListCache } from '../lib/cache.js'
 import { getServiceHelp } from '../lib/oas-runner.js'
 import { toYaml } from '../lib/yaml.js'
 import { ExitCode } from '../lib/exit-codes.js'
+import { isJsonOutput, outputSuccess, outputError } from '../lib/output.js'
 
 export function registerServices(program: Command): void {
   const services = program
@@ -37,6 +38,18 @@ export function registerServices(program: Command): void {
         }
       }
 
+      // Strip authConfig secrets — only expose { type }
+      const safe = entries.map(({ authConfig, ...rest }) => ({
+        ...rest,
+        authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
+      }))
+
+      // Structured JSON envelope mode
+      if (isJsonOutput()) {
+        outputSuccess(safe)
+        return
+      }
+
       const format = (opts.format ?? 'table').toLowerCase()
 
       if (entries.length === 0) {
@@ -45,20 +58,11 @@ export function registerServices(program: Command): void {
       }
 
       if (format === 'json') {
-        // Strip authConfig secrets from JSON output — only expose { type }
-        const safe = entries.map(({ authConfig, ...rest }) => ({
-          ...rest,
-          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
-        }))
         console.log(JSON.stringify(safe, null, 2))
         return
       }
 
       if (format === 'yaml') {
-        const safe = entries.map(({ authConfig, ...rest }) => ({
-          ...rest,
-          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
-        }))
         console.log(toYaml(safe))
         return
       }
@@ -86,33 +90,36 @@ export function registerServices(program: Command): void {
       let entry
       try {
         entry = await client.getOAS(name)
-      } catch (err) {
+      } catch {
+        if (isJsonOutput()) {
+          outputError(ExitCode.NOT_FOUND, `Service not found: ${name}`,
+            'Run: ucli services list  to see available services')
+        }
         console.error(`Service not found: ${name}`)
         console.error('Run `ucli services list` to see available services.')
         process.exit(ExitCode.NOT_FOUND)
       }
 
       const help = await getServiceHelp(entry)
+      const { authConfig, ...rest } = entry
+      const safe = {
+        ...rest,
+        authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
+        operationsHelp: help,
+      }
+
+      if (isJsonOutput()) {
+        outputSuccess(safe)
+        return
+      }
+
       const format = (opts.format ?? 'table').toLowerCase()
       if (format === 'json') {
-        // Strip authConfig secrets from JSON output
-        const { authConfig, ...rest } = entry
-        const safe = {
-          ...rest,
-          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
-          operationsHelp: help,
-        }
         console.log(JSON.stringify(safe, null, 2))
         return
       }
 
       if (format === 'yaml') {
-        const { authConfig, ...rest } = entry
-        const safe = {
-          ...rest,
-          authConfig: { type: (authConfig as Record<string, unknown>)['type'] ?? rest.authType },
-          operationsHelp: help,
-        }
         console.log(toYaml(safe))
         return
       }

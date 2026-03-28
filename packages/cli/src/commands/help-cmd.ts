@@ -82,6 +82,10 @@ DISCOVERY
   ucli services info <service>
       Show detailed service info and all available operations.
 
+  ucli introspect
+      Return complete capability manifest in a single call (JSON).
+      Ideal for AI agents: includes services, MCP servers, and command reference.
+
   ucli help [service]
       Show this guide, or service-specific operations.
 
@@ -93,6 +97,16 @@ EXECUTION
         --format json|table|yaml   Output format (default: json)
         --query <jmespath>         Filter response with JMESPath
         --data <json|@file>        Request body for POST/PUT/PATCH
+
+MCP SERVERS
+  ucli mcp list
+      List all MCP servers in your group.
+
+  ucli mcp tools <server>
+      List tools available on a MCP server.
+
+  ucli mcp run <server> <tool> [key=value ...]
+      Call a tool on a MCP server.
 
 MAINTENANCE
   ucli refresh
@@ -108,6 +122,8 @@ SHELL COMPLETIONS
 
 GLOBAL FLAGS
   --debug                          Enable verbose debug logging
+  --output json                    Wrap ALL output in structured JSON envelopes
+                                   (for agent/automation consumption)
   -v, --version                    Show version number
 
 ERRORS
@@ -115,5 +131,10 @@ ERRORS
   404 Not Found     → Check service name: ucli services list
   4xx Client Error  → Check operation args: ucli services info <service>
   5xx Server Error  → Retry or run: ucli refresh
+
+AI AGENT QUICK START
+  1. ucli introspect               # discover everything in one call
+  2. ucli run <svc> <op> [args]    # execute operations
+  3. Use --output json globally    # get structured { success, data/error } envelopes
 `)
 }
