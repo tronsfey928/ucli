@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { execFile, type ChildProcess, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
+import { createServer } from 'node:net'
 import http from 'node:http'
 
 const execFileAsync = promisify(execFile)
@@ -23,7 +24,9 @@ describe('Server binary (e2e)', () => {
 
   it('dist/main.js is executable and the server can start and respond', async () => {
     const mainJs = join(serverPkg, 'dist', 'main.js')
-    const port = 30000 + Math.floor(Math.random() * 20000)
+
+    // Find an available port by briefly binding to port 0
+    const port = await getFreePort()
 
     const child: ChildProcess = spawn(process.execPath, [mainJs], {
       cwd: serverPkg,
@@ -55,14 +58,29 @@ describe('Server binary (e2e)', () => {
       expect(health.status).toBe('ok')
     } finally {
       child.kill('SIGTERM')
-      // Wait for the process to exit
-      await new Promise<void>((resolve) => {
-        child.on('exit', () => resolve())
-        setTimeout(resolve, 3000)
-      })
+      await Promise.race([
+        new Promise<void>((resolve) => child.on('exit', () => resolve())),
+        new Promise<void>((resolve) => setTimeout(resolve, 3000).unref()),
+      ])
     }
   }, 30000)
 })
+
+function getFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = createServer()
+    srv.listen(0, '127.0.0.1', () => {
+      const addr = srv.address()
+      if (addr && typeof addr === 'object') {
+        const port = addr.port
+        srv.close(() => resolve(port))
+      } else {
+        srv.close(() => reject(new Error('Failed to get free port')))
+      }
+    })
+    srv.on('error', reject)
+  })
+}
 
 function httpGet(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
