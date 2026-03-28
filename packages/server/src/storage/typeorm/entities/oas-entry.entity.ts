@@ -19,7 +19,7 @@ export class OASEntryEntity {
   @Column({ name: 'remote_url', length: 2048 })
   remoteUrl!: string
 
-  @Column({ name: 'base_endpoint', length: 2048, nullable: true })
+  @Column({ name: 'base_endpoint', type: 'varchar', length: 2048, nullable: true })
   baseEndpoint!: string | null
 
   @Column({ name: 'auth_type', length: 20 })
