@@ -13,7 +13,7 @@ export class McpEntryEntity {
   @Column({ length: 100 })
   name!: string
 
-  @Column({ type: 'text', default: '' })
+  @Column({ length: 1000, default: '' })
   description!: string
 
   @Column({ length: 10 })

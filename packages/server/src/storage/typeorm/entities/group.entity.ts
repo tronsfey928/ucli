@@ -11,7 +11,7 @@ export class GroupEntity {
   @Column({ length: 100, unique: true })
   name!: string
 
-  @Column({ type: 'text', default: '' })
+  @Column({ length: 500, default: '' })
   description!: string
 
   @CreateDateColumn({ name: 'created_at' })

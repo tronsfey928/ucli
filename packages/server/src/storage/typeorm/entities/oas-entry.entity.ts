@@ -13,7 +13,7 @@ export class OASEntryEntity {
   @Column({ length: 100 })
   name!: string
 
-  @Column({ type: 'text', default: '' })
+  @Column({ length: 1000, default: '' })
   description!: string
 
   @Column({ name: 'remote_url', length: 2048 })
