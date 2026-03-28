@@ -1,7 +1,7 @@
 ---
 name: ucli
 description: Proxy OpenAPI and MCP services for AI agents — discover, inspect, and invoke APIs with automatic credential injection.
-version: 0.4.1
+version: 0.5.0
 metadata:
   openclaw:
     emoji: "🔗"
@@ -23,8 +23,73 @@ Use `ucli` whenever you need to call any external business API or MCP server too
 - Proxies registered OpenAPI services on your behalf
 - Handles authentication automatically (credentials are never exposed to you)
 - Returns structured JSON output suitable for further processing
+- Supports `--output json` for fully structured envelopes (success/error)
 
-**When to use:** Any time you need to interact with external services (business APIs, data sources, microservices). Always check available services first with `ucli services list`.
+**When to use:** Any time you need to interact with external services (business APIs, data sources, microservices). Always start with `ucli introspect` to discover all capabilities in a single call.
+
+---
+
+## Agent Methodology — OODA Loop
+
+ucli is designed around the **Observe → Orient → Decide → Act** (OODA) loop for AI agent workflows:
+
+1. **Observe** — Discover all available capabilities with `ucli introspect`
+2. **Orient** — Understand specific operations with `ucli services info <name>` or `ucli mcp tools <server>`
+3. **Decide** — Choose the right operation and parameters based on the task
+4. **Act** — Execute with `ucli run` or `ucli mcp run`
+
+### Recommended First Call
+
+```bash
+ucli introspect --output json
+```
+
+This returns a complete manifest in a single call:
+```json
+{
+  "success": true,
+  "data": {
+    "version": "1",
+    "services": [
+      { "name": "payments", "description": "...", "authType": "bearer", ... }
+    ],
+    "mcpServers": [
+      { "name": "weather", "description": "...", "transport": "http", ... }
+    ],
+    "commands": [
+      { "name": "run", "description": "...", "usage": "...", "examples": [...] }
+    ]
+  }
+}
+```
+
+---
+
+## Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `--output json` | Wrap ALL output in structured `{ success, data/error }` envelopes |
+| `--debug` | Enable verbose debug logging |
+| `-v, --version` | Show version number |
+
+### Structured Output Mode (`--output json`)
+
+When `--output json` is passed, every command emits exactly one JSON object to stdout:
+
+**Success:**
+```json
+{ "success": true, "data": <result> }
+```
+
+**Error:**
+```json
+{ "success": false, "error": { "code": 6, "message": "Service not found: foo", "hint": "Run: ucli services list" } }
+```
+
+Error codes: `0`=success, `1`=general, `2`=usage, `3`=config, `4`=auth, `5`=connectivity, `6`=not-found, `7`=server-error.
+
+**Always use `--output json` when calling ucli from code or as an AI agent.** This ensures you can reliably parse both success and error results.
 
 ---
 
@@ -43,6 +108,11 @@ SERVICE     AUTH      DESCRIPTION
 payments    bearer    Payment processing service
 inventory   api_key   Product inventory management
 crm         oauth2_cc Customer relationship management
+```
+
+For machine-readable output:
+```bash
+ucli services list --output json
 ```
 
 ---
@@ -132,11 +202,11 @@ By default, `ucli run` returns JSON. You can:
 ## Complete Workflow Example
 
 ```bash
-# 1. Discover services
-ucli services list
+# 1. Discover all capabilities (single call)
+ucli introspect --output json
 
-# 2. Check what operations are available on "payments"
-ucli services info payments
+# 2. Inspect a specific service's operations
+ucli services info payments --output json
 
 # 3. List recent transactions
 ucli run payments listTransactions --query "transactions[*].{id:id,amount:amount,status:status}"
@@ -166,10 +236,20 @@ ucli run payments createCharge --data '{
 | `429 Too Many Requests` | Rate limit exceeded | Wait and retry |
 | `5xx Server Error` | Upstream service error | Retry once; if persistent, report to the service owner |
 
+### Error Recovery Strategy for Agents
+
+1. **Parse the exit code** — non-zero means failure (codes 1–7 have specific meanings)
+2. **When using `--output json`** — check `success` field; on failure read `error.hint`
+3. **Retry logic** — on `code: 5` (connectivity) or `code: 7` (server error), retry once after a brief wait
+4. **Re-discover** — on `code: 6` (not found), re-run `ucli introspect` to refresh your capability model
+
 **On persistent errors:**
 ```bash
 # Refresh the local OAS cache (may resolve stale spec issues)
 ucli refresh
+
+# Run diagnostics
+ucli doctor --output json
 
 # Then retry the operation
 ucli run <service> <operation>
@@ -222,9 +302,9 @@ ucli mcp run search-server web_search query="ucli documentation" limit=5
 
 ## Tips for AI Agents
 
-1. **Always discover first.** Don't guess service or operation names — run `ucli services list` then `ucli services info <name>`.
+1. **Start with `ucli introspect`.** This gives you a complete picture of all services, MCP servers, and available commands in a single call. Don't make multiple discovery calls when one will do.
 
-2. **Use JSON output.** Default `--format json` gives you machine-parseable data. Only switch to `table` when presenting to humans.
+2. **Always use `--output json`.** This wraps every result in `{ success: true, data }` or `{ success: false, error }`. Never parse human-readable text output.
 
 3. **Use `--query` to extract.** Instead of parsing the entire response, use JMESPath to extract exactly what you need.
 
@@ -238,3 +318,7 @@ ucli mcp run search-server web_search query="ucli documentation" limit=5
 5. **Check pagination.** Large result sets may be paginated. Look for `nextPage`, `cursor`, or `Link` headers in the response.
 
 6. **Validate before mutating.** For destructive operations (DELETE, large updates), confirm the resource exists and is correct before proceeding.
+
+7. **Use exit codes for control flow.** Exit code `0` = success, non-zero = failure. Use `--output json` for richer error context.
+
+8. **Re-introspect on capability changes.** If you encounter a `not found` error for a service that should exist, run `ucli refresh` then `ucli introspect` to refresh your model of available capabilities.

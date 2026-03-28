@@ -1,7 +1,8 @@
 import type { Command } from 'commander'
-import { saveConfig, isConfigured } from '../config.js'
+import { saveConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { ExitCode } from '../lib/exit-codes.js'
+import { isJsonOutput, outputSuccess, outputError } from '../lib/output.js'
 
 export function registerConfigure(program: Command): void {
   program
@@ -14,19 +15,27 @@ export function registerConfigure(program: Command): void {
       const token = opts.token
 
       // Validate connectivity before saving
-      console.log(`Connecting to ${serverUrl}...`)
+      if (!isJsonOutput()) {
+        console.log(`Connecting to ${serverUrl}...`)
+      }
       const client = new ServerClient({ serverUrl, token })
 
       try {
         await client.listOAS()
         saveConfig({ serverUrl, token })
+
+        if (isJsonOutput()) {
+          outputSuccess({ serverUrl, configured: true })
+          return
+        }
+
         console.log('✓ Configuration saved successfully.')
         console.log(`  Server: ${serverUrl}`)
         console.log(`  Token:  ${token.slice(0, 20)}...`)
       } catch (err) {
-        console.error('Connection failed:', (err as Error).message)
-        console.error('Please check the server URL and token.')
-        process.exit(ExitCode.CONNECTIVITY_ERROR)
+        outputError(ExitCode.CONNECTIVITY_ERROR,
+          `Connection failed: ${(err as Error).message}`,
+          'Check the server URL and token')
       }
     })
 }

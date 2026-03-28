@@ -2,6 +2,7 @@ import type { Command } from 'commander'
 import { getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { writeOASListCache, clearOASListCache, clearOASCache } from '../lib/cache.js'
+import { isJsonOutput, outputSuccess } from '../lib/output.js'
 
 export function registerRefresh(program: Command): void {
   program
@@ -12,7 +13,10 @@ export function registerRefresh(program: Command): void {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
 
-      console.log('Refreshing OAS list from server...')
+      if (!isJsonOutput()) {
+        console.log('Refreshing OAS list from server...')
+      }
+
       if (opts.service) {
         await clearOASCache(opts.service)
       } else {
@@ -23,6 +27,11 @@ export function registerRefresh(program: Command): void {
       if (entries.length > 0) {
         const maxTtl = Math.min(...entries.map((e) => e.cacheTtl))
         await writeOASListCache(entries, maxTtl)
+      }
+
+      if (isJsonOutput()) {
+        outputSuccess({ refreshed: entries.length })
+        return
       }
 
       console.log(`✓ Refreshed ${entries.length} service(s).`)

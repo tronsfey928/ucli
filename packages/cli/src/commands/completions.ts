@@ -40,7 +40,7 @@ _ucli_completions() {
   COMPREPLY=()
   cur="\${COMP_WORDS[COMP_CWORD]}"
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
-  commands="configure services run refresh help mcp doctor completions"
+  commands="configure services run refresh help mcp doctor completions introspect"
 
   case "\${COMP_WORDS[1]}" in
     services)
@@ -85,6 +85,7 @@ _ucli() {
     'mcp:Interact with MCP servers'
     'doctor:Check configuration and connectivity'
     'completions:Generate shell completion script'
+    'introspect:Return complete capability manifest for AI agents'
   )
 
   _arguments -C \\
@@ -127,6 +128,8 @@ complete -c ucli -n __fish_use_subcommand -a help -d 'Show usage guide'
 complete -c ucli -n __fish_use_subcommand -a mcp -d 'Interact with MCP servers'
 complete -c ucli -n __fish_use_subcommand -a doctor -d 'Check config and connectivity'
 complete -c ucli -n __fish_use_subcommand -a completions -d 'Generate shell completions'
+
+complete -c ucli -n __fish_use_subcommand -a introspect -d 'Return capability manifest for AI agents'
 
 # services subcommands
 complete -c ucli -n '__fish_seen_subcommand_from services' -a list -d 'List services'

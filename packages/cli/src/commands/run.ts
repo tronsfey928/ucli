@@ -3,6 +3,7 @@ import { getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
 import { runOperation } from '../lib/oas-runner.js'
 import { ExitCode } from '../lib/exit-codes.js'
+import { outputError } from '../lib/output.js'
 
 export function registerRun(program: Command): void {
   program
@@ -21,14 +22,15 @@ export function registerRun(program: Command): void {
       opts: { service?: string; operation?: string; params?: string; format?: string; query?: string; data?: string; args?: string[] },
     ) => {
       if (serviceArg && opts.service && serviceArg !== opts.service) {
-        console.error(`Conflicting service values: positional "${serviceArg}" and --service "${opts.service}". Use either the positional argument or --service flag, not both.`)
-        process.exit(ExitCode.USAGE_ERROR)
+        outputError(ExitCode.USAGE_ERROR,
+          `Conflicting service values: positional "${serviceArg}" and --service "${opts.service}". Use either the positional argument or --service flag, not both.`)
       }
 
       const service = opts.service ?? serviceArg
       if (!service) {
-        console.error('Missing service name. Use positional <service> or --service <name>.')
-        process.exit(ExitCode.USAGE_ERROR)
+        outputError(ExitCode.USAGE_ERROR,
+          'Missing service name. Use positional <service> or --service <name>.',
+          'Run: ucli services list  to see available services')
       }
 
       const cfg = getConfig()
@@ -38,9 +40,9 @@ export function registerRun(program: Command): void {
       try {
         entry = await client.getOAS(service)
       } catch {
-        console.error(`Unknown service: ${service}`)
-        console.error('Run `ucli services list` to see available services.')
-        process.exit(ExitCode.NOT_FOUND)
+        outputError(ExitCode.NOT_FOUND,
+          `Unknown service: ${service}`,
+          'Run: ucli services list  to see available services')
       }
 
       // Collect extra args (pass-through to openapi2cli)
@@ -56,8 +58,9 @@ export function registerRun(program: Command): void {
         try {
           parsed = JSON.parse(opts.params)
         } catch {
-          console.error('Invalid --params JSON. Example: --params \'{"petId": 1}\'')
-          process.exit(ExitCode.USAGE_ERROR)
+          outputError(ExitCode.USAGE_ERROR,
+            'Invalid --params JSON.',
+            'Example: --params \'{"petId": 1}\'')
         }
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
           for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
@@ -83,8 +86,8 @@ export function registerRun(program: Command): void {
           ...(query !== undefined ? { query } : {}),
         })
       } catch (err) {
-        console.error('Operation failed:', (err as Error).message)
-        process.exit(ExitCode.GENERAL_ERROR)
+        outputError(ExitCode.GENERAL_ERROR,
+          `Operation failed: ${(err as Error).message}`)
       }
     })
 }
