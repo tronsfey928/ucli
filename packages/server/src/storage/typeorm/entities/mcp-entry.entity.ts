@@ -13,13 +13,13 @@ export class McpEntryEntity {
   @Column({ length: 100 })
   name!: string
 
-  @Column({ type: 'text', default: '' })
+  @Column({ length: 1000, default: '' })
   description!: string
 
   @Column({ length: 10 })
   transport!: string
 
-  @Column({ name: 'server_url', length: 2048, nullable: true })
+  @Column({ name: 'server_url', type: 'varchar', length: 2048, nullable: true })
   serverUrl!: string | null
 
   @Column({ type: 'text', nullable: true })

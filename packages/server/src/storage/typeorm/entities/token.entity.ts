@@ -16,7 +16,7 @@ export class TokenEntity {
   jti!: string
 
   // Stored as comma-separated string — compatible with MySQL and PostgreSQL
-  @Column({ type: 'simple-array', default: '' })
+  @Column({ type: 'simple-array' })
   scopes!: string[]
 
   @Column({ name: 'expires_at', nullable: true, type: 'datetime' })
