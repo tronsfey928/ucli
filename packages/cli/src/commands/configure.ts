@@ -33,14 +33,9 @@ export function registerConfigure(program: Command): void {
         console.log(`  Server: ${serverUrl}`)
         console.log(`  Token:  ${token.slice(0, 20)}...`)
       } catch (err) {
-        if (isJsonOutput()) {
-          outputError(ExitCode.CONNECTIVITY_ERROR,
-            `Connection failed: ${(err as Error).message}`,
-            'Check the server URL and token')
-        }
-        console.error('Connection failed:', (err as Error).message)
-        console.error('Please check the server URL and token.')
-        process.exit(ExitCode.CONNECTIVITY_ERROR)
+        outputError(ExitCode.CONNECTIVITY_ERROR,
+          `Connection failed: ${(err as Error).message}`,
+          'Check the server URL and token')
       }
     })
 }

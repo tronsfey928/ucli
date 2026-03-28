@@ -71,24 +71,15 @@ export function registerMcp(program: Command): void {
       try {
         entry = await client.getMCP(serverName)
       } catch {
-        if (isJsonOutput()) {
-          outputError(ExitCode.NOT_FOUND, `Unknown MCP server: ${serverName}`,
-            'Run: ucli mcp list  to see available servers')
-        }
-        console.error(`Unknown MCP server: ${serverName}`)
-        console.error('Run `ucli mcp list` to see available servers.')
-        process.exit(ExitCode.NOT_FOUND)
+        outputError(ExitCode.NOT_FOUND, `Unknown MCP server: ${serverName}`,
+          'Run: ucli mcp list  to see available servers')
       }
 
       let tools
       try {
         tools = await listMcpTools(entry)
       } catch (err) {
-        if (isJsonOutput()) {
-          outputError(ExitCode.GENERAL_ERROR, `Failed to fetch tools: ${(err as Error).message}`)
-        }
-        console.error('Failed to fetch tools:', (err as Error).message)
-        process.exit(ExitCode.GENERAL_ERROR)
+        outputError(ExitCode.GENERAL_ERROR, `Failed to fetch tools: ${(err as Error).message}`)
       }
 
       if (isJsonOutput()) {
@@ -133,23 +124,14 @@ export function registerMcp(program: Command): void {
       try {
         entry = await client.getMCP(serverName)
       } catch {
-        if (isJsonOutput()) {
-          outputError(ExitCode.NOT_FOUND, `Unknown MCP server: ${serverName}`,
-            'Run: ucli mcp list  to see available servers')
-        }
-        console.error(`Unknown MCP server: ${serverName}`)
-        console.error('Run `ucli mcp list` to see available servers.')
-        process.exit(ExitCode.NOT_FOUND)
+        outputError(ExitCode.NOT_FOUND, `Unknown MCP server: ${serverName}`,
+          'Run: ucli mcp list  to see available servers')
       }
 
       try {
         await runMcpTool(entry, toolName, args)
       } catch (err) {
-        if (isJsonOutput()) {
-          outputError(ExitCode.GENERAL_ERROR, `Tool execution failed: ${(err as Error).message}`)
-        }
-        console.error('Tool execution failed:', (err as Error).message)
-        process.exit(ExitCode.GENERAL_ERROR)
+        outputError(ExitCode.GENERAL_ERROR, `Tool execution failed: ${(err as Error).message}`)
       }
     })
 }

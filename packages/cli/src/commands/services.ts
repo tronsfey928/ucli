@@ -91,13 +91,8 @@ export function registerServices(program: Command): void {
       try {
         entry = await client.getOAS(name)
       } catch {
-        if (isJsonOutput()) {
-          outputError(ExitCode.NOT_FOUND, `Service not found: ${name}`,
-            'Run: ucli services list  to see available services')
-        }
-        console.error(`Service not found: ${name}`)
-        console.error('Run `ucli services list` to see available services.')
-        process.exit(ExitCode.NOT_FOUND)
+        outputError(ExitCode.NOT_FOUND, `Service not found: ${name}`,
+          'Run: ucli services list  to see available services')
       }
 
       const help = await getServiceHelp(entry)

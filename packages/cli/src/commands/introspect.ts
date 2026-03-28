@@ -71,12 +71,8 @@ export function registerIntrospect(program: Command): void {
         ])
       } catch (err) {
         const message = (err as Error).message
-        if (isJsonOutput()) {
-          outputError(ExitCode.CONNECTIVITY_ERROR, `Failed to fetch capabilities: ${message}`,
-            'Check server connectivity with: ucli doctor')
-        }
-        console.error(`Failed to fetch capabilities: ${message}`)
-        process.exit(ExitCode.CONNECTIVITY_ERROR)
+        outputError(ExitCode.CONNECTIVITY_ERROR, `Failed to fetch capabilities: ${message}`,
+          'Check server connectivity with: ucli doctor')
       }
 
       const manifest: IntrospectManifest = {

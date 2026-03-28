@@ -35,13 +35,9 @@ export function registerDoctor(program: Command): void {
           ok: false,
           detail: 'Not configured. Run: ucli configure --server <url> --token <jwt>',
         })
-        if (isJsonOutput()) {
-          outputError(ExitCode.CONFIG_ERROR,
-            'Not configured',
-            'Run: ucli configure --server <url> --token <jwt>')
-        }
-        printResults(results)
-        process.exit(ExitCode.CONFIG_ERROR)
+        outputError(ExitCode.CONFIG_ERROR,
+          'Not configured',
+          'Run: ucli configure --server <url> --token <jwt>')
       }
 
       let cfg: { serverUrl: string; token: string }
@@ -58,13 +54,9 @@ export function registerDoctor(program: Command): void {
           ok: false,
           detail: `Failed to read config: ${(err as Error).message}`,
         })
-        if (isJsonOutput()) {
-          outputError(ExitCode.CONFIG_ERROR,
-            `Failed to read config: ${(err as Error).message}`,
-            'Run: ucli configure --server <url> --token <jwt>')
-        }
-        printResults(results)
-        process.exit(ExitCode.CONFIG_ERROR)
+        outputError(ExitCode.CONFIG_ERROR,
+          `Failed to read config: ${(err as Error).message}`,
+          'Run: ucli configure --server <url> --token <jwt>')
       }
 
       // ── Check 2: Connectivity (health endpoint, no auth required) ──
