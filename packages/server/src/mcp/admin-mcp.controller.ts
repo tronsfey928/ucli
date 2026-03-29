@@ -42,6 +42,14 @@ export class AdminMCPController {
     return all
   }
 
+  @Post('probe')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Test connectivity to an MCP server (HTTP transport)' })
+  @ApiResponse({ status: 200, description: 'Connection test result' })
+  probe(@Body() dto: ProbeMcpDto) {
+    return this.mcpService.probe(dto.serverUrl, dto.headers)
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single MCP server by ID' })
   @ApiResponse({ status: 200, description: 'MCP server details' })
@@ -54,14 +62,6 @@ export class AdminMCPController {
   @ApiResponse({ status: 404, description: 'MCP server not found' })
   update(@Param('id') id: string, @Body() dto: UpdateMcpDto) {
     return this.mcpService.update(id, dto)
-  }
-
-  @Post('probe')
-  @HttpCode(200)
-  @ApiOperation({ summary: 'Test connectivity to an MCP server (HTTP transport)' })
-  @ApiResponse({ status: 200, description: 'Connection test result' })
-  probe(@Body() dto: ProbeMcpDto) {
-    return this.mcpService.probe(dto.serverUrl, dto.headers)
   }
 
   @Delete(':id')

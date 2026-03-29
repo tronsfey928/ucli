@@ -1,4 +1,4 @@
-import { IsString, IsUrl, IsOptional, IsObject } from 'class-validator'
+import { IsUrl, IsOptional, IsObject } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class ProbeOASDto {

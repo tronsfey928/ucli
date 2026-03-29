@@ -43,14 +43,6 @@ export class AdminOASController {
     return all
   }
 
-  @Put(':id')
-  @ApiOperation({ summary: 'Update an OAS entry' })
-  @ApiResponse({ status: 200, description: 'OAS entry updated' })
-  @ApiResponse({ status: 404, description: 'OAS entry not found' })
-  update(@Param('id') id: string, @Body() dto: UpdateOASDto) {
-    return this.oasService.update(id, dto)
-  }
-
   @Post('probe')
   @HttpCode(200)
   @ApiOperation({ summary: 'Fetch and parse a remote OpenAPI spec to preview endpoints' })
@@ -58,6 +50,14 @@ export class AdminOASController {
   @ApiResponse({ status: 400, description: 'Failed to fetch or parse the spec' })
   probe(@Body() dto: ProbeOASDto) {
     return this.oasService.probe(dto.url, dto.headers)
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update an OAS entry' })
+  @ApiResponse({ status: 200, description: 'OAS entry updated' })
+  @ApiResponse({ status: 404, description: 'OAS entry not found' })
+  update(@Param('id') id: string, @Body() dto: UpdateOASDto) {
+    return this.oasService.update(id, dto)
   }
 
   @Delete(':id')
