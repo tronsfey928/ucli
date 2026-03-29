@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
   listOAS, listGroups, createOAS, updateOAS, deleteOAS, probeOAS, getErrorMessage,
-  type OASEntry, type Group, type AuthType, type OASProbeResult, type OASEndpoint,
+  type OASEntry, type Group, type AuthType, type OASProbeResult,
 } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
