@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class ProbeMcpDto {
   @ApiProperty({ example: 'https://mcp.example.com/sse', description: 'Server URL to test connectivity' })
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   serverUrl!: string
 
   @ApiPropertyOptional({ description: 'Optional HTTP headers to send with the request (e.g. for auth)' })

@@ -3,7 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class ProbeOASDto {
   @ApiProperty({ example: 'https://api.example.com/openapi.json', description: 'URL to the remote OpenAPI spec' })
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   url!: string
 
   @ApiPropertyOptional({ description: 'Optional HTTP headers to send with the request (e.g. for auth)' })
