@@ -4,6 +4,7 @@ import { AdminGuard } from '../auth/admin.guard'
 import { MCPService } from './mcp.service'
 import { CreateMcpDto } from './dto/create-mcp.dto'
 import { UpdateMcpDto } from './dto/update-mcp.dto'
+import { ProbeMcpDto } from './dto/probe-mcp.dto'
 import { PaginationQueryDto, paginate } from '../common'
 
 @ApiTags('Admin / MCP')
@@ -53,6 +54,14 @@ export class AdminMCPController {
   @ApiResponse({ status: 404, description: 'MCP server not found' })
   update(@Param('id') id: string, @Body() dto: UpdateMcpDto) {
     return this.mcpService.update(id, dto)
+  }
+
+  @Post('probe')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Test connectivity to an MCP server (HTTP transport)' })
+  @ApiResponse({ status: 200, description: 'Connection test result' })
+  probe(@Body() dto: ProbeMcpDto) {
+    return this.mcpService.probe(dto.serverUrl, dto.headers)
   }
 
   @Delete(':id')
