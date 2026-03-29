@@ -172,6 +172,8 @@ ucli run --service <name> --operation <operationId> [选项]
 | `--params` | 否 | JSON 字符串（路径参数、查询参数、请求体合并传入） |
 | `--format` | 否 | 输出格式：`json`（默认）、`table`、`yaml` |
 | `--query` | 否 | JMESPath 表达式，用于过滤响应 |
+| `--machine` | 否 | 结构化 JSON 信封输出（Agent 友好模式） |
+| `--dry-run` | 否 | 预览 HTTP 请求但不执行（隐含 `--machine`） |
 
 **示例：**
 
@@ -193,6 +195,13 @@ ucli run --service inventory --operation listProducts \
 # 从文件读取参数
 ucli run --service crm --operation createContact \
   --params "@./contact.json"
+
+# Agent 友好结构化输出
+ucli run --service payments --operation listTransactions --machine
+
+# 预览请求但不执行
+ucli run --service payments --operation createPayment --dry-run \
+  --data '{"amount": 5000, "currency": "CNY"}'
 ```
 
 ---
@@ -217,6 +226,32 @@ ucli mcp tools <server-name> [--format table|json]
 
 ---
 
+### `mcp describe <server> <tool>`
+
+查看 MCP 服务器上指定工具的详细参数模式。
+
+```bash
+ucli mcp describe <server-name> <tool-name> [--json]
+```
+
+| 参数 | 说明 |
+|------|------|
+| `<server-name>` | MCP 服务器名称（来自 `mcp list`） |
+| `<tool-name>` | 工具名称（来自 `mcp tools`） |
+| `--json` | 以 JSON 格式输出完整模式（适合 Agent 消费） |
+
+**示例：**
+
+```bash
+# 人类可读的工具描述
+ucli mcp describe weather get_forecast
+
+# JSON 模式（适合 Agent 内省）
+ucli mcp describe weather get_forecast --json
+```
+
+---
+
 ### `mcp run <server> <tool> [args...]`
 
 在 MCP 服务器上执行指定工具。
@@ -225,7 +260,12 @@ ucli mcp tools <server-name> [--format table|json]
 ucli mcp run <server-name> <tool-name> [args...]
 ```
 
-参数以 `key=value` 形式传入。
+参数以 `key=value` 形式传入，或使用 `--input-json` 直接传入 JSON 对象。
+
+| 参数 | 说明 |
+|------|------|
+| `--json` | 结构化 JSON 输出 |
+| `--input-json` | 以 JSON 对象形式传入工具参数（Agent 推荐） |
 
 **示例：**
 
@@ -235,6 +275,12 @@ ucli mcp run weather get_forecast location="北京" units=metric
 
 # 调用搜索工具
 ucli mcp run search-server web_search query="ucli MCP" limit=5
+
+# 以 JSON 输入调用（Agent 推荐）
+ucli mcp run weather get_forecast --input-json '{"location": "北京", "units": "metric"}'
+
+# 获取结构化 JSON 输出
+ucli mcp run weather get_forecast --json location="北京"
 ```
 
 ---
@@ -305,23 +351,35 @@ ucli services list --format json
 # 第二步：查看服务支持的操作
 ucli services info <service-name> --format json
 
-# 第三步：执行操作
-ucli run --service <name> --operation <operationId> \
-  --params '{ ... }' --format json
+# 第三步：预览请求（dry-run，不执行）
+ucli run --service <name> --operation <operationId> --dry-run \
+  --params '{ ... }'
 
-# 第四步：用 JMESPath 过滤结果
+# 第四步：执行操作并获取结构化输出
+ucli run --service <name> --operation <operationId> \
+  --params '{ ... }' --machine
+
+# 第五步：用 JMESPath 过滤结果
 ucli run --service inventory --operation listProducts \
   --query 'items[?inStock == `true`] | [0:5]'
 
-# 第五步：链式操作（将前一个结果作为下一个的输入）
+# 第六步：链式操作（将前一个结果作为下一个的输入）
 PRODUCT_ID=$(ucli run --service inventory --operation listProducts \
   --query 'items[0].id' | tr -d '"')
 ucli run --service orders --operation createOrder \
   --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
+
+# 第七步：MCP — 查看工具参数模式，然后以 JSON 输入调用
+ucli mcp describe weather get_forecast --json
+ucli mcp run weather get_forecast --input-json '{"location": "北京", "units": "metric"}'
 ```
 
 **智能体使用建议：**
 - 始终先运行 `services list` 发现可用服务
+- 使用 `--machine` 获取结构化信封输出
+- 使用 `--dry-run` 预览请求，避免误操作
+- 使用 `mcp describe <server> <tool> --json` 发现工具参数模式
+- 使用 `--input-json` 调用 MCP 工具（适合复杂或嵌套参数）
 - 使用 `--format json` 方便程序解析
 - 使用 `--query` 配合 JMESPath 提取特定字段
 - 注意列表操作的分页字段（`nextPage`、`totalCount`）

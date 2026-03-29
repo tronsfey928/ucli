@@ -145,6 +145,33 @@ ucli run <service> <operation> [options]
 | `--format json\|table\|yaml` | Output format (default: json) | `--format table` |
 | `--query <jmespath>` | Filter response with JMESPath | `--query "items[*].id"` |
 | `--data <json\|@file>` | Request body for POST/PUT/PATCH | `--data '{"amount":100}'` |
+| `--machine` | Structured JSON envelope output (agent-friendly) | `--machine` |
+| `--dry-run` | Preview the HTTP request without executing (implies `--machine`) | `--dry-run` |
+
+### Agent-Friendly Mode (`--machine`)
+
+Use `--machine` for structured JSON envelope output that agents can parse deterministically:
+
+```bash
+# Structured success output
+ucli run payments listTransactions --machine
+# → { "success": true, "data": {...}, "meta": { "durationMs": 42 } }
+
+# Structured error output
+ucli run payments getTransaction --transactionId invalid --machine
+# → { "success": false, "error": { "type": "HttpClientError", "message": "...", "statusCode": 404 } }
+```
+
+### Dry-Run Mode (`--dry-run`)
+
+Preview the HTTP request that *would* be sent, without actually executing it:
+
+```bash
+ucli run payments createCharge --dry-run --data '{"amount": 5000, "currency": "USD"}'
+# → { "method": "POST", "url": "https://api.example.com/charges", "headers": {...}, "body": {...} }
+```
+
+This is useful for verifying parameters before making destructive or costly API calls.
 
 ### Examples
 
@@ -208,19 +235,26 @@ ucli introspect --output json
 # 2. Inspect a specific service's operations
 ucli services info payments --output json
 
-# 3. List recent transactions
-ucli run payments listTransactions --query "transactions[*].{id:id,amount:amount,status:status}"
+# 3. Preview a request (dry-run, no execution)
+ucli run payments createCharge --dry-run --data '{"amount": 9900, "currency": "USD"}'
 
-# 4. Get a specific transaction
+# 4. Execute with structured output (--machine)
+ucli run payments listTransactions --machine --query "transactions[*].{id:id,amount:amount,status:status}"
+
+# 5. Get a specific transaction
 ucli run payments getTransaction --transactionId txn_abc123
 
-# 5. Create a new charge
+# 6. Create a new charge
 ucli run payments createCharge --data '{
   "amount": 9900,
   "currency": "USD",
   "customerId": "cus_xyz789",
   "description": "Monthly subscription"
 }'
+
+# 7. MCP: describe a tool's parameters, then call it
+ucli mcp describe weather get_forecast --json
+ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
 ```
 
 ---
@@ -270,7 +304,10 @@ ucli mcp list
 # Step 2: Inspect a server's available tools
 ucli mcp tools <server-name>
 
-# Step 3: Run a tool (args as key=value pairs)
+# Step 3: Describe a specific tool's schema (parameters, types)
+ucli mcp describe <server-name> <tool-name>
+
+# Step 4: Run a tool (args as key=value pairs)
 ucli mcp run <server-name> <tool-name> [key=value ...]
 ```
 
@@ -280,7 +317,36 @@ ucli mcp run <server-name> <tool-name> [key=value ...]
 |---------|-------------|
 | `ucli mcp list` | List all MCP servers available to your group |
 | `ucli mcp tools <server>` | List tools available on the server |
+| `ucli mcp describe <server> <tool>` | Show detailed parameter schema for a tool |
 | `ucli mcp run <server> <tool> [args...]` | Execute a tool on the server |
+
+### Tool Introspection (`mcp describe`)
+
+Before calling a tool, use `mcp describe` to discover its parameters:
+
+```bash
+# Human-readable description
+ucli mcp describe weather get_forecast
+
+# JSON schema (for agent consumption)
+ucli mcp describe weather get_forecast --json
+```
+
+### JSON Input Mode (`--input-json`)
+
+For agent callers, use `--input-json` to pass tool arguments as a JSON object (bypasses CLI flag parsing):
+
+```bash
+ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+```
+
+### JSON Output Mode (`--json`)
+
+Use `--json` on `mcp run` to get structured JSON envelope output:
+
+```bash
+ucli mcp run weather get_forecast --json location="New York"
+```
 
 ### Examples
 
@@ -291,11 +357,17 @@ ucli mcp list
 # See what tools are available on "weather" server
 ucli mcp tools weather
 
-# Call the get_forecast tool with arguments
+# Describe the get_forecast tool's parameters
+ucli mcp describe weather get_forecast
+
+# Call the get_forecast tool with key=value arguments
 ucli mcp run weather get_forecast location="New York" units=metric
 
-# Call a search tool
-ucli mcp run search-server web_search query="ucli documentation" limit=5
+# Call with JSON input (preferred for agents)
+ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+
+# Call a search tool with structured JSON output
+ucli mcp run search-server web_search --json query="ucli documentation" limit=5
 ```
 
 ---
@@ -306,19 +378,25 @@ ucli mcp run search-server web_search query="ucli documentation" limit=5
 
 2. **Always use `--output json`.** This wraps every result in `{ success: true, data }` or `{ success: false, error }`. Never parse human-readable text output.
 
-3. **Use `--query` to extract.** Instead of parsing the entire response, use JMESPath to extract exactly what you need.
+3. **Use `--machine` for operation execution.** When running API operations, use `--machine` to get structured envelope output with metadata (timing, method, path). This is more reliable than parsing raw API responses.
 
-4. **Chain operations.** Use the output of one operation as input to the next:
+4. **Preview before mutating with `--dry-run`.** Before making POST/PUT/DELETE calls, use `--dry-run` to verify the request URL, headers, and body without actually executing. This prevents accidental mutations.
+
+5. **Use `--query` to extract.** Instead of parsing the entire response, use JMESPath to extract exactly what you need.
+
+6. **Use `mcp describe` before `mcp run`.** Use `ucli mcp describe <server> <tool> --json` to discover a tool's full parameter schema before calling it. This avoids parameter errors.
+
+7. **Use `--input-json` for MCP tool calls.** When calling MCP tools programmatically, prefer `--input-json '{"key": "value"}'` over `key=value` pairs. JSON input is more reliable for complex or nested arguments.
+
+8. **Chain operations.** Use the output of one operation as input to the next:
    ```bash
    # Get customer ID, then create a charge
    CUSTOMER_ID=$(ucli run crm findCustomer --email user@example.com --query "id" | tr -d '"')
    ucli run payments createCharge --data "{\"customerId\": \"$CUSTOMER_ID\", \"amount\": 1000}"
    ```
 
-5. **Check pagination.** Large result sets may be paginated. Look for `nextPage`, `cursor`, or `Link` headers in the response.
+9. **Check pagination.** Large result sets may be paginated. Look for `nextPage`, `cursor`, or `Link` headers in the response.
 
-6. **Validate before mutating.** For destructive operations (DELETE, large updates), confirm the resource exists and is correct before proceeding.
+10. **Use exit codes for control flow.** Exit code `0` = success, non-zero = failure. Use `--output json` for richer error context.
 
-7. **Use exit codes for control flow.** Exit code `0` = success, non-zero = failure. Use `--output json` for richer error context.
-
-8. **Re-introspect on capability changes.** If you encounter a `not found` error for a service that should exist, run `ucli refresh` then `ucli introspect` to refresh your model of available capabilities.
+11. **Re-introspect on capability changes.** If you encounter a `not found` error for a service that should exist, run `ucli refresh` then `ucli introspect` to refresh your model of available capabilities.

@@ -97,8 +97,8 @@ importers:
   packages/cli:
     dependencies:
       '@tronsfey/openapi2cli':
-        specifier: 1.0.13
-        version: 1.0.13
+        specifier: 1.0.17
+        version: 1.0.17
       axios:
         specifier: ^1.8.4
         version: 1.13.6
@@ -113,8 +113,8 @@ importers:
         specifier: 2026.1.14
         version: 2026.1.14(zod@4.3.6)
       '@tronsfey/mcp2cli':
-        specifier: 1.0.2
-        version: 1.0.2(zod@4.3.6)
+        specifier: 1.3.0
+        version: 1.3.0(zod@4.3.6)
       '@types/node':
         specifier: ^22.14.0
         version: 22.19.15
@@ -2171,13 +2171,13 @@ packages:
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
 
-  '@tronsfey/mcp2cli@1.0.2':
-    resolution: {integrity: sha512-rYKJR1yYS7xg9LaPD6rVL4Hxqbul3XKPioI2MQ3FC9FMmbRa0jA8qdTbgVaowULXXdKTyqtZqcZdKJb5+j+KXQ==}
+  '@tronsfey/mcp2cli@1.3.0':
+    resolution: {integrity: sha512-3GUqpEJVSIlWBgOp7SWdLtHmJ2i5zytKvn6zL4wSyZDOFKIIy+8YRv8c+cG0RRcbyRA8JyOuIh4Y0EOkXOnCQg==}
     engines: {node: '>=18'}
     hasBin: true
 
-  '@tronsfey/openapi2cli@1.0.13':
-    resolution: {integrity: sha512-DepXiBR/xj7wKaJTFxL+54Xi1q9kbFEFpdaO2uvoMRMEWN4fqlqbL5cKogznLl8zgqyZWG8u+lur1aL3NfGTkA==}
+  '@tronsfey/openapi2cli@1.0.17':
+    resolution: {integrity: sha512-pYIN6goRICH/2ga0fsgN2N7TewyVkJ9FN1Nre56EMO42mC27+7YqclHMyO5O8RDqY2qwSWdyTNO8a3UcD4Lzsw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -6993,7 +6993,7 @@ snapshots:
 
   '@tokenizer/token@0.3.0': {}
 
-  '@tronsfey/mcp2cli@1.0.2(zod@4.3.6)':
+  '@tronsfey/mcp2cli@1.3.0(zod@4.3.6)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.27.1(zod@4.3.6)
       chalk: 4.1.2
@@ -7006,7 +7006,7 @@ snapshots:
       - supports-color
       - zod
 
-  '@tronsfey/openapi2cli@1.0.13':
+  '@tronsfey/openapi2cli@1.0.17':
     dependencies:
       '@apidevtools/swagger-parser': 10.1.1(openapi-types@12.1.3)
       axios: 1.13.6

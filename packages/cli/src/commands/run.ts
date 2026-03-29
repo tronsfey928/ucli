@@ -15,11 +15,13 @@ export function registerRun(program: Command): void {
     .option('--format <fmt>', 'Output format: json | table | yaml', 'json')
     .option('--query <jmespath>', 'Filter response with JMESPath expression')
     .option('--data <json>', 'Request body (JSON string or @filename)')
+    .option('--machine', 'Agent-friendly mode: structured JSON envelope output')
+    .option('--dry-run', 'Preview the HTTP request without executing (implies --machine)')
     .allowUnknownOption(true)
     .action(async (
       serviceArg: string | undefined,
       args: string[],
-      opts: { service?: string; operation?: string; params?: string; format?: string; query?: string; data?: string; args?: string[] },
+      opts: { service?: string; operation?: string; params?: string; format?: string; query?: string; data?: string; machine?: boolean; dryRun?: boolean; args?: string[] },
     ) => {
       if (serviceArg && opts.service && serviceArg !== opts.service) {
         outputError(ExitCode.USAGE_ERROR,
@@ -77,6 +79,8 @@ export function registerRun(program: Command): void {
 
       const format = opts.format as 'json' | 'table' | 'yaml' | undefined
       const query = opts.query as string | undefined
+      const machine = opts.machine ?? false
+      const dryRun = opts.dryRun ?? false
 
       try {
         await runOperation({
@@ -84,6 +88,8 @@ export function registerRun(program: Command): void {
           operationArgs,
           ...(format !== undefined ? { format } : {}),
           ...(query !== undefined ? { query } : {}),
+          ...(machine ? { machine } : {}),
+          ...(dryRun ? { dryRun } : {}),
         })
       } catch (err) {
         outputError(ExitCode.GENERAL_ERROR,

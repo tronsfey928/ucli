@@ -1,7 +1,7 @@
 import type { Command } from 'commander'
 import { getConfig } from '../config.js'
 import { ServerClient } from '../lib/server-client.js'
-import { listMcpTools, runMcpTool } from '../lib/mcp-runner.js'
+import { listMcpTools, describeMcpTool, runMcpTool } from '../lib/mcp-runner.js'
 import { toYaml } from '../lib/yaml.js'
 import { ExitCode } from '../lib/exit-codes.js'
 import { isJsonOutput, outputSuccess, outputError } from '../lib/output.js'
@@ -112,11 +112,12 @@ export function registerMcp(program: Command): void {
       console.log()
     })
 
-  // mcp run <server> <tool> [args...]
+  // mcp describe <server> <tool>
   mcp
-    .command('run <server> <tool> [args...]')
-    .description('Call a tool on a MCP server')
-    .action(async (serverName: string, toolName: string, args: string[]) => {
+    .command('describe <server> <tool>')
+    .description('Show detailed schema for a tool on a MCP server')
+    .option('--json', 'Output full schema as JSON (for agent consumption)')
+    .action(async (serverName: string, toolName: string, opts: { json?: boolean }) => {
       const cfg = getConfig()
       const client = new ServerClient(cfg)
 
@@ -129,7 +130,35 @@ export function registerMcp(program: Command): void {
       }
 
       try {
-        await runMcpTool(entry, toolName, args)
+        await describeMcpTool(entry, toolName, { json: opts.json })
+      } catch (err) {
+        outputError(ExitCode.GENERAL_ERROR, `Failed to describe tool: ${(err as Error).message}`)
+      }
+    })
+
+  // mcp run <server> <tool> [args...]
+  mcp
+    .command('run <server> <tool> [args...]')
+    .description('Call a tool on a MCP server')
+    .option('--json', 'Machine-readable JSON output')
+    .option('--input-json <json>', 'Pass tool arguments as a JSON object')
+    .action(async (serverName: string, toolName: string, args: string[], opts: { json?: boolean; inputJson?: string }) => {
+      const cfg = getConfig()
+      const client = new ServerClient(cfg)
+
+      let entry
+      try {
+        entry = await client.getMCP(serverName)
+      } catch {
+        outputError(ExitCode.NOT_FOUND, `Unknown MCP server: ${serverName}`,
+          'Run: ucli mcp list  to see available servers')
+      }
+
+      try {
+        await runMcpTool(entry, toolName, args, {
+          json: opts.json,
+          inputJson: opts.inputJson,
+        })
       } catch (err) {
         outputError(ExitCode.GENERAL_ERROR, `Tool execution failed: ${(err as Error).message}`)
       }

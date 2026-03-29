@@ -24,8 +24,10 @@ async function getMcp2cli() {
   const runnerMod = await import('@tronsfey/mcp2cli/dist/runner/index.js') as any
   return {
     createMcpClient: resolve(clientMod, 'createMcpClient') as (...args: unknown[]) => Promise<unknown>,
-    getTools: resolve(runnerMod, 'getTools') as (...args: unknown[]) => Promise<{ name: string; description?: string }[]>,
+    getTools: resolve(runnerMod, 'getTools') as (...args: unknown[]) => Promise<{ name: string; description?: string; inputSchema?: unknown }[]>,
     runTool: resolve(runnerMod, 'runTool') as (...args: unknown[]) => Promise<void>,
+    describeTool: resolve(runnerMod, 'describeTool') as (...args: unknown[]) => void,
+    describeToolJson: resolve(runnerMod, 'describeToolJson') as (...args: unknown[]) => void,
   }
 }
 
@@ -51,7 +53,7 @@ function buildMcpConfig(entry: McpEntryPublic): Record<string, unknown> {
   return base
 }
 
-export async function listMcpTools(entry: McpEntryPublic): Promise<{ name: string; description?: string }[]> {
+export async function listMcpTools(entry: McpEntryPublic): Promise<{ name: string; description?: string; inputSchema?: unknown }[]> {
   const { createMcpClient, getTools } = await getMcp2cli()
   const config = buildMcpConfig(entry)
   const client = await createMcpClient(config)
@@ -63,7 +65,35 @@ export async function listMcpTools(entry: McpEntryPublic): Promise<{ name: strin
   }
 }
 
-export async function runMcpTool(entry: McpEntryPublic, toolName: string, rawArgs: string[]): Promise<void> {
+export async function describeMcpTool(
+  entry: McpEntryPublic,
+  toolName: string,
+  opts?: { json?: boolean },
+): Promise<void> {
+  const { createMcpClient, getTools, describeTool, describeToolJson } = await getMcp2cli()
+  const config = buildMcpConfig(entry)
+  const client = await createMcpClient(config)
+  try {
+    const tools = await getTools(client, config, { noCache: false, cacheTtl: 3600 })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tool = tools.find((t: any) => t.name === toolName)
+    if (!tool) throw new Error(`Tool "${toolName}" not found on MCP server "${entry.name}"`)
+    if (opts?.json) {
+      describeToolJson(tool)
+    } else {
+      describeTool(tool)
+    }
+  } finally {
+    await closeClient(client)
+  }
+}
+
+export async function runMcpTool(
+  entry: McpEntryPublic,
+  toolName: string,
+  rawArgs: string[],
+  opts?: { json?: boolean; inputJson?: string },
+): Promise<void> {
   const { createMcpClient, getTools, runTool } = await getMcp2cli()
   const config = buildMcpConfig(entry)
   const client = await createMcpClient(config)
@@ -83,7 +113,10 @@ export async function runMcpTool(entry: McpEntryPublic, toolName: string, rawArg
         normalizedArgs.push(arg)
       }
     }
-    await runTool(client, tool, normalizedArgs, {})
+    await runTool(client, tool, normalizedArgs, {
+      ...(opts?.json ? { json: true } : {}),
+      ...(opts?.inputJson ? { inputJson: opts.inputJson } : {}),
+    })
   } finally {
     await closeClient(client)
   }
