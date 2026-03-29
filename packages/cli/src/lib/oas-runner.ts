@@ -32,6 +32,10 @@ export interface RunOptions {
   operationArgs: string[]
   format?: 'json' | 'table' | 'yaml'
   query?: string
+  /** Agent-friendly mode: wrap all output in structured JSON envelopes */
+  machine?: boolean
+  /** Preview the HTTP request without executing it (implies --machine) */
+  dryRun?: boolean
 }
 
 /**
@@ -98,13 +102,15 @@ function buildSafeEnv(authEnv: Record<string, string>): Record<string, string> {
 
 export async function runOperation(opts: RunOptions): Promise<void> {
   const bin = resolveOpenapi2CliBin()
-  const { entry, operationArgs, format, query } = opts
+  const { entry, operationArgs, format, query, machine, dryRun } = opts
 
   const args = [
     'run',
     '--oas', entry.remoteUrl,
     '--cache-ttl', String(entry.cacheTtl),
     ...(entry.baseEndpoint ? ['--endpoint', entry.baseEndpoint] : []),
+    ...(machine ? ['--machine'] : []),
+    ...(dryRun ? ['--dry-run'] : []),
     ...(format ? ['--format', format] : []),
     ...(query ? ['--query', query] : []),
     ...operationArgs,

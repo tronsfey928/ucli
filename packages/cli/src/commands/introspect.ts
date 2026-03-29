@@ -152,12 +152,14 @@ function getCommandReference(): IntrospectCommand[] {
     {
       name: 'run',
       description: 'Execute an operation on an OAS service',
-      usage: 'ucli run <service> <operation> [--format json|table|yaml] [--query <jmespath>] [--data <json|@file>] [--params <json>]',
+      usage: 'ucli run <service> <operation> [--format json|table|yaml] [--query <jmespath>] [--data <json|@file>] [--params <json>] [--machine] [--dry-run]',
       examples: [
         'ucli run payments listTransactions',
         'ucli run payments getTransaction --transactionId txn_123',
         'ucli run payments createCharge --data \'{"amount": 5000, "currency": "USD"}\'',
         'ucli run inventory listProducts --query "items[?stock > `0`].name"',
+        'ucli run payments listTransactions --machine',
+        'ucli run payments createCharge --dry-run --data \'{"amount": 5000}\'',
       ],
     },
     {
@@ -179,12 +181,23 @@ function getCommandReference(): IntrospectCommand[] {
       ],
     },
     {
+      name: 'mcp describe',
+      description: 'Show detailed schema for a tool on a MCP server',
+      usage: 'ucli mcp describe <server> <tool> [--json]',
+      examples: [
+        'ucli mcp describe weather get_forecast',
+        'ucli mcp describe weather get_forecast --json',
+      ],
+    },
+    {
       name: 'mcp run',
       description: 'Call a tool on a MCP server',
-      usage: 'ucli mcp run <server> <tool> [key=value ...]',
+      usage: 'ucli mcp run <server> <tool> [key=value ...] [--json] [--input-json <json>]',
       examples: [
         'ucli mcp run weather get_forecast location="New York"',
         'ucli mcp run search web_search query="ucli docs" limit=5',
+        'ucli mcp run weather get_forecast --input-json \'{"location": "New York"}\'',
+        'ucli mcp run weather get_forecast --json location="New York"',
       ],
     },
     {
