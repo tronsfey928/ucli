@@ -40,6 +40,11 @@ interface OASAuthFields {
   oauth2Scopes: string
 }
 
+/** Convert a spec title to a valid lowercase service name (alphanumeric, hyphens, underscores). */
+function toServiceName(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9\-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 100)
+}
+
 const EMPTY_AUTH_FIELDS: OASAuthFields = {
   bearerToken: '',
   apiKeyKey: '',
@@ -207,9 +212,9 @@ export default function OASPage() {
     try {
       const result = await probeOAS(url)
       setProbeResult(result)
-      // Auto-fill form fields from spec
+      // Auto-fill form fields from spec (only empty fields)
       if (mode === 'create') {
-        const autoName = (result.title || '').toLowerCase().replace(/[^a-z0-9\-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 100)
+        const autoName = toServiceName(result.title || '')
         setForm(f => ({
           ...f,
           name: f.name || autoName,
@@ -217,6 +222,7 @@ export default function OASPage() {
           remoteUrl: f.remoteUrl || url,
           baseEndpoint: f.baseEndpoint || (result.servers[0] ?? ''),
         }))
+        // Clear the import URL input once it has been copied into remoteUrl
         if (!form.remoteUrl) {
           setImportUrl('')
         }

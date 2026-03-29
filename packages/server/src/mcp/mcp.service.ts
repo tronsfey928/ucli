@@ -86,6 +86,8 @@ export class MCPService {
       })
       clearTimeout(timeout)
       const latencyMs = Date.now() - start
+      // 405 Method Not Allowed is treated as "ok" because MCP servers
+      // may not support GET but are still reachable and operational.
       if (res.ok || res.status === 405) {
         return { status: 'ok', message: `Server responded with HTTP ${res.status}`, latencyMs }
       }
