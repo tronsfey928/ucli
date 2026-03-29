@@ -172,6 +172,8 @@ ucli run --service <name> --operation <operationId> [options]
 | `--params` | No | JSON string of parameters (path, query, body merged) |
 | `--format` | No | Output format: `json` (default), `table`, `yaml` |
 | `--query` | No | JMESPath expression to filter the response |
+| `--machine` | No | Structured JSON envelope output (agent-friendly) |
+| `--dry-run` | No | Preview the HTTP request without executing (implies `--machine`) |
 
 **Examples:**
 
@@ -193,6 +195,13 @@ ucli run --service inventory --operation listProducts \
 # POST with data from file
 ucli run --service crm --operation createContact \
   --params "@./contact.json"
+
+# Agent-friendly structured output
+ucli run --service payments --operation listTransactions --machine
+
+# Preview request without executing
+ucli run --service payments --operation createPayment --dry-run \
+  --data '{"amount": 5000, "currency": "USD"}'
 ```
 
 ---
@@ -226,6 +235,32 @@ ucli mcp tools <server-name> [--format table|json]
 
 ---
 
+### `mcp describe <server> <tool>`
+
+Show detailed parameter schema for a tool on a MCP server.
+
+```bash
+ucli mcp describe <server-name> <tool-name> [--json]
+```
+
+| Argument/Flag | Description |
+|---------------|-------------|
+| `<server-name>` | MCP server name from `mcp list` |
+| `<tool-name>` | Tool name from `mcp tools` |
+| `--json` | Output full schema as JSON (for agent consumption) |
+
+**Examples:**
+
+```bash
+# Human-readable tool description
+ucli mcp describe weather get_forecast
+
+# JSON schema (for agent introspection)
+ucli mcp describe weather get_forecast --json
+```
+
+---
+
 ### `mcp run <server> <tool> [args...]`
 
 Execute a tool on an MCP server.
@@ -234,16 +269,27 @@ Execute a tool on an MCP server.
 ucli mcp run <server-name> <tool-name> [args...]
 ```
 
-Args are passed as `key=value` pairs and converted to a JSON object.
+Args are passed as `key=value` pairs and converted to a JSON object, or use `--input-json` for direct JSON input.
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Machine-readable JSON output |
+| `--input-json` | Pass tool arguments as a JSON object (preferred for agents) |
 
 **Examples:**
 
 ```bash
-# Call a weather tool
+# Call a weather tool with key=value args
 ucli mcp run weather get_forecast location="New York" units=metric
 
 # Call a search tool
 ucli mcp run search-server web_search query="ucli MCP" limit=5
+
+# Call with JSON input (preferred for agents)
+ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+
+# Get structured JSON output
+ucli mcp run weather get_forecast --json location="New York"
 ```
 
 ---
@@ -314,23 +360,35 @@ ucli services list --format json
 # Step 2: Inspect a service to see available operations
 ucli services info <service-name> --format json
 
-# Step 3: Execute an operation
-ucli run --service <name> --operation <operationId> \
-  --params '{ ... }' --format json
+# Step 3: Preview a request (dry-run — no execution)
+ucli run --service <name> --operation <operationId> --dry-run \
+  --params '{ ... }'
 
-# Step 4: Filter results with JMESPath
+# Step 4: Execute an operation with structured output
+ucli run --service <name> --operation <operationId> \
+  --params '{ ... }' --machine
+
+# Step 5: Filter results with JMESPath
 ucli run --service inventory --operation listProducts \
   --query 'items[?inStock == `true`] | [0:5]'
 
-# Step 5: Chain operations (use output from one as input to another)
+# Step 6: Chain operations (use output from one as input to another)
 PRODUCT_ID=$(ucli run --service inventory --operation listProducts \
   --query 'items[0].id' | tr -d '"')
 ucli run --service orders --operation createOrder \
   --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
+
+# Step 7: MCP — describe a tool, then call it with JSON input
+ucli mcp describe weather get_forecast --json
+ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
 ```
 
 **Tips for agents:**
 - Always run `services list` first to discover what's available
+- Use `--machine` for structured envelope output from API operations
+- Use `--dry-run` to preview requests before executing destructive operations
+- Use `mcp describe <server> <tool> --json` to discover tool parameters
+- Use `--input-json` for MCP tool calls (more reliable than `key=value` for complex args)
 - Use `--format json` for programmatic parsing
 - Use `--query` with JMESPath to extract specific fields
 - Check pagination fields (`nextPage`, `totalCount`) for list operations
