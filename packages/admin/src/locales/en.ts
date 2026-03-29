@@ -111,6 +111,16 @@ export const en = {
   oas_auth_oauth2_client_secret: 'Client Secret',
   oas_auth_oauth2_scopes: 'Scopes',
   oas_auth_oauth2_scopes_hint: 'comma-separated, leave empty if none',
+  oas_probe_fetch: 'Fetch & Preview',
+  oas_probe_fetching: 'Fetching…',
+  oas_probe_success: 'OpenAPI spec loaded successfully',
+  oas_probe_error: 'Failed to fetch spec',
+  oas_probe_endpoints: 'Endpoints',
+  oas_probe_no_endpoints: 'No endpoints found in the spec',
+  oas_probe_auto_filled: 'Form auto-filled from spec',
+  oas_probe_import_url: 'Import from URL',
+  oas_probe_import_url_desc: 'Enter an OpenAPI spec URL to auto-fill the form',
+  oas_probe_import_url_placeholder: 'https://api.example.com/openapi.json',
 
   // MCP
   mcp_title: 'MCP Servers',
@@ -154,6 +164,11 @@ export const en = {
   mcp_save_changes: 'Save changes',
   mcp_delete_title: 'Delete MCP server?',
   mcp_delete_desc: 'Clients using this server will lose access. This action cannot be undone.',
+  mcp_probe_test: 'Test Connection',
+  mcp_probe_testing: 'Testing…',
+  mcp_probe_ok: 'Connection successful',
+  mcp_probe_error: 'Connection failed',
+  mcp_probe_latency: 'Latency',
 
   // Tokens
   tokens_title: 'Tokens',

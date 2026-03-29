@@ -74,6 +74,31 @@ export class MCPService {
     await this.mcpRepo.delete(id)
   }
 
+  async probe(serverUrl: string, headers?: Record<string, string>): Promise<{ status: 'ok' | 'error'; message: string; latencyMs: number }> {
+    const start = Date.now()
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+      const res = await fetch(serverUrl, {
+        method: 'GET',
+        headers: { ...(headers ?? {}) },
+        signal: controller.signal,
+      })
+      clearTimeout(timeout)
+      const latencyMs = Date.now() - start
+      // 405 Method Not Allowed is treated as "ok" because MCP servers
+      // may not support GET but are still reachable and operational.
+      if (res.ok || res.status === 405) {
+        return { status: 'ok', message: `Server responded with HTTP ${res.status}`, latencyMs }
+      }
+      return { status: 'error', message: `Server responded with HTTP ${res.status} ${res.statusText}`, latencyMs }
+    } catch (err: unknown) {
+      const latencyMs = Date.now() - start
+      const msg = err instanceof Error ? err.message : String(err)
+      return { status: 'error', message: `Connection failed: ${msg}`, latencyMs }
+    }
+  }
+
   private decrypt(entry: McpEntry): McpEntry {
     return { ...entry, authConfig: this.encryption.decrypt(entry.authConfig as unknown as string) as McpAuthConfig }
   }

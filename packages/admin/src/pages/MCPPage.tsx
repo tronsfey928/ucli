@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  listMCP, listGroups, createMCP, updateMCP, deleteMCP, getErrorMessage,
-  type McpEntry, type Group, type McpTransport, type McpAuthConfig,
+  listMCP, listGroups, createMCP, updateMCP, deleteMCP, probeMCP, getErrorMessage,
+  type McpEntry, type Group, type McpTransport, type McpAuthConfig, type MCPProbeResult,
 } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,6 +99,10 @@ export default function MCPPage() {
   const [deleteTarget, setDeleteTarget] = useState<McpEntry | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Probe state
+  const [probing, setProbing] = useState(false)
+  const [probeResult, setProbeResult] = useState<MCPProbeResult | null>(null)
+
   async function load() {
     try {
       const [e, g] = await Promise.all([listMCP(), listGroups()])
@@ -118,6 +122,7 @@ export default function MCPPage() {
     setEditId(null)
     setForm({ ...EMPTY_FORM, groupId: groups[0]?.id ?? '' })
     setFormError('')
+    setProbeResult(null)
     setDialogOpen(true)
   }
 
@@ -137,6 +142,7 @@ export default function MCPPage() {
       enabled: entry.enabled,
     })
     setFormError('')
+    setProbeResult(null)
     setDialogOpen(true)
   }
 
@@ -161,6 +167,31 @@ export default function MCPPage() {
       const pairs = f.authKvPairs.map((p, idx) => idx === i ? { ...p, [field]: val } : p)
       return { ...f, authKvPairs: pairs }
     })
+  }
+
+  async function handleProbe() {
+    if (form.transport !== 'http' || !form.serverUrl.trim()) return
+    setProbing(true)
+    setProbeResult(null)
+    try {
+      const headers: Record<string, string> = {}
+      if (form.authType === 'http_headers') {
+        for (const pair of form.authKvPairs) {
+          if (pair.key.trim()) headers[pair.key.trim()] = pair.value
+        }
+      }
+      const result = await probeMCP(form.serverUrl.trim(), Object.keys(headers).length > 0 ? headers : undefined)
+      setProbeResult(result)
+      if (result.status === 'ok') {
+        toast.success(t('mcp_probe_ok'))
+      } else {
+        toast.error(`${t('mcp_probe_error')}: ${result.message}`)
+      }
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, t('mcp_probe_error')))
+    } finally {
+      setProbing(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -368,14 +399,40 @@ export default function MCPPage() {
             {form.transport === 'http' ? (
               <div className="space-y-1.5">
                 <Label htmlFor="murl">{t('mcp_field_server_url')} <span className="text-destructive">{t('common_required')}</span></Label>
-                <Input
-                  id="murl"
-                  placeholder="https://mcp.example.com/sse"
-                  type="url"
-                  value={form.serverUrl}
-                  onChange={e => setField('serverUrl', e.target.value)}
-                  required={form.transport === 'http'}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="murl"
+                    placeholder="https://mcp.example.com/sse"
+                    type="url"
+                    value={form.serverUrl}
+                    onChange={e => setField('serverUrl', e.target.value)}
+                    required={form.transport === 'http'}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={probing || !form.serverUrl.trim()}
+                    onClick={handleProbe}
+                    className="shrink-0"
+                  >
+                    {probing ? <i className="ri-loader-4-line animate-spin" /> : <i className="ri-pulse-line" />}
+                    {probing ? t('mcp_probe_testing') : t('mcp_probe_test')}
+                  </Button>
+                </div>
+                {/* Probe result */}
+                {probeResult && (
+                  <div className={`flex items-center gap-2 rounded-md px-3 py-2 text-xs ${
+                    probeResult.status === 'ok'
+                      ? 'border border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-300'
+                      : 'border border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300'
+                  }`}>
+                    <i className={probeResult.status === 'ok' ? 'ri-checkbox-circle-line' : 'ri-close-circle-line'} />
+                    <span className="flex-1">{probeResult.message}</span>
+                    <span className="text-muted-foreground">{t('mcp_probe_latency')}: {probeResult.latencyMs}ms</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-1.5">

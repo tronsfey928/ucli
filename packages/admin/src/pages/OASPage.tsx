@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
-  listOAS, listGroups, createOAS, updateOAS, deleteOAS, getErrorMessage,
-  type OASEntry, type Group, type AuthType,
+  listOAS, listGroups, createOAS, updateOAS, deleteOAS, probeOAS, getErrorMessage,
+  type OASEntry, type Group, type AuthType, type OASProbeResult, type OASEndpoint,
 } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,6 +38,11 @@ interface OASAuthFields {
   oauth2ClientId: string
   oauth2ClientSecret: string
   oauth2Scopes: string
+}
+
+/** Convert a spec title to a valid lowercase service name (alphanumeric, hyphens, underscores). */
+function toServiceName(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9\-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 100)
 }
 
 const EMPTY_AUTH_FIELDS: OASAuthFields = {
@@ -138,6 +143,11 @@ export default function OASPage() {
   const [deleteTarget, setDeleteTarget] = useState<OASEntry | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Probe state
+  const [probing, setProbing] = useState(false)
+  const [probeResult, setProbeResult] = useState<OASProbeResult | null>(null)
+  const [importUrl, setImportUrl] = useState('')
+
   async function load() {
     try {
       const [e, g] = await Promise.all([listOAS(), listGroups()])
@@ -158,6 +168,8 @@ export default function OASPage() {
     setForm({ ...EMPTY_FORM, groupId: groups[0]?.id ?? '' })
     setAuthFields(EMPTY_AUTH_FIELDS)
     setFormError('')
+    setProbeResult(null)
+    setImportUrl('')
     setDialogOpen(true)
   }
 
@@ -176,6 +188,8 @@ export default function OASPage() {
     })
     setAuthFields(parseOASAuthFields(entry.authConfig as Record<string, unknown>))
     setFormError('')
+    setProbeResult(null)
+    setImportUrl('')
     setDialogOpen(true)
   }
 
@@ -188,6 +202,37 @@ export default function OASPage() {
 
   function setAuth<K extends keyof OASAuthFields>(key: K, value: OASAuthFields[K]) {
     setAuthFields(f => ({ ...f, [key]: value }))
+  }
+
+  async function handleProbe() {
+    const url = importUrl.trim() || form.remoteUrl.trim()
+    if (!url) return
+    setProbing(true)
+    setProbeResult(null)
+    try {
+      const result = await probeOAS(url)
+      setProbeResult(result)
+      // Auto-fill form fields from spec (only empty fields)
+      if (mode === 'create') {
+        const autoName = toServiceName(result.title || '')
+        setForm(f => ({
+          ...f,
+          name: f.name || autoName,
+          description: f.description || result.description || '',
+          remoteUrl: f.remoteUrl || url,
+          baseEndpoint: f.baseEndpoint || (result.servers[0] ?? ''),
+        }))
+        // Clear the import URL input once it has been copied into remoteUrl
+        if (!form.remoteUrl) {
+          setImportUrl('')
+        }
+      }
+      toast.success(t('oas_probe_success'))
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, t('oas_probe_error')))
+    } finally {
+      setProbing(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -342,6 +387,34 @@ export default function OASPage() {
               {mode === 'create' ? t('oas_dialog_create_desc') : t('oas_dialog_edit_desc')}
             </DialogDescription>
           </DialogHeader>
+
+          {/* Auto-import from URL */}
+          {mode === 'create' && (
+            <div className="space-y-1.5 rounded-md border border-dashed p-3 bg-muted/30">
+              <Label className="text-xs text-muted-foreground">{t('oas_probe_import_url')}</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder={t('oas_probe_import_url_placeholder')}
+                  value={importUrl}
+                  onChange={e => setImportUrl(e.target.value)}
+                  type="url"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={probing || !importUrl.trim()}
+                  onClick={handleProbe}
+                  className="shrink-0"
+                >
+                  {probing ? <i className="ri-loader-4-line animate-spin" /> : <i className="ri-download-cloud-line" />}
+                  {probing ? t('oas_probe_fetching') : t('oas_probe_fetch')}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -382,14 +455,28 @@ export default function OASPage() {
 
             <div className="space-y-1.5">
               <Label htmlFor="ourl">{t('oas_field_remote_url')} <span className="text-destructive">{t('common_required')}</span></Label>
-              <Input
-                id="ourl"
-                placeholder="https://api.example.com/openapi.json"
-                type="url"
-                value={form.remoteUrl}
-                onChange={e => setField('remoteUrl', e.target.value)}
-                required
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="ourl"
+                  placeholder="https://api.example.com/openapi.json"
+                  type="url"
+                  value={form.remoteUrl}
+                  onChange={e => setField('remoteUrl', e.target.value)}
+                  required
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={probing || !form.remoteUrl.trim()}
+                  onClick={handleProbe}
+                  className="shrink-0"
+                >
+                  {probing ? <i className="ri-loader-4-line animate-spin" /> : <i className="ri-search-eye-line" />}
+                  {probing ? t('oas_probe_fetching') : t('oas_probe_fetch')}
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -559,6 +646,45 @@ export default function OASPage() {
                     onChange={e => setAuth('oauth2Scopes', e.target.value)}
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Probe results — endpoints list */}
+            {probeResult && (
+              <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">
+                    {t('oas_probe_endpoints')} ({probeResult.endpoints.length})
+                  </Label>
+                  {probeResult.title && (
+                    <Badge variant="outline" className="text-xs">{probeResult.title} v{probeResult.version}</Badge>
+                  )}
+                </div>
+                {probeResult.endpoints.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t('oas_probe_no_endpoints')}</p>
+                ) : (
+                  <div className="max-h-40 overflow-y-auto rounded border bg-background">
+                    <table className="w-full text-xs">
+                      <tbody>
+                        {probeResult.endpoints.map((ep, i) => (
+                          <tr key={i} className="border-b last:border-0">
+                            <td className="px-2 py-1 w-16">
+                              <Badge variant={
+                                ep.method === 'GET' ? 'secondary' :
+                                ep.method === 'POST' ? 'default' :
+                                ep.method === 'DELETE' ? 'destructive' : 'outline'
+                              } className="text-[10px] font-mono">
+                                {ep.method}
+                              </Badge>
+                            </td>
+                            <td className="px-2 py-1 font-mono text-muted-foreground">{ep.path}</td>
+                            <td className="px-2 py-1 text-muted-foreground truncate max-w-[200px]">{ep.summary}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
 

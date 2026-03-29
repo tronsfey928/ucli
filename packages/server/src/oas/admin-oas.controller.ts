@@ -4,6 +4,7 @@ import { AdminGuard } from '../auth/admin.guard'
 import { OASService } from './oas.service'
 import { CreateOASDto } from './dto/create-oas.dto'
 import { UpdateOASDto } from './dto/update-oas.dto'
+import { ProbeOASDto } from './dto/probe-oas.dto'
 import { PaginationQueryDto, paginate } from '../common'
 
 @ApiTags('Admin / OAS')
@@ -40,6 +41,15 @@ export class AdminOASController {
       return paginate(all, query)
     }
     return all
+  }
+
+  @Post('probe')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Fetch and parse a remote OpenAPI spec to preview endpoints' })
+  @ApiResponse({ status: 200, description: 'Parsed OpenAPI spec info' })
+  @ApiResponse({ status: 400, description: 'Failed to fetch or parse the spec' })
+  probe(@Body() dto: ProbeOASDto) {
+    return this.oasService.probe(dto.url, dto.headers)
   }
 
   @Put(':id')

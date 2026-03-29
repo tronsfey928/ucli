@@ -3,6 +3,21 @@ import { OAS_REPO } from '../storage/storage.tokens'
 import { EncryptionService } from '../crypto/encryption.service'
 import type { IOASRepo, OASEntry, CreateOASInput, UpdateOASInput, AuthConfig } from '../storage/interfaces/repos.interface'
 
+export interface OASEndpoint {
+  path: string
+  method: string
+  summary: string
+  operationId: string
+}
+
+export interface OASProbeResult {
+  title: string
+  description: string
+  version: string
+  servers: string[]
+  endpoints: OASEndpoint[]
+}
+
 @Injectable()
 export class OASService {
   constructor(
@@ -66,6 +81,65 @@ export class OASService {
 
   async delete(id: string): Promise<void> {
     await this.oasRepo.delete(id)
+  }
+
+  async probe(url: string, headers?: Record<string, string>): Promise<OASProbeResult> {
+    let body: string
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+      const res = await fetch(url, {
+        headers: { Accept: 'application/json, application/yaml, text/yaml', ...(headers ?? {}) },
+        signal: controller.signal,
+      })
+      clearTimeout(timeout)
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+      body = await res.text()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      throw new BadRequestException(`Failed to fetch OAS spec: ${msg}`)
+    }
+
+    try {
+      const spec = JSON.parse(body) as Record<string, unknown>
+      return this.parseOASSpec(spec)
+    } catch {
+      throw new BadRequestException('Failed to parse OAS spec: invalid JSON')
+    }
+  }
+
+  private parseOASSpec(spec: Record<string, unknown>): OASProbeResult {
+    const info = (spec['info'] ?? {}) as Record<string, unknown>
+    const title = String(info['title'] ?? '')
+    const description = String(info['description'] ?? '')
+    const version = String(info['version'] ?? '')
+
+    const servers: string[] = []
+    const rawServers = spec['servers'] as Array<Record<string, unknown>> | undefined
+    if (Array.isArray(rawServers)) {
+      for (const s of rawServers) {
+        if (s['url']) servers.push(String(s['url']))
+      }
+    }
+
+    const endpoints: OASEndpoint[] = []
+    const paths = (spec['paths'] ?? {}) as Record<string, Record<string, unknown>>
+    for (const [path, methods] of Object.entries(paths)) {
+      if (!methods || typeof methods !== 'object') continue
+      for (const [method, op] of Object.entries(methods)) {
+        if (['get', 'post', 'put', 'delete', 'patch', 'head', 'options'].includes(method.toLowerCase())) {
+          const operation = op as Record<string, unknown>
+          endpoints.push({
+            path,
+            method: method.toUpperCase(),
+            summary: String(operation['summary'] ?? operation['description'] ?? ''),
+            operationId: String(operation['operationId'] ?? ''),
+          })
+        }
+      }
+    }
+
+    return { title, description, version, servers, endpoints }
   }
 
   private decrypt(entry: OASEntry): OASEntry {
