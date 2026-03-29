@@ -227,6 +227,41 @@ export async function deleteMCP(id: string): Promise<void> {
   await client().delete(`/admin/mcp/${id}`)
 }
 
+// ── OAS Probe ─────────────────────────────────────────────────────────────
+
+export interface OASEndpoint {
+  path: string
+  method: string
+  summary: string
+  operationId: string
+}
+
+export interface OASProbeResult {
+  title: string
+  description: string
+  version: string
+  servers: string[]
+  endpoints: OASEndpoint[]
+}
+
+export async function probeOAS(url: string, headers?: Record<string, string>): Promise<OASProbeResult> {
+  const res = await client().post<OASProbeResult>('/admin/oas/probe', { url, headers })
+  return res.data
+}
+
+// ── MCP Probe ─────────────────────────────────────────────────────────────
+
+export interface MCPProbeResult {
+  status: 'ok' | 'error'
+  message: string
+  latencyMs: number
+}
+
+export async function probeMCP(serverUrl: string, headers?: Record<string, string>): Promise<MCPProbeResult> {
+  const res = await client().post<MCPProbeResult>('/admin/mcp/probe', { serverUrl, headers })
+  return res.data
+}
+
 // ── Stats helper ──────────────────────────────────────────────────────────
 
 export interface Stats {

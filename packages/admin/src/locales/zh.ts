@@ -113,6 +113,16 @@ export const zh: Record<TranslationKey, string> = {
   oas_auth_oauth2_client_secret: 'Client Secret',
   oas_auth_oauth2_scopes: '授权范围',
   oas_auth_oauth2_scopes_hint: '逗号分隔，无需授权范围时留空',
+  oas_probe_fetch: '获取并预览',
+  oas_probe_fetching: '获取中…',
+  oas_probe_success: 'OpenAPI 规范加载成功',
+  oas_probe_error: '获取规范失败',
+  oas_probe_endpoints: '接口列表',
+  oas_probe_no_endpoints: '规范中未找到接口',
+  oas_probe_auto_filled: '已从规范自动填充表单',
+  oas_probe_import_url: '从 URL 导入',
+  oas_probe_import_url_desc: '输入 OpenAPI 规范地址以自动填充表单',
+  oas_probe_import_url_placeholder: 'https://api.example.com/openapi.json',
 
   // MCP
   mcp_title: 'MCP 服务器',
@@ -156,6 +166,11 @@ export const zh: Record<TranslationKey, string> = {
   mcp_save_changes: '保存更改',
   mcp_delete_title: '删除 MCP 服务器？',
   mcp_delete_desc: '使用该服务器的客户端将失去访问权限。此操作不可撤销。',
+  mcp_probe_test: '测试连接',
+  mcp_probe_testing: '测试中…',
+  mcp_probe_ok: '连接成功',
+  mcp_probe_error: '连接失败',
+  mcp_probe_latency: '延迟',
 
   // Token
   tokens_title: 'Token',
