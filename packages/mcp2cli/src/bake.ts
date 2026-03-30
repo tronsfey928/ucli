@@ -78,7 +78,7 @@ export async function deleteBake(name: string): Promise<boolean> {
  */
 export function configToArgs(config: McpServerConfig): string[] {
   const args: string[] = [];
-  if (config.type === 'http') {
+  if (config.type === 'http' || config.type === 'sse') {
     args.push('--mcp', config.url);
     if (config.headers) {
       for (const [k, v] of Object.entries(config.headers)) {

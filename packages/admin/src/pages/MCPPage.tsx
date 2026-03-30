@@ -391,22 +391,23 @@ export default function MCPPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="http">{t('mcp_transport_http')}</SelectItem>
+                  <SelectItem value="sse">{t('mcp_transport_sse')}</SelectItem>
                   <SelectItem value="stdio">{t('mcp_transport_stdio')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {form.transport === 'http' ? (
+            {(form.transport === 'http' || form.transport === 'sse') ? (
               <div className="space-y-1.5">
                 <Label htmlFor="murl">{t('mcp_field_server_url')} <span className="text-destructive">{t('common_required')}</span></Label>
                 <div className="flex gap-2">
                   <Input
                     id="murl"
-                    placeholder="https://mcp.example.com/sse"
+                    placeholder={form.transport === 'sse' ? 'https://mcp.example.com/sse' : 'https://mcp.example.com/mcp'}
                     type="url"
                     value={form.serverUrl}
                     onChange={e => setField('serverUrl', e.target.value)}
-                    required={form.transport === 'http'}
+                    required={form.transport === 'http' || form.transport === 'sse'}
                     className="flex-1"
                   />
                   <Button

@@ -1,6 +1,6 @@
 {
   "name": "@tronsfey/ucli",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "ucli — proxy OpenAPI and MCP services for AI agents",
   "keywords": [
     "openapi",
@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/server-filesystem": "2026.1.14",
-    "@tronsfey/mcp2cli": "1.3.0",
+    "@tronsfey/mcp2cli": "workspace:*",
     "@types/node": "^22.14.0",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",

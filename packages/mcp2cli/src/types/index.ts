@@ -1,8 +1,16 @@
 export interface HttpServerConfig {
   type: 'http';
-  /** HTTP/SSE server URL */
+  /** Streamable HTTP server URL (MCP protocol ≥ 2025-03-26, auto-falls back to SSE) */
   url: string;
   /** Custom HTTP headers for the HTTP server */
+  headers?: Record<string, string>;
+}
+
+export interface SseServerConfig {
+  type: 'sse';
+  /** SSE server URL (MCP protocol 2024-11-05, forced SSE — no Streamable HTTP attempt) */
+  url: string;
+  /** Custom HTTP headers */
   headers?: Record<string, string>;
 }
 
@@ -14,7 +22,7 @@ export interface StdioServerConfig {
   env?: Record<string, string>;
 }
 
-export type McpServerConfig = HttpServerConfig | StdioServerConfig;
+export type McpServerConfig = HttpServerConfig | SseServerConfig | StdioServerConfig;
 
 export interface BakeEntry {
   name: string;

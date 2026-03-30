@@ -10,8 +10,8 @@ function getCacheDir(): string {
 
 function getCacheKey(config: McpServerConfig): string {
   const parts: string[] = [];
-  if (config.type === 'http') {
-    parts.push(config.url);
+  if (config.type === 'http' || config.type === 'sse') {
+    parts.push(config.type + ':' + config.url);
     if (config.headers && Object.keys(config.headers).length > 0) {
       // Sort keys for deterministic hashing
       const sorted = Object.keys(config.headers).sort();

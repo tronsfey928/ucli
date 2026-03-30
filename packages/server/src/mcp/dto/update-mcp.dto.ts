@@ -16,14 +16,14 @@ export class UpdateMcpDto {
   @Length(0, 1000)
   description?: string
 
-  @ApiPropertyOptional({ enum: ['http', 'stdio'] })
+  @ApiPropertyOptional({ enum: ['http', 'sse', 'stdio'] })
   @IsOptional()
-  @IsEnum(['http', 'stdio'])
-  transport?: 'http' | 'stdio'
+  @IsEnum(['http', 'sse', 'stdio'])
+  transport?: 'http' | 'sse' | 'stdio'
 
-  @ApiPropertyOptional({ example: 'https://mcp.example.com/sse' })
+  @ApiPropertyOptional({ example: 'https://mcp.example.com/mcp' })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   serverUrl?: string
 
   @ApiPropertyOptional({ example: 'npx -y my-mcp-server' })

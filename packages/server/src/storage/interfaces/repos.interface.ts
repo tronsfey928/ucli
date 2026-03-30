@@ -120,7 +120,7 @@ export interface McpEntry {
   groupId: string
   name: string
   description: string
-  transport: 'http' | 'stdio'
+  transport: 'http' | 'sse' | 'stdio'
   serverUrl: string | null
   command: string | null
   /** Stored AES-256-GCM encrypted; decrypted on retrieval */
@@ -134,7 +134,7 @@ export interface CreateMcpInput {
   groupId: string
   name: string
   description: string
-  transport: 'http' | 'stdio'
+  transport: 'http' | 'sse' | 'stdio'
   serverUrl?: string | null
   command?: string | null
   authConfig: McpAuthConfig
@@ -143,7 +143,7 @@ export interface CreateMcpInput {
 export interface UpdateMcpInput {
   name?: string
   description?: string
-  transport?: 'http' | 'stdio'
+  transport?: 'http' | 'sse' | 'stdio'
   serverUrl?: string | null
   command?: string | null
   authConfig?: McpAuthConfig

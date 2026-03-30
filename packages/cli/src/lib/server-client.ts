@@ -26,7 +26,7 @@ export interface McpEntryPublic {
   groupId: string
   name: string
   description: string
-  transport: 'http' | 'stdio'
+  transport: 'http' | 'sse' | 'stdio'
   serverUrl: string | null
   command: string | null
   authConfig: McpAuthConfig

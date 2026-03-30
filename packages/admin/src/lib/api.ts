@@ -168,7 +168,7 @@ export async function deleteOAS(id: string): Promise<void> {
 
 // ── MCP entries ───────────────────────────────────────────────────────────
 
-export type McpTransport = 'http' | 'stdio'
+export type McpTransport = 'http' | 'sse' | 'stdio'
 
 export type McpAuthConfig =
   | { type: 'none' }

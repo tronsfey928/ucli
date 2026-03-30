@@ -19,14 +19,14 @@ export class CreateMcpDto {
   @Length(0, 1000)
   description?: string
 
-  @ApiProperty({ example: 'http', enum: ['http', 'stdio'], description: 'Transport type' })
-  @IsEnum(['http', 'stdio'])
-  transport!: 'http' | 'stdio'
+  @ApiProperty({ example: 'http', enum: ['http', 'sse', 'stdio'], description: 'Transport type: http (Streamable HTTP, auto-falls back to SSE), sse (forced SSE), stdio (subprocess)' })
+  @IsEnum(['http', 'sse', 'stdio'])
+  transport!: 'http' | 'sse' | 'stdio'
 
-  @ApiPropertyOptional({ example: 'https://mcp.example.com/sse', description: 'Server URL (required for http transport)' })
-  @ValidateIf(o => o.transport === 'http')
-  @IsNotEmpty({ message: 'serverUrl is required when transport is http' })
-  @IsUrl()
+  @ApiPropertyOptional({ example: 'https://mcp.example.com/mcp', description: 'Server URL (required for http or sse transport)' })
+  @ValidateIf(o => o.transport === 'http' || o.transport === 'sse')
+  @IsNotEmpty({ message: 'serverUrl is required when transport is http or sse' })
+  @IsUrl({ require_tld: false })
   serverUrl?: string
 
   @ApiPropertyOptional({ example: 'npx -y my-mcp-server', description: 'Command to run (required for stdio transport)' })

@@ -39,7 +39,7 @@ async function closeClient(client: unknown): Promise<void> {
 
 function buildMcpConfig(entry: McpEntryPublic): Record<string, unknown> {
   const base: Record<string, unknown> = { type: entry.transport }
-  if (entry.transport === 'http') {
+  if (entry.transport === 'http' || entry.transport === 'sse') {
     base.url = entry.serverUrl
   } else {
     base.command = entry.command

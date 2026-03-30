@@ -104,6 +104,25 @@ export async function createMcpClient(
   config: McpServerConfig,
   verbose = false
 ): Promise<Client> {
+  // --- Forced SSE transport (MCP protocol 2024-11-05, no Streamable HTTP attempt) ---
+  if (config.type === 'sse') {
+    if (!config.url) {
+      throw new Error('sse config requires a url');
+    }
+    const sseUrl = new URL(config.url);
+    const sseHeaders = config.headers ?? {};
+    if (verbose) {
+      console.error(`[debug] Connecting via forced SSE to ${config.url}`);
+    }
+    const client = makeClient();
+    const transport = new SSEClientTransport(sseUrl, { requestInit: { headers: sseHeaders } });
+    await client.connect(transport);
+    if (verbose) {
+      console.error(`[debug] Connected via SSE successfully`);
+    }
+    return client;
+  }
+
   if (config.type === 'stdio') {
     if (!config.command) {
       throw new Error('stdio config requires a command');

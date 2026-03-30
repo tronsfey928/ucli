@@ -36,7 +36,7 @@ export function buildBakeCommand(): Command {
       console.log(chalk.bold('\nSaved bakes:\n'));
       for (const b of bakes) {
         const loc =
-          b.config.type === 'http'
+          b.config.type === 'http' || b.config.type === 'sse'
             ? chalk.cyan(b.config.url)
             : chalk.cyan(b.config.command);
         console.log(`  ${chalk.bold(b.name)}  (${b.config.type})  ${loc}`);
