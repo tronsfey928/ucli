@@ -1,0 +1,204 @@
+---
+name: {{structure.name}}
+description: >-
+  Use this skill to interact with the {{structure.name}} API from the command
+  line. Invoke when the user wants to call API operations, retrieve or mutate
+  data, or automate requests against {{structure.baseUrl}}.
+  Available command groups: {{#each structure.groups}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}{{#if (hasItems structure.flatCommands)}}{{#if structure.groups}}; {{/if}}top-level: {{#each structure.flatCommands}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}.
+allowed-tools: Bash({{structure.name}} *)
+argument-hint: "[describe the API call you want to make]"
+---
+
+# {{structure.name}}
+
+{{structure.description}}
+
+**Base URL:** `{{structure.baseUrl}}`
+
+## Setup
+
+```bash
+npm install && npm run build && npm link
+```
+
+{{#eq structure.authConfig.type "bearer"}}
+```bash
+export {{structure.authConfig.envVar}}=<bearer-token>
+```
+{{/eq}}
+{{#eq structure.authConfig.type "apiKey"}}
+```bash
+export {{structure.authConfig.envVar}}=<api-key>
+```
+{{/eq}}
+{{#eq structure.authConfig.type "basic"}}
+```bash
+export {{structure.authConfig.envVar}}=<username:password>
+```
+{{/eq}}
+
+## Available Commands
+
+```
+$ {{structure.name}} --help
+Usage: {{structure.name}} [options] [command]
+
+Commands:
+{{#each structure.groups}}  {{pad name 26}}{{description}}
+{{/each}}{{#each structure.flatCommands}}  {{pad name 26}}{{description}}
+{{/each}}
+Options:
+  --endpoint <url>       Override base URL (default: "{{structure.baseUrl}}")
+  --format <format>      Output format: json|yaml|table (default: "json")
+  --verbose              Log HTTP method and URL before each request
+  -h, --help             display help for command
+```
+
+{{#each structure.groups}}
+### `{{../structure.name}} {{name}}` — {{description}}
+
+```
+$ {{../../structure.name}} {{name}} --help
+Usage: {{../../structure.name}} {{name}} [options] [command]
+
+Commands:
+{{#each subcommands}}  {{pad name 26}}{{description}}
+{{/each}}```
+
+{{#each subcommands}}
+**`{{../../structure.name}} {{../name}} {{name}}`** — {{description}}
+
+`{{uppercase method}} {{path}}`
+
+```bash
+$ {{../../../structure.name}} {{../../name}} {{name}}{{#each options}}{{#if required}} --{{name}} <{{name}}>{{/if}}{{/each}}{{#each options}}{{#unless required}}{{#eq type "boolean"}} --{{name}}{{else}} [--{{name}} <value>]{{/eq}}{{/unless}}{{/each}}
+```
+{{#if (sampleResponseJson this)}}
+```json
+{{sampleResponseJson this}}
+```
+{{/if}}
+{{#if (subcommandHelpText this)}}
+```
+{{subcommandHelpText this}}
+```
+{{/if}}
+
+{{/each}}
+{{/each}}
+{{#if (hasItems structure.flatCommands)}}
+### Top-Level Commands
+
+{{#each structure.flatCommands}}
+**`{{../structure.name}} {{name}}`** — {{description}}
+
+`{{uppercase method}} {{path}}`
+
+```bash
+$ {{../../structure.name}} {{name}}{{#each options}}{{#if required}} --{{name}} <{{name}}>{{/if}}{{/each}}
+```
+{{#if (sampleResponseJson this)}}
+```json
+{{sampleResponseJson this}}
+```
+{{/if}}
+{{#if (subcommandHelpText this)}}
+```
+{{subcommandHelpText this}}
+```
+{{/if}}
+
+{{/each}}
+{{/if}}
+
+## Common Patterns
+
+```bash
+# List with table view
+{{structure.name}} <group> <command> --format table
+
+# POST / PUT / PATCH with inline JSON body
+{{structure.name}} <group> <command> --data '{"field": "value"}'
+
+# POST / PUT / PATCH with body from file
+{{structure.name}} <group> <command> --data @payload.json
+
+# Filter response with jq
+{{structure.name}} <group> <command> | jq '.[] | select(.status == "active")'
+
+# Override endpoint (e.g. staging)
+{{structure.name}} <group> <command> --endpoint https://staging.example.com
+
+# Verbose: log request method + URL
+{{structure.name}} <group> <command> --verbose
+```
+
+## Agent Workflow (openapi2cli run --machine)
+
+When using `openapi2cli` as an AI agent tool, use the proxy mode with `--machine`
+for structured JSON output at every step:
+
+### Step 1: Discover available operations
+
+```bash
+openapi2cli run --oas <spec> --machine
+```
+
+Returns a JSON envelope with all operations, groups, and metadata.
+
+### Step 2: Inspect a specific operation
+
+```bash
+openapi2cli run --oas <spec> --machine describe <group> <operation>
+```
+
+Returns full parameter details, request body schema, response schema,
+authentication requirements, and an example command.
+
+### Step 3: Preview the request (dry-run)
+
+```bash
+openapi2cli run --oas <spec> --dry-run <group> <operation> --param value
+```
+
+Returns the planned HTTP request (method, URL, headers, body) without executing it.
+
+### Step 4: Execute the operation
+
+```bash
+openapi2cli run --oas <spec> --machine <group> <operation> --param value
+```
+
+Returns the API response wrapped in a structured envelope with timing metadata.
+
+### JSON Envelope Format
+
+Every `--machine` response follows this structure:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "meta": {
+    "operation": "get-item",
+    "method": "GET",
+    "path": "/items/{id}",
+    "baseUrl": "{{structure.baseUrl}}",
+    "durationMs": 42
+  }
+}
+```
+
+Error responses:
+
+```json
+{
+  "success": false,
+  "error": {
+    "type": "HttpClientError",
+    "message": "[HTTP 404 Not Found] ...",
+    "statusCode": 404,
+    "hint": "Endpoint not found — verify the operation name and path params"
+  }
+}
+```

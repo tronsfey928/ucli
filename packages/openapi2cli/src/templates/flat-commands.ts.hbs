@@ -1,0 +1,126 @@
+import { Command, Option } from 'commander';
+import chalk from 'chalk';
+import { createApiClient } from './lib/api-client';
+
+export function registerFlatCommands(program: Command): void {
+{{#each flatCommands}}
+  program
+    .command({{jsString name}})
+    .description({{jsString description}})
+{{#each aliases}}
+    .alias({{jsString this}})
+{{/each}}
+{{#each options}}
+{{#if enum}}
+    .addOption(new Option('{{optionFlag name required type}}', {{jsString description}}){{#if defaultValue}}.default({{jsString defaultValue}}){{/if}}.choices([{{#each enum}}{{jsString this}}{{#unless @last}}, {{/unless}}{{/each}}]))
+{{else}}
+{{#eq type "boolean"}}
+    .option('{{optionFlag name required type}}', {{jsString description}})
+{{else}}
+    .option('{{optionFlag name required type}}', {{jsString description}}{{#if defaultValue}}, {{jsString defaultValue}}{{/if}})
+{{/eq}}
+{{/if}}
+{{/each}}
+{{#if (subcommandHelpText this)}}
+    .addHelpText('after', {{subcommandHelpText this}})
+{{/if}}
+    .action(async (opts: Record<string, unknown>, cmd: Command) => {
+      const allOpts = cmd.optsWithGlobals<Record<string, unknown>>();
+      const endpoint = (allOpts['endpoint'] as string | undefined) ?? {{jsString ../structure.baseUrl}};
+      const format = (allOpts['format'] as string | undefined) ?? 'json';
+      const verbose = Boolean(allOpts['verbose']);
+      const allPages = Boolean(allOpts['allPages']);
+      const query = allOpts['query'] as string | undefined;
+      const client = createApiClient(endpoint);
+
+      // Separate body keys from path/query params
+      const bodyKeys = new Set<string>([{{#if requestBody}}{{#each requestBody.fields}}'{{optKey}}', {{/each}}'data'{{/if}}]);
+      const params: Record<string, string | undefined> = {};
+      for (const [k, v] of Object.entries(opts)) {
+        if (!bodyKeys.has(k)) params[k] = v as string | undefined;
+      }
+
+{{#if requestBody}}
+      // Assemble request body
+      let body: unknown;
+      const rawData = opts['data'] as string | undefined;
+      if (rawData) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { readFileSync } = require('fs') as typeof import('fs');
+        body = rawData.startsWith('@')
+          ? JSON.parse(readFileSync(rawData.slice(1), 'utf-8'))
+          : JSON.parse(rawData);
+{{#if (hasItems requestBody.fields)}}
+      } else {
+        const bodyObj: Record<string, unknown> = {};
+        {{#each requestBody.fields}}if (opts['{{optKey}}'] !== undefined) bodyObj[{{jsString name}}] = opts['{{optKey}}'];
+        {{/each}}if (Object.keys(bodyObj).length) body = bodyObj;
+{{/if}}
+      }
+{{/if}}
+
+      try {
+{{#eq streaming "sse"}}
+        // Server-Sent Events — stream events to stdout, one compact JSON line each
+        for await (const eventData of client.requestStream({
+          method: '{{method}}',
+          path: '{{path}}',
+          params,
+          verbose,
+        })) {
+          try {
+            let output: unknown = JSON.parse(eventData);
+            if (query) {
+              // eslint-disable-next-line @typescript-eslint/no-require-imports
+              const jmespath = require('jmespath') as { search: (d: unknown, e: string) => unknown };
+              output = jmespath.search(output, query);
+            }
+            process.stdout.write(JSON.stringify(output) + '\n');
+          } catch {
+            process.stdout.write(eventData + '\n');
+          }
+        }
+{{else}}
+        const result = await client.request({
+          method: '{{method}}',
+          path: '{{path}}',
+          params,
+          {{#if requestBody}}body,{{/if}}
+          verbose,
+          allPages,
+        });
+        formatOutput(result, format, query);
+{{/eq}}
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(chalk.red('Error:'), message);
+        process.exit(1);
+      }
+    });
+
+{{/each}}
+}
+
+function formatOutput(data: unknown, format: string, query?: string): void {
+  let output = data;
+  if (query) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const jmespath = require('jmespath') as { search: (d: unknown, e: string) => unknown };
+    output = jmespath.search(data, query);
+  }
+  if (format === 'json') {
+    console.log(JSON.stringify(output, null, 2));
+  } else if (format === 'yaml') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const yaml = require('yaml') as { stringify: (d: unknown) => string };
+    process.stdout.write(yaml.stringify(output));
+  } else if (format === 'table') {
+    if (Array.isArray(output)) {
+      console.table(output);
+    } else {
+      console.log(JSON.stringify(output, null, 2));
+    }
+  } else {
+    console.log(JSON.stringify(output, null, 2));
+  }
+}

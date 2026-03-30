@@ -1,0 +1,197 @@
+[English](./README.md) | 中文
+
+# {{structure.name}}
+
+{{structure.description}}
+
+| | |
+|---|---|
+| **Base URL** | `{{structure.baseUrl}}` |
+| **版本** | `{{structure.version}}` |
+| **认证方式** | {{#eq structure.authConfig.type "bearer"}}Bearer Token（`{{structure.authConfig.envVar}}`）{{/eq}}{{#eq structure.authConfig.type "apiKey"}}API Key（`{{structure.authConfig.envVar}}`）{{/eq}}{{#eq structure.authConfig.type "basic"}}HTTP Basic 认证（`{{structure.authConfig.envVar}}`）{{/eq}}{{#eq structure.authConfig.type "none"}}无需认证{{/eq}} |
+
+## 快速开始
+
+```bash
+npm install && npm run build && npm link
+```
+
+{{#eq structure.authConfig.type "bearer"}}
+```bash
+export {{structure.authConfig.envVar}}=your-token-here
+```
+{{/eq}}
+{{#eq structure.authConfig.type "apiKey"}}
+```bash
+export {{structure.authConfig.envVar}}=your-api-key
+```
+{{/eq}}
+{{#eq structure.authConfig.type "basic"}}
+```bash
+export {{structure.authConfig.envVar}}=用户名:密码
+```
+{{/eq}}
+
+```
+$ {{structure.name}} --help
+Usage: {{structure.name}} [options] [command]
+
+{{structure.description}}
+
+Commands:
+{{#each structure.groups}}  {{pad name 26}}{{description}}
+{{/each}}{{#each structure.flatCommands}}  {{pad name 26}}{{description}}
+{{/each}}
+Options:
+  --endpoint <url>       覆盖 API 基础地址（默认：\"{{structure.baseUrl}}\"）
+  --format <format>      输出格式（可选：\"json\"、\"yaml\"、\"table\"，默认：\"json\"）
+  --verbose              开启请求详细日志
+  -V, --version          显示版本号
+  -h, --help             显示帮助信息
+```
+
+---
+
+## 命令列表
+
+{{#each structure.groups}}
+### `{{../structure.name}} {{name}}`
+
+{{description}}
+
+```
+$ {{../../structure.name}} {{name}} --help
+Usage: {{../../structure.name}} {{name}} [options] [command]
+
+{{description}}
+
+Commands:
+{{#each subcommands}}  {{pad name 26}}{{description}}
+{{/each}}
+Options:
+  -h, --help             显示帮助信息
+```
+
+{{#each subcommands}}
+#### `{{../../structure.name}} {{../name}} {{name}}`
+
+{{description}} — `{{uppercase method}} {{path}}`
+
+```
+$ {{../../../structure.name}} {{../../name}} {{name}} --help
+Usage: {{../../../structure.name}} {{../../name}} {{name}} [options]
+
+{{description}}
+
+Options:
+{{#each options}}  {{pad (optionFlag name required type) 28}}{{description}}{{#if defaultValue}}（默认：{{defaultValue}}）{{/if}}{{#if enum}}（可选值：{{join enum "、"}}）{{/if}}
+{{/each}}  -h, --help                     显示帮助信息
+```
+
+**示例：**
+
+```bash
+$ {{../../../structure.name}} {{../../name}} {{name}}{{#each options}}{{#if required}} --{{name}} <{{name}}>{{/if}}{{/each}}
+```
+
+{{#if (sampleResponseJson this)}}
+**响应示例：**
+
+```json
+{{sampleResponseJson this}}
+```
+{{/if}}
+{{#if (subcommandHelpText this)}}
+**数据结构：**
+```
+{{subcommandHelpText this}}
+```
+{{/if}}
+
+---
+{{/each}}
+{{/each}}
+{{#if (hasItems structure.flatCommands)}}
+## 顶层命令
+
+未分组的操作直接注册到 CLI 根命令。
+
+{{#each structure.flatCommands}}
+### `{{../structure.name}} {{name}}`
+
+{{description}} — `{{uppercase method}} {{path}}`
+
+```
+$ {{../../structure.name}} {{name}} --help
+Usage: {{../../structure.name}} {{name}} [options]
+
+{{description}}
+
+Options:
+{{#each options}}  {{pad (optionFlag name required type) 28}}{{description}}{{#if defaultValue}}（默认：{{defaultValue}}）{{/if}}{{#if enum}}（可选值：{{join enum "、"}}）{{/if}}
+{{/each}}  -h, --help                     显示帮助信息
+```
+
+**示例：**
+
+```bash
+$ {{../../structure.name}} {{name}}{{#each options}}{{#if required}} --{{name}} <{{name}}>{{/if}}{{/each}}
+```
+
+{{#if (sampleResponseJson this)}}
+**响应示例：**
+
+```json
+{{sampleResponseJson this}}
+```
+{{/if}}
+{{#if (subcommandHelpText this)}}
+**数据结构：**
+```
+{{subcommandHelpText this}}
+```
+{{/if}}
+
+---
+{{/each}}
+{{/if}}
+
+## 全局选项
+
+| 选项 | 说明 | 默认值 |
+|------|------|--------|
+| `--endpoint <url>` | 覆盖 API 基础地址 | `{{structure.baseUrl}}` |
+| `--format <format>` | 输出格式 | `json`（可选：`json`、`yaml`、`table`） |
+| `--verbose` | 打印每次请求的 HTTP 方法和 URL | `false` |
+
+## 请求体
+
+对于 `POST`、`PUT`、`PATCH` 命令，使用 `--data` 传入请求体：
+
+```bash
+# 内联 JSON
+{{structure.name}} <group> <command> --data '{"key": "value"}'
+
+# 从文件读取
+{{structure.name}} <group> <command> --data @payload.json
+```
+
+## 输出格式
+
+```bash
+# 默认：格式化 JSON
+{{structure.name}} <group> <command> [options]
+
+# 表格视图（适合数组类型数据）
+{{structure.name}} <group> <command> [options] --format table
+
+# 配合 jq 过滤
+{{structure.name}} <group> <command> [options] | jq '.items[]'
+
+# 保存到文件
+{{structure.name}} <group> <command> [options] > result.json
+```
+
+---
+
+_由 [openapi2cli](https://github.com/tronsfey928/openapi2cli) 根据 OpenAPI 规范 v{{structure.version}} 生成。_

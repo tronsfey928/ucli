@@ -1,0 +1,38 @@
+#!/usr/bin/env node
+import { Command } from 'commander';
+import chalk from 'chalk';
+{{#each structure.groups}}
+import { register{{pascalCase name}}Commands } from './commands/{{name}}';
+{{/each}}
+{{#if (hasItems structure.flatCommands)}}
+import { registerFlatCommands } from './flat-commands';
+{{/if}}
+
+const program = new Command();
+
+program
+  .name({{jsString structure.name}})
+  .description({{jsString structure.description}})
+  .version({{jsString structure.version}});
+
+// Global options
+program
+  .option('--endpoint <url>', 'Override the base API URL', {{jsString structure.baseUrl}})
+  .addOption(new (require('commander').Option)('--format <format>', 'Output format').choices(['json', 'yaml', 'table']).default('json'))
+  .option('--verbose', 'Enable verbose request logging')
+  .option('--query [expr]', 'JMESPath expression to filter the response')
+  .option('--all-pages', 'Auto-follow Link rel="next" headers to collect all pages');
+
+// Register tag-level command groups
+{{#each structure.groups}}
+register{{pascalCase name}}Commands(program);
+{{/each}}
+{{#if (hasItems structure.flatCommands)}}
+// Register untagged operations directly on the program
+registerFlatCommands(program);
+{{/if}}
+
+program.parseAsync(process.argv).catch((err: Error) => {
+  console.error(chalk.red('Error:'), err.message);
+  process.exit(1);
+});

@@ -1,0 +1,16 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Source — published package only ships dist/ (see "files" in package.json)
+src/
+tsconfig.json
+scripts/
+
+# Tests & fixtures
+tests/
+examples/
+
+# Dev configs
+.eslintrc*
+.prettierrc*

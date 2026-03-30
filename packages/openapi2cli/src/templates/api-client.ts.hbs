@@ -1,0 +1,217 @@
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import chalk from 'chalk';
+import { EventSourceParserStream } from 'eventsource-parser/stream';
+
+// Available auth schemes: {{join structure.allAuthSchemes ", "}}
+
+// ─── Dynamic token helpers ────────────────────────────────────────────────────
+{{#eq structure.authConfig.type "oauth2-cc"}}
+/**
+ * OAuth2 Client Credentials token exchange (RFC 6749 §4.4).
+ * Reads {{structure.authConfig.clientIdEnvVar}} and {{structure.authConfig.clientSecretEnvVar}}
+ * from the environment, calls the token endpoint, and caches the result for
+ * the lifetime of the process.
+ */
+let _oauth2Token: string | null = null;
+async function _getOAuth2Token(): Promise<string | null> {
+  if (_oauth2Token) return _oauth2Token;
+  const clientId = process.env[{{jsString structure.authConfig.clientIdEnvVar}}];
+  const clientSecret = process.env[{{jsString structure.authConfig.clientSecretEnvVar}}];
+  if (!clientId || !clientSecret) return null;
+  const body = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: clientId,
+    client_secret: clientSecret,
+  });
+  const scopes = process.env[{{jsString structure.authConfig.scopesEnvVar}}];
+  if (scopes) body.set('scope', scopes);
+  const resp = await axios.post({{jsString structure.authConfig.tokenUrl}}, body.toString(), {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+  _oauth2Token = (resp.data as { access_token: string }).access_token;
+  return _oauth2Token;
+}
+{{/eq}}
+{{#eq structure.authConfig.type "dynamic"}}
+/**
+ * Custom dynamic token provider.
+ * Reads env vars, sends them as a JSON body to the token endpoint,
+ * and caches the result for the lifetime of the process.
+ * Token endpoint: {{structure.authConfig.tokenUrl}}
+ */
+let _dynamicToken: string | null = null;
+async function _getDynamicToken(): Promise<string | null> {
+  if (_dynamicToken) return _dynamicToken;
+  const tokenBody: Record<string, string> = {};
+  {{#each structure.authConfig.tokenEnvVars}}
+  const _v{{@index}} = process.env[{{jsString env}}];
+  if (_v{{@index}}) tokenBody[{{jsString name}}] = _v{{@index}};
+  {{/each}}
+  if (!Object.keys(tokenBody).length) return null;
+  const resp = await axios.post({{jsString structure.authConfig.tokenUrl}}, tokenBody);
+  _dynamicToken = (resp.data as { access_token: string }).access_token;
+  return _dynamicToken;
+}
+{{/eq}}
+
+// ─── Auth header builder ──────────────────────────────────────────────────────
+async function _getAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {};
+{{#eq structure.authConfig.type "bearer"}}
+  const token = process.env[{{jsString structure.authConfig.envVar}}];
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+{{/eq}}
+{{#eq structure.authConfig.type "apiKey"}}
+  const key = process.env[{{jsString structure.authConfig.envVar}}];
+  if (key) headers[{{jsString structure.authConfig.headerName}}] = key;
+{{/eq}}
+{{#eq structure.authConfig.type "basic"}}
+  const credentials = process.env[{{jsString structure.authConfig.envVar}}];
+  if (credentials) headers['Authorization'] = `Basic ${Buffer.from(credentials).toString('base64')}`;
+{{/eq}}
+{{#eq structure.authConfig.type "oauth2-cc"}}
+  const token = await _getOAuth2Token();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+{{/eq}}
+{{#eq structure.authConfig.type "dynamic"}}
+  const token = await _getDynamicToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+{{/eq}}
+  return headers;
+}
+
+// ─── URL builder ──────────────────────────────────────────────────────────────
+function _buildUrl(
+  path: string,
+  params: Record<string, string | undefined>
+): { url: string; queryParams: Record<string, string> } {
+  const mutableParams = { ...params };
+  const url = path.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const val = mutableParams[key];
+    if (!val) throw new Error(`Missing required path parameter: ${key}`);
+    delete mutableParams[key];
+    return encodeURIComponent(val);
+  });
+  const queryParams = Object.fromEntries(
+    Object.entries(mutableParams).filter(([, v]) => v !== undefined)
+  ) as Record<string, string>;
+  return { url, queryParams };
+}
+
+// ─── Link header parser (RFC 5988) ───────────────────────────────────────────
+function _parseLinkNext(linkHeader: string | undefined): string | null {
+  if (!linkHeader) return null;
+  for (const part of linkHeader.split(',')) {
+    const match = part.match(/<([^>]+)>;\s*rel="next"/);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// ─── API client factory ───────────────────────────────────────────────────────
+interface RequestOptions {
+  method: string;
+  path: string;
+  params: Record<string, string | undefined>;
+  body?: unknown;
+  verbose?: boolean;
+  allPages?: boolean;
+}
+
+export function createApiClient(baseURL: string): {
+  request: (opts: RequestOptions) => Promise<unknown>;
+  requestStream: (opts: RequestOptions) => AsyncGenerator<string, void, unknown>;
+} {
+  const instance: AxiosInstance = axios.create({ baseURL, proxy: false });
+
+  return {
+    async request({ method, path, params, body, verbose, allPages }: RequestOptions): Promise<unknown> {
+      const { url, queryParams } = _buildUrl(path, params);
+      const authHeaders = await _getAuthHeaders();
+
+      const config: AxiosRequestConfig = {
+        method,
+        url,
+        params: Object.keys(queryParams).length ? queryParams : undefined,
+        data: body,
+        headers: authHeaders,
+      };
+
+      if (verbose) {
+        console.error(chalk.dim('→'), chalk.bold(method.toUpperCase()), baseURL + url);
+        if (body !== undefined) console.error(chalk.dim('  body:'), JSON.stringify(body));
+      }
+
+      if (allPages) {
+        const results: unknown[] = [];
+        let nextUrl: string | null = url;
+        let isFirst = true;
+        while (nextUrl) {
+          const pageConfig: AxiosRequestConfig = isFirst
+            ? { ...config }
+            : { method, url: nextUrl, headers: authHeaders };
+          isFirst = false;
+          const response: AxiosResponse = await instance.request(pageConfig);
+          if (verbose) {
+            console.error(chalk.dim('←'), chalk.bold(String(response.status)), response.statusText);
+          }
+          const data = response.data;
+          if (Array.isArray(data)) {
+            results.push(...data);
+          } else {
+            results.push(data);
+          }
+          nextUrl = _parseLinkNext(response.headers['link'] as string | undefined);
+        }
+        return results;
+      }
+
+      const response: AxiosResponse = await instance.request(config);
+      if (verbose) {
+        console.error(chalk.dim('←'), chalk.bold(String(response.status)), response.statusText);
+      }
+      return response.data;
+    },
+
+    /**
+     * Consume a Server-Sent Events stream.
+     * Uses eventsource-parser (Node.js-native) via the Web Streams API.
+     * Yields each non-empty data payload. "[DONE]" sentinels are silently dropped.
+     * Requires Node.js ≥18 for the built-in fetch API.
+     */
+    async *requestStream({ method, path, params, body, verbose }: RequestOptions): AsyncGenerator<string, void, unknown> {
+      const { url, queryParams } = _buildUrl(path, params);
+      const qs = new URLSearchParams(queryParams).toString();
+      const fullUrl = baseURL + url + (qs ? `?${qs}` : '');
+      const authHeaders = await _getAuthHeaders();
+
+      if (verbose) {
+        console.error(chalk.dim('→ SSE'), chalk.bold(method.toUpperCase()), fullUrl);
+      }
+
+      const response = await fetch(fullUrl, {
+        method,
+        headers: { 'Accept': 'text/event-stream', 'Cache-Control': 'no-cache', ...authHeaders },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!response.body) return;
+
+      if (verbose) {
+        console.error(chalk.dim('← SSE'), chalk.bold(String(response.status)), response.statusText);
+      }
+
+      // Pipe: Uint8Array → decoded text → parsed SSE events
+      const eventStream = response.body
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(new EventSourceParserStream());
+
+      for await (const event of eventStream) {
+        if (event.data && event.data !== '[DONE]') {
+          yield event.data;
+        }
+      }
+    },
+  };
+}

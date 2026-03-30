@@ -1,0 +1,31 @@
+{
+  "name": "{{structure.name}}",
+  "version": "1.0.0",
+  "description": {{jsString structure.description}},
+  "main": "dist/index.js",
+  "bin": {
+    "{{structure.name}}": "./bin/{{structure.name}}"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "eventsource-parser": "^3.0.6",
+    "axios": "^1.7.9",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "jmespath": "^0.16.0",
+    "ora": "^5.4.1",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

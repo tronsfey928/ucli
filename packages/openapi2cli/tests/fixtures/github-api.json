@@ -1,0 +1,329 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "GitHub REST API",
+    "description": "GitHub's v3 REST API — curated subset for openapi2cli integration testing",
+    "version": "1.1.4",
+    "license": {
+      "name": "MIT",
+      "url": "https://spdx.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.github.com",
+      "description": "GitHub REST API"
+    }
+  ],
+  "tags": [
+    {
+      "name": "repos",
+      "description": "Interact with GitHub Repositories"
+    },
+    {
+      "name": "users",
+      "description": "Interact with GitHub Users"
+    }
+  ],
+  "paths": {
+    "/repos/{owner}/{repo}": {
+      "get": {
+        "operationId": "getRepo",
+        "tags": ["repos"],
+        "summary": "Get a repository",
+        "description": "The parent and source objects are present when the repository is a fork.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "description": "The account owner of the repository",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "description": "The name of the repository without the .git extension",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full Repository object",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FullRepository" }
+              }
+            }
+          },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Resource not found" }
+        }
+      }
+    },
+    "/repos/{owner}/{repo}/issues": {
+      "get": {
+        "operationId": "listRepoIssues",
+        "tags": ["repos"],
+        "summary": "List repository issues",
+        "description": "List issues in a repository. Only open issues will be listed.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "description": "The account owner of the repository",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "description": "The name of the repository",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "Indicates the state of the issues to return",
+            "schema": {
+              "type": "string",
+              "enum": ["open", "closed", "all"],
+              "default": "open"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "The number of results per page (max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "The page number of the results to fetch",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of issues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Issue" }
+                }
+              }
+            }
+          },
+          "404": { "description": "Resource not found" }
+        }
+      },
+      "post": {
+        "operationId": "createIssue",
+        "tags": ["repos"],
+        "summary": "Create an issue",
+        "description": "Any user with pull access to a repository can create an issue.",
+        "parameters": [
+          {
+            "name": "owner",
+            "in": "path",
+            "required": true,
+            "description": "The account owner of the repository",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "repo",
+            "in": "path",
+            "required": true,
+            "description": "The name of the repository",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Issue creation data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title"],
+                "properties": {
+                  "title": { "type": "string", "description": "The title of the issue" },
+                  "body": { "type": "string", "description": "The contents of the issue" },
+                  "labels": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Labels to associate with this issue"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Issue created" },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Resource not found" },
+          "422": { "description": "Validation failed" }
+        }
+      }
+    },
+    "/users/{username}": {
+      "get": {
+        "operationId": "getUser",
+        "tags": ["users"],
+        "summary": "Get a user",
+        "description": "Provides publicly available information about someone with a GitHub account.",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "description": "The handle for the GitHub user account",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User data",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PublicUser" }
+              }
+            }
+          },
+          "404": { "description": "Resource not found" }
+        }
+      }
+    },
+    "/user/repos": {
+      "get": {
+        "operationId": "listUserRepos",
+        "tags": ["users"],
+        "summary": "List repositories for the authenticated user",
+        "description": "Lists repositories that the authenticated user has explicit permission to access.",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "description": "Limit results to repositories of the specified type",
+            "schema": {
+              "type": "string",
+              "enum": ["all", "owner", "public", "private", "member"],
+              "default": "all"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "The property to sort the results by",
+            "schema": {
+              "type": "string",
+              "enum": ["created", "updated", "pushed", "full_name"],
+              "default": "full_name"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "The number of results per page (max 100)",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Repository" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "GitHub personal access token or OAuth token"
+      }
+    },
+    "schemas": {
+      "FullRepository": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "full_name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "private": { "type": "boolean" },
+          "html_url": { "type": "string" },
+          "stargazers_count": { "type": "integer" },
+          "forks_count": { "type": "integer" },
+          "language": { "type": "string", "nullable": true }
+        }
+      },
+      "Repository": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "full_name": { "type": "string" },
+          "private": { "type": "boolean" }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "number": { "type": "integer" },
+          "title": { "type": "string" },
+          "state": { "type": "string" },
+          "html_url": { "type": "string" }
+        }
+      },
+      "PublicUser": {
+        "type": "object",
+        "properties": {
+          "login": { "type": "string" },
+          "id": { "type": "integer" },
+          "name": { "type": "string", "nullable": true },
+          "company": { "type": "string", "nullable": true },
+          "blog": { "type": "string" },
+          "location": { "type": "string", "nullable": true },
+          "email": { "type": "string", "nullable": true },
+          "public_repos": { "type": "integer" },
+          "followers": { "type": "integer" },
+          "following": { "type": "integer" }
+        }
+      }
+    }
+  },
+  "security": [
+    { "bearerAuth": [] }
+  ]
+}
