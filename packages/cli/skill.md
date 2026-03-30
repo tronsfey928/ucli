@@ -34,9 +34,9 @@ Use `ucli` whenever you need to call any external business API or MCP server too
 ucli is designed around the **Observe → Orient → Decide → Act** (OODA) loop for AI agent workflows:
 
 1. **Observe** — Discover all available capabilities with `ucli introspect`
-2. **Orient** — Understand specific operations with `ucli services info <name>` or `ucli mcp tools <server>`
+2. **Orient** — Understand specific operations with `ucli oas <service> listapi` or `ucli mcp <server> listtool`
 3. **Decide** — Choose the right operation and parameters based on the task
-4. **Act** — Execute with `ucli run` or `ucli mcp run`
+4. **Act** — Execute with `ucli oas <service> invokeapi <api>` or `ucli mcp <server> invoketool <tool>`
 
 ### Recommended First Call
 
@@ -57,7 +57,7 @@ This returns a complete manifest in a single call:
       { "name": "weather", "description": "...", "transport": "http", ... }
     ],
     "commands": [
-      { "name": "run", "description": "...", "usage": "...", "examples": [...] }
+      { "name": "oas invokeapi", "description": "...", "usage": "...", "examples": [...] }
     ]
   }
 }
@@ -84,7 +84,7 @@ When `--output json` is passed, every command emits exactly one JSON object to s
 
 **Error:**
 ```json
-{ "success": false, "error": { "code": 6, "message": "Service not found: foo", "hint": "Run: ucli services list" } }
+{ "success": false, "error": { "code": 6, "message": "Service not found: foo", "hint": "Run: ucli listoas" } }
 ```
 
 Error codes: `0`=success, `1`=general, `2`=usage, `3`=config, `4`=auth, `5`=connectivity, `6`=not-found, `7`=server-error.
@@ -96,7 +96,7 @@ Error codes: `0`=success, `1`=general, `2`=usage, `3`=config, `4`=auth, `5`=conn
 ## Step 1 — Discover Available Services
 
 ```bash
-ucli services list
+ucli listoas
 ```
 
 Returns a table of service names, auth type, and descriptions. Run this first to see what's available.
@@ -112,7 +112,7 @@ crm         oauth2_cc Customer relationship management
 
 For machine-readable output:
 ```bash
-ucli services list --output json
+ucli listoas --output json
 ```
 
 ---
@@ -120,14 +120,19 @@ ucli services list --output json
 ## Step 2 — Inspect a Service's Operations
 
 ```bash
-ucli services info <service-name>
+ucli oas <service-name> listapi
 ```
 
 Shows all available operations, their parameters, and expected inputs.
 
 **Example:**
 ```bash
-ucli services info payments
+ucli oas payments listapi
+```
+
+For detailed information about a specific API operation:
+```bash
+ucli oas payments apiinfo createCharge
 ```
 
 ---
@@ -135,7 +140,7 @@ ucli services info payments
 ## Step 3 — Execute an Operation
 
 ```bash
-ucli run <service> <operation> [options]
+ucli oas <service> invokeapi <api> [options]
 ```
 
 ### Options
@@ -154,11 +159,11 @@ Use `--machine` for structured JSON envelope output that agents can parse determ
 
 ```bash
 # Structured success output
-ucli run payments listTransactions --machine
+ucli oas payments invokeapi listTransactions --machine
 # → { "success": true, "data": {...}, "meta": { "durationMs": 42 } }
 
 # Structured error output
-ucli run payments getTransaction --transactionId invalid --machine
+ucli oas payments invokeapi getTransaction --params '{"transactionId": "invalid"}' --machine
 # → { "success": false, "error": { "type": "HttpClientError", "message": "...", "statusCode": 404 } }
 ```
 
@@ -167,7 +172,7 @@ ucli run payments getTransaction --transactionId invalid --machine
 Preview the HTTP request that *would* be sent, without actually executing it:
 
 ```bash
-ucli run payments createCharge --dry-run --data '{"amount": 5000, "currency": "USD"}'
+ucli oas payments invokeapi createCharge --dry-run --data '{"amount": 5000, "currency": "USD"}'
 # → { "method": "POST", "url": "https://api.example.com/charges", "headers": {...}, "body": {...} }
 ```
 
@@ -177,34 +182,34 @@ This is useful for verifying parameters before making destructive or costly API 
 
 **List resources (GET):**
 ```bash
-ucli run payments listTransactions --format json
+ucli oas payments invokeapi listTransactions --format json
 ```
 
 **Filter response:**
 ```bash
-ucli run inventory listProducts --query "items[?stock > \`0\`].name"
+ucli oas inventory invokeapi listProducts --query "items[?stock > \`0\`].name"
 ```
 
 **Create a resource (POST):**
 ```bash
-ucli run payments createCharge --data '{"amount": 5000, "currency": "USD", "customerId": "cus_123"}'
+ucli oas payments invokeapi createCharge --data '{"amount": 5000, "currency": "USD", "customerId": "cus_123"}'
 ```
 
 **Update a resource (PUT/PATCH):**
 ```bash
-ucli run crm updateContact --data '{"email": "new@example.com"}' --contactId abc123
+ucli oas crm invokeapi updateContact --data '{"email": "new@example.com"}' --params '{"contactId": "abc123"}'
 ```
 
 **Get a specific resource:**
 ```bash
-ucli run inventory getProduct --productId SKU-001
+ucli oas inventory invokeapi getProduct --params '{"productId": "SKU-001"}'
 ```
 
 ---
 
 ## Step 4 — Process the Output
 
-By default, `ucli run` returns JSON. You can:
+By default, `ucli oas <service> invokeapi` returns JSON. You can:
 - Parse it directly as structured data
 - Use `--query` to extract specific fields (JMESPath syntax)
 - Use `--format table` for human-readable display
@@ -232,29 +237,35 @@ By default, `ucli run` returns JSON. You can:
 # 1. Discover all capabilities (single call)
 ucli introspect --output json
 
-# 2. Inspect a specific service's operations
-ucli services info payments --output json
+# 2. List available services
+ucli listoas
 
-# 3. Preview a request (dry-run, no execution)
-ucli run payments createCharge --dry-run --data '{"amount": 9900, "currency": "USD"}'
+# 3. Inspect a service's API operations
+ucli oas payments listapi
 
-# 4. Execute with structured output (--machine)
-ucli run payments listTransactions --machine --query "transactions[*].{id:id,amount:amount,status:status}"
+# 4. Get detailed info about a specific API
+ucli oas payments apiinfo createCharge
 
-# 5. Get a specific transaction
-ucli run payments getTransaction --transactionId txn_abc123
+# 5. Preview a request (dry-run, no execution)
+ucli oas payments invokeapi createCharge --dry-run --data '{"amount": 9900, "currency": "USD"}'
 
-# 6. Create a new charge
-ucli run payments createCharge --data '{
+# 6. Execute with structured output (--machine)
+ucli oas payments invokeapi listTransactions --machine --query "transactions[*].{id:id,amount:amount,status:status}"
+
+# 7. Get a specific transaction
+ucli oas payments invokeapi getTransaction --params '{"transactionId": "txn_abc123"}'
+
+# 8. Create a new charge
+ucli oas payments invokeapi createCharge --data '{
   "amount": 9900,
   "currency": "USD",
   "customerId": "cus_xyz789",
   "description": "Monthly subscription"
 }'
 
-# 7. MCP: describe a tool's parameters, then call it
-ucli mcp describe weather get_forecast --json
-ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+# 9. MCP: inspect a tool's parameters, then call it
+ucli mcp weather toolinfo get_forecast --json
+ucli mcp weather invoketool get_forecast --data '{"location": "New York", "units": "metric"}'
 ```
 
 ---
@@ -264,8 +275,8 @@ ucli mcp run weather get_forecast --input-json '{"location": "New York", "units"
 | Error | Cause | Resolution |
 |-------|-------|------------|
 | `Authentication failed` | Token expired or invalid | Run `ucli configure --server <url> --token <jwt>` |
-| `Unknown service: <name>` | Service not registered | Run `ucli services list` to see valid names |
-| `400 Bad Request` | Invalid parameters | Check operation signature with `ucli services info <service>` |
+| `Unknown service: <name>` | Service not registered | Run `ucli listoas` to see valid names |
+| `400 Bad Request` | Invalid parameters | Check operation signature with `ucli oas <service> apiinfo <api>` |
 | `404 Not Found` | Resource doesn't exist | Verify the resource ID |
 | `429 Too Many Requests` | Rate limit exceeded | Wait and retry |
 | `5xx Server Error` | Upstream service error | Retry once; if persistent, report to the service owner |
@@ -286,7 +297,7 @@ ucli refresh
 ucli doctor --output json
 
 # Then retry the operation
-ucli run <service> <operation>
+ucli oas <service> invokeapi <api>
 ```
 
 ---
@@ -299,75 +310,72 @@ In addition to OpenAPI services, ucli can interact with MCP (Model Context Proto
 
 ```bash
 # Step 1: Discover available MCP servers
-ucli mcp list
+ucli listmcp
 
 # Step 2: Inspect a server's available tools
-ucli mcp tools <server-name>
+ucli mcp <server-name> listtool
 
 # Step 3: Describe a specific tool's schema (parameters, types)
-ucli mcp describe <server-name> <tool-name>
+ucli mcp <server-name> toolinfo <tool-name>
 
-# Step 4: Run a tool (args as key=value pairs)
-ucli mcp run <server-name> <tool-name> [key=value ...]
+# Step 4: Run a tool (pass arguments as JSON with --data)
+ucli mcp <server-name> invoketool <tool-name> --data <json>
 ```
 
 ### Commands
 
 | Command | Description |
 |---------|-------------|
-| `ucli mcp list` | List all MCP servers available to your group |
-| `ucli mcp tools <server>` | List tools available on the server |
-| `ucli mcp describe <server> <tool>` | Show detailed parameter schema for a tool |
-| `ucli mcp run <server> <tool> [args...]` | Execute a tool on the server |
+| `ucli listmcp` | List all MCP servers available to your group |
+| `ucli mcp <server> listtool` | List tools available on the server |
+| `ucli mcp <server> toolinfo <tool>` | Show detailed parameter schema for a tool |
+| `ucli mcp <server> invoketool <tool> --data <json>` | Execute a tool on the server |
 
-### Tool Introspection (`mcp describe`)
+### Tool Introspection (`mcp toolinfo`)
 
-Before calling a tool, use `mcp describe` to discover its parameters:
+Before calling a tool, use `mcp toolinfo` to discover its parameters:
 
 ```bash
 # Human-readable description
-ucli mcp describe weather get_forecast
+ucli mcp weather toolinfo get_forecast
 
 # JSON schema (for agent consumption)
-ucli mcp describe weather get_forecast --json
+ucli mcp weather toolinfo get_forecast --json
 ```
 
-### JSON Input Mode (`--input-json`)
+### JSON Input Mode (`--data`)
 
-For agent callers, use `--input-json` to pass tool arguments as a JSON object (bypasses CLI flag parsing):
+Pass tool arguments as a JSON object with `--data`:
 
 ```bash
-ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+ucli mcp weather invoketool get_forecast --data '{"location": "New York", "units": "metric"}'
 ```
 
 ### JSON Output Mode (`--json`)
 
-Use `--json` on `mcp run` to get structured JSON envelope output:
+Use `--json` on `mcp invoketool` to get structured JSON envelope output:
 
 ```bash
-ucli mcp run weather get_forecast --json location="New York"
+ucli mcp weather invoketool get_forecast --json --data '{"location": "New York"}'
 ```
 
 ### Examples
 
 ```bash
 # List available MCP servers
-ucli mcp list
+ucli listmcp
 
 # See what tools are available on "weather" server
-ucli mcp tools weather
+ucli mcp weather listtool
 
 # Describe the get_forecast tool's parameters
-ucli mcp describe weather get_forecast
+ucli mcp weather toolinfo get_forecast
 
-# Call the get_forecast tool with key=value arguments
-ucli mcp run weather get_forecast location="New York" units=metric
-
-# Call with JSON input (preferred for agents)
-ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+# Call the get_forecast tool with JSON input
+ucli mcp weather invoketool get_forecast --data '{"location": "New York", "units": "metric"}'
 
 # Call a search tool with structured JSON output
-ucli mcp run search-server web_search --json query="ucli documentation" limit=5
+ucli mcp search-server invoketool web_search --json --data '{"query": "ucli documentation", "limit": 5}'
 ```
 
 ---
@@ -384,15 +392,15 @@ ucli mcp run search-server web_search --json query="ucli documentation" limit=5
 
 5. **Use `--query` to extract.** Instead of parsing the entire response, use JMESPath to extract exactly what you need.
 
-6. **Use `mcp describe` before `mcp run`.** Use `ucli mcp describe <server> <tool> --json` to discover a tool's full parameter schema before calling it. This avoids parameter errors.
+6. **Use `mcp toolinfo` before `mcp invoketool`.** Use `ucli mcp <server> toolinfo <tool> --json` to discover a tool's full parameter schema before calling it. This avoids parameter errors.
 
-7. **Use `--input-json` for MCP tool calls.** When calling MCP tools programmatically, prefer `--input-json '{"key": "value"}'` over `key=value` pairs. JSON input is more reliable for complex or nested arguments.
+7. **Use `--data` for tool/API calls.** When calling MCP tools or OAS APIs programmatically, prefer `--data '{"key": "value"}'` to pass arguments as JSON. JSON input is more reliable for complex or nested arguments.
 
 8. **Chain operations.** Use the output of one operation as input to the next:
    ```bash
    # Get customer ID, then create a charge
-   CUSTOMER_ID=$(ucli run crm findCustomer --email user@example.com --query "id" | tr -d '"')
-   ucli run payments createCharge --data "{\"customerId\": \"$CUSTOMER_ID\", \"amount\": 1000}"
+   CUSTOMER_ID=$(ucli oas crm invokeapi findCustomer --params '{"email":"user@example.com"}' --query "id" | tr -d '"')
+   ucli oas payments invokeapi createCharge --data "{\"customerId\": \"$CUSTOMER_ID\", \"amount\": 1000}"
    ```
 
 9. **Check pagination.** Large result sets may be paginated. Look for `nextPage`, `cursor`, or `Link` headers in the response.

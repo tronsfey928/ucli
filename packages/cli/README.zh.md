@@ -20,7 +20,7 @@
 - **发现** 注册在 ucli 服务端上的 OpenAPI 服务
 - **执行** API 操作，无需直接处理凭据
 - **本地缓存** 规范，减少网络请求
-- **调用** MCP 服务器工具，使用 `ucli mcp run`
+- **调用** MCP 服务器工具，使用 `ucli mcp <server> invoketool <tool>`
 
 认证凭据（Bearer Token、API 密钥、OAuth2 密钥、MCP 请求头/环境变量）在服务端加密存储，运行时以环境变量或请求头方式注入——**永不落盘**，也不会出现在进程列表中。
 
@@ -37,7 +37,7 @@ sequenceDiagram
     Agent->>CLI: ucli configure --server URL --token JWT
     CLI->>CLI: 保存配置（OS 配置目录）
 
-    Agent->>CLI: ucli services list
+    Agent->>CLI: ucli listoas
     CLI->>Cache: 检查本地缓存（TTL）
     alt 缓存未命中
         CLI->>Server: GET /api/v1/oas（Bearer JWT）
@@ -47,7 +47,7 @@ sequenceDiagram
     Cache-->>CLI: OAS 列表
     CLI-->>Agent: 表格 / JSON 输出
 
-    Agent->>CLI: ucli run --service payments --operation createPayment --params '{...}'
+    Agent->>CLI: ucli oas payments invokeapi createPayment --data '{...}'
     CLI->>Server: GET /api/v1/oas/payments（Bearer JWT）
     Server-->>CLI: OAS 规范 + 解密认证配置（TLS）
     CLI->>CLI: 将认证配置注入 ENV 变量
@@ -55,7 +55,7 @@ sequenceDiagram
     API-->>CLI: HTTP 响应
     CLI-->>Agent: 格式化输出（JSON / 表格 / YAML）
 
-    Agent->>CLI: ucli mcp run my-server get_weather --city Beijing
+    Agent->>CLI: ucli mcp my-server invoketool get_weather --data '{"city":"Beijing"}'
     CLI->>Server: GET /api/v1/mcp/my-server（Bearer JWT）
     Server-->>CLI: McpEntry + 解密认证配置（TLS）
     CLI->>CLI: 将认证信息注入 mcp2cli 配置（headers/env）
@@ -79,13 +79,13 @@ pnpm add -g @tronsfey/ucli
 ucli configure --server http://localhost:3000 --token <group-jwt>
 
 # 2. 列出可用服务
-ucli services list
+ucli listoas
 
 # 3. 查看服务的操作列表
-ucli services info payments
+ucli oas payments listapi
 
 # 4. 执行操作
-ucli run --service payments --operation getPetById --params '{"petId": 42}'
+ucli oas payments invokeapi getPetById --params '{"petId": 42}'
 ```
 
 ## 命令参考
@@ -109,12 +109,12 @@ ucli configure --server <url> --token <jwt>
 
 ---
 
-### `services list`
+### `listoas`
 
 列出当前群组可访问的所有 OpenAPI 服务。
 
 ```bash
-ucli services list [--format table|json|yaml] [--refresh]
+ucli listoas [--format table|json|yaml] [--refresh]
 ```
 
 | 参数 | 默认值 | 说明 |
@@ -122,54 +122,50 @@ ucli services list [--format table|json|yaml] [--refresh]
 | `--format` | `table` | 输出格式：`table`、`json` 或 `yaml` |
 | `--refresh` | `false` | 绕过本地缓存，从服务器重新拉取 |
 
-**示例输出（table）：**
-
-```
-NAME         DESCRIPTION              CACHE TTL
-payments     支付服务 API              3600s
-inventory    库存管理                  1800s
-crm          CRM 操作                  7200s
-```
-
-**示例输出（json）：**
-
-```json
-[
-  { "name": "payments", "description": "支付服务 API", "cacheTtl": 3600 },
-  { "name": "inventory", "description": "库存管理", "cacheTtl": 1800 }
-]
-```
-
 ---
 
-### `services info <name>`
+### `oas <service> info`
 
-显示指定服务的详细信息（包括可用操作列表）。
+显示指定服务的详细信息。
 
 ```bash
-ucli services info <service-name> [--format table|json|yaml]
+ucli oas <service> info [--format json|table|yaml]
 ```
-
-| 参数 | 说明 |
-|------|------|
-| `<name>` | 服务名称（来自 `services list`） |
-| `--format` | 输出格式（默认 `table`） |
 
 ---
 
-### `run`
+### `oas <service> listapi`
+
+列出指定服务的所有可用 API 操作。
+
+```bash
+ucli oas <service> listapi [--format json|table|yaml]
+```
+
+---
+
+### `oas <service> apiinfo <api>`
+
+显示指定 API 操作的详细输入输出参数信息。
+
+```bash
+ucli oas <service> apiinfo <api>
+```
+
+---
+
+### `oas <service> invokeapi <api>`
 
 执行 OpenAPI 规范中定义的单个 API 操作。
 
 ```bash
-ucli run --service <name> --operation <operationId> [选项]
+ucli oas <service> invokeapi <api> [选项]
 ```
 
 | 参数 | 必填 | 说明 |
 |------|------|------|
-| `--service` | 是 | 服务名称（来自 `services list`） |
-| `--operation` | 是 | OpenAPI 规范中的 `operationId` |
-| `--params` | 否 | JSON 字符串（路径参数、查询参数、请求体合并传入） |
+| `--data` | 否 | 请求体（JSON 字符串或 @文件名） |
+| `--params` | 否 | JSON 字符串（路径参数、查询参数合并传入） |
 | `--format` | 否 | 输出格式：`json`（默认）、`table`、`yaml` |
 | `--query` | 否 | JMESPath 表达式，用于过滤响应 |
 | `--machine` | 否 | 结构化 JSON 信封输出（Agent 友好模式） |
@@ -179,108 +175,97 @@ ucli run --service <name> --operation <operationId> [选项]
 
 ```bash
 # GET 带路径参数
-ucli run --service petstore --operation getPetById \
-  --params '{"petId": 42}'
+ucli oas petstore invokeapi getPetById --params '{"petId": 42}'
 
 # POST 带请求体
-ucli run --service payments --operation createPayment \
-  --params '{"amount": 100, "currency": "CNY", "recipient": "acct_123"}' \
-  --format json
+ucli oas payments invokeapi createPayment \
+  --data '{"amount": 100, "currency": "CNY", "recipient": "acct_123"}'
 
 # 使用 JMESPath 过滤结果
-ucli run --service inventory --operation listProducts \
+ucli oas inventory invokeapi listProducts \
   --params '{"category": "electronics"}' \
   --query 'items[?price < `500`].name'
 
-# 从文件读取参数
-ucli run --service crm --operation createContact \
-  --params "@./contact.json"
-
 # Agent 友好结构化输出
-ucli run --service payments --operation listTransactions --machine
+ucli oas payments invokeapi listTransactions --machine
 
 # 预览请求但不执行
-ucli run --service payments --operation createPayment --dry-run \
+ucli oas payments invokeapi createPayment --dry-run \
   --data '{"amount": 5000, "currency": "CNY"}'
 ```
 
 ---
 
-### `mcp list`
+### `listmcp`
 
 列出当前群组可访问的所有 MCP 服务器。
 
 ```bash
-ucli mcp list [--format table|json|yaml]
+ucli listmcp [--format table|json|yaml]
 ```
 
 ---
 
-### `mcp tools <server>`
+### `mcp <server> listtool`
 
 列出指定 MCP 服务器上的可用工具。
 
 ```bash
-ucli mcp tools <server-name> [--format table|json]
+ucli mcp <server> listtool [--format table|json|yaml]
 ```
 
 ---
 
-### `mcp describe <server> <tool>`
+### `mcp <server> toolinfo <tool>`
 
 查看 MCP 服务器上指定工具的详细参数模式。
 
 ```bash
-ucli mcp describe <server-name> <tool-name> [--json]
+ucli mcp <server> toolinfo <tool> [--json]
 ```
 
 | 参数 | 说明 |
 |------|------|
-| `<server-name>` | MCP 服务器名称（来自 `mcp list`） |
-| `<tool-name>` | 工具名称（来自 `mcp tools`） |
+| `<server>` | MCP 服务器名称（来自 `listmcp`） |
+| `<tool>` | 工具名称（来自 `mcp <server> listtool`） |
 | `--json` | 以 JSON 格式输出完整模式（适合 Agent 消费） |
 
 **示例：**
 
 ```bash
 # 人类可读的工具描述
-ucli mcp describe weather get_forecast
+ucli mcp weather toolinfo get_forecast
 
 # JSON 模式（适合 Agent 内省）
-ucli mcp describe weather get_forecast --json
+ucli mcp weather toolinfo get_forecast --json
 ```
 
 ---
 
-### `mcp run <server> <tool> [args...]`
+### `mcp <server> invoketool <tool>`
 
 在 MCP 服务器上执行指定工具。
 
 ```bash
-ucli mcp run <server-name> <tool-name> [args...]
+ucli mcp <server> invoketool <tool> [--data <json>] [--json]
 ```
-
-参数以 `key=value` 形式传入，或使用 `--input-json` 直接传入 JSON 对象。
 
 | 参数 | 说明 |
 |------|------|
+| `--data` | 以 JSON 对象形式传入工具参数 |
 | `--json` | 结构化 JSON 输出 |
-| `--input-json` | 以 JSON 对象形式传入工具参数（Agent 推荐） |
 
 **示例：**
 
 ```bash
 # 调用天气工具
-ucli mcp run weather get_forecast location="北京" units=metric
+ucli mcp weather invoketool get_forecast --data '{"location": "北京", "units": "metric"}'
 
 # 调用搜索工具
-ucli mcp run search-server web_search query="ucli MCP" limit=5
-
-# 以 JSON 输入调用（Agent 推荐）
-ucli mcp run weather get_forecast --input-json '{"location": "北京", "units": "metric"}'
+ucli mcp search-server invoketool web_search --data '{"query": "ucli MCP", "limit": 5}'
 
 # 获取结构化 JSON 输出
-ucli mcp run weather get_forecast --json location="北京"
+ucli mcp weather invoketool get_forecast --json --data '{"location": "北京"}'
 ```
 
 ---
@@ -321,7 +306,7 @@ ucli help
 - OAS 条目以 JSON 文件形式缓存到 OS 临时目录（`ucli/` 子目录）
 - 每个条目的缓存 TTL 由服务端管理员通过 `cacheTtl` 字段设置（单位：秒）
 - 过期条目在下次访问时自动重新拉取
-- 强制刷新：`ucli refresh` 或在 `services list` 时添加 `--refresh`
+- 强制刷新：`ucli refresh` 或在 `listoas` 时添加 `--refresh`
 
 ## 认证处理
 
@@ -346,40 +331,43 @@ AI 智能体将 `ucli` 作为技能使用时，推荐的工作流程：
 
 ```bash
 # 第一步：发现可用服务
-ucli services list --format json
+ucli listoas --format json
 
 # 第二步：查看服务支持的操作
-ucli services info <service-name> --format json
+ucli oas <service-name> listapi --format json
 
-# 第三步：预览请求（dry-run，不执行）
-ucli run --service <name> --operation <operationId> --dry-run \
-  --params '{ ... }'
+# 第三步：查看具体 API 的详细参数
+ucli oas <service-name> apiinfo <api>
 
-# 第四步：执行操作并获取结构化输出
-ucli run --service <name> --operation <operationId> \
-  --params '{ ... }' --machine
+# 第四步：预览请求（dry-run，不执行）
+ucli oas <service-name> invokeapi <api> --dry-run \
+  --data '{ ... }'
 
-# 第五步：用 JMESPath 过滤结果
-ucli run --service inventory --operation listProducts \
+# 第五步：执行操作并获取结构化输出
+ucli oas <service-name> invokeapi <api> \
+  --data '{ ... }' --machine
+
+# 第六步：用 JMESPath 过滤结果
+ucli oas inventory invokeapi listProducts \
   --query 'items[?inStock == `true`] | [0:5]'
 
-# 第六步：链式操作（将前一个结果作为下一个的输入）
-PRODUCT_ID=$(ucli run --service inventory --operation listProducts \
+# 第七步：链式操作（将前一个结果作为下一个的输入）
+PRODUCT_ID=$(ucli oas inventory invokeapi listProducts \
   --query 'items[0].id' | tr -d '"')
-ucli run --service orders --operation createOrder \
-  --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
+ucli oas orders invokeapi createOrder \
+  --data "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
 
-# 第七步：MCP — 查看工具参数模式，然后以 JSON 输入调用
-ucli mcp describe weather get_forecast --json
-ucli mcp run weather get_forecast --input-json '{"location": "北京", "units": "metric"}'
+# 第八步：MCP — 查看工具参数模式，然后以 JSON 输入调用
+ucli mcp weather toolinfo get_forecast --json
+ucli mcp weather invoketool get_forecast --data '{"location": "北京", "units": "metric"}'
 ```
 
 **智能体使用建议：**
-- 始终先运行 `services list` 发现可用服务
+- 始终先运行 `ucli listoas` 发现可用服务
 - 使用 `--machine` 获取结构化信封输出
 - 使用 `--dry-run` 预览请求，避免误操作
-- 使用 `mcp describe <server> <tool> --json` 发现工具参数模式
-- 使用 `--input-json` 调用 MCP 工具（适合复杂或嵌套参数）
+- 使用 `ucli mcp <server> toolinfo <tool> --json` 发现工具参数模式
+- 使用 `--data` 传入 JSON 输入（适合复杂或嵌套参数）
 - 使用 `--format json` 方便程序解析
 - 使用 `--query` 配合 JMESPath 提取特定字段
 - 注意列表操作的分页字段（`nextPage`、`totalCount`）
@@ -390,9 +378,9 @@ ucli mcp run weather get_forecast --input-json '{"location": "北京", "units": 
 | 错误 | 可能原因 | 解决方法 |
 |------|---------|---------|
 | `Unauthorized (401)` | JWT 已过期或被吊销 | 联系管理员获取新令牌 |
-| `Service not found` | 服务名拼写错误或不在当前群组 | 运行 `services list` 查看可用服务 |
-| `Operation not found` | 无效的 `operationId` | 运行 `services info <name>` 查看有效操作 |
-| `MCP server not found` | MCP 服务器名拼写错误或不在当前群组 | 运行 `ucli mcp list` 查看可用服务器 |
-| `Tool not found` | 无效的工具名 | 运行 `ucli mcp tools <server>` 查看可用工具 |
+| `Service not found` | 服务名拼写错误或不在当前群组 | 运行 `ucli listoas` 查看可用服务 |
+| `Operation not found` | 无效的 `operationId` | 运行 `ucli oas <service> listapi` 查看有效操作 |
+| `MCP server not found` | MCP 服务器名拼写错误或不在当前群组 | 运行 `ucli listmcp` 查看可用服务器 |
+| `Tool not found` | 无效的工具名 | 运行 `ucli mcp <server> listtool` 查看可用工具 |
 | `Connection refused` | 服务器未运行或 URL 错误 | 用 `ucli configure` 检查服务器 URL |
 | `Cache error` | 临时目录权限问题 | 运行 `ucli refresh` 重置缓存 |

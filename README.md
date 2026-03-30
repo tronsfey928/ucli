@@ -131,7 +131,7 @@ ucli/
     │   └── test/e2e/                # Jest E2E tests (memory adapters)
     └── cli/                         # @tronsfey/ucli (Commander.js + tsup/ESM)
         ├── src/
-        │   ├── commands/            # configure, services, run, refresh, help, mcp
+        │   ├── commands/            # configure, listoas, listmcp, oas, mcp, refresh, help
         │   └── lib/                 # server-client, cache, oas-runner, mcp-runner
         └── test/                    # Vitest unit tests
 ```
@@ -196,13 +196,13 @@ curl -s -X POST http://localhost:3000/admin/mcp \
 npm install -g @tronsfey/ucli
 
 ucli configure --server http://localhost:3000 --token $JWT
-ucli services list
-ucli run --service petstore --operation getPetById --params '{"petId": 1}'
+ucli listoas
+ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
 
 # Use MCP servers
-ucli mcp list
-ucli mcp tools weather
-ucli mcp run weather get_forecast --location "New York"
+ucli listmcp
+ucli mcp weather listtool
+ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
 ```
 
 ## Using with OpenClaw
@@ -263,16 +263,16 @@ Once configured, the OpenClaw agent can:
 
 ```
 > List available API services
-  → Agent runs: ucli services list
+  → Agent runs: ucli listoas
 
 > Call the petstore API to get pet #1
-  → Agent runs: ucli run petstore getPetById --petId 1
+  → Agent runs: ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
 
 > List MCP tools on the weather server
-  → Agent runs: ucli mcp tools weather
+  → Agent runs: ucli mcp weather listtool
 
 > Get the weather forecast for New York
-  → Agent runs: ucli mcp run weather get_forecast location="New York"
+  → Agent runs: ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
 ```
 
 The agent handles service discovery, operation lookup, and credential injection automatically — credentials are **never exposed** to the agent.
@@ -304,7 +304,7 @@ Open `~/Library/Application Support/Claude/claude_desktop_config.json` (create i
 }
 ```
 
-Replace `"weather"` with the name of any MCP server you have registered in ucli (`ucli mcp list` to see available servers).
+Replace `"weather"` with the name of any MCP server you have registered in ucli (`ucli listmcp` to see available servers).
 
 ### Step 3 — Restart Claude Desktop
 

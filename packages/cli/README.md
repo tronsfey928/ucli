@@ -20,7 +20,7 @@
 - **Discover** OpenAPI services registered on a ucli server
 - **Execute** API operations without ever handling credentials directly
 - **Cache** specs locally to reduce round-trips
-- **Invoke** MCP server tools via `ucli mcp run`
+- **Invoke** MCP server tools via `ucli mcp <server> invoketool <tool>`
 
 Auth credentials (bearer tokens, API keys, OAuth2 secrets, MCP headers/env) are stored encrypted on the server and injected at runtime — they are **never written to disk** or visible in process listings.
 
@@ -37,7 +37,7 @@ sequenceDiagram
     Agent->>CLI: ucli configure --server URL --token JWT
     CLI->>CLI: Save config (OS config dir)
 
-    Agent->>CLI: ucli services list
+    Agent->>CLI: ucli listoas
     CLI->>Cache: Check local cache (TTL)
     alt Cache miss
         CLI->>Server: GET /api/v1/oas  (Bearer JWT)
@@ -47,7 +47,7 @@ sequenceDiagram
     Cache-->>CLI: OAS list
     CLI-->>Agent: Table / JSON output
 
-    Agent->>CLI: ucli run --service payments --operation createPayment --params '{...}'
+    Agent->>CLI: ucli oas payments invokeapi createPayment --data '{...}'
     CLI->>Server: GET /api/v1/oas/payments  (Bearer JWT)
     Server-->>CLI: OAS spec + decrypted authConfig (TLS)
     CLI->>CLI: Inject authConfig as ENV vars
@@ -55,7 +55,7 @@ sequenceDiagram
     API-->>CLI: HTTP response
     CLI-->>Agent: Formatted output (JSON / table / YAML)
 
-    Agent->>CLI: ucli mcp run my-server get_weather --city Beijing
+    Agent->>CLI: ucli mcp my-server invoketool get_weather --data '{"city":"Beijing"}'
     CLI->>Server: GET /api/v1/mcp/my-server (Bearer JWT)
     Server-->>CLI: McpEntry + decrypted authConfig (TLS)
     CLI->>CLI: Inject auth as headers/env into mcp2cli config
@@ -79,13 +79,13 @@ pnpm add -g @tronsfey/ucli
 ucli configure --server http://localhost:3000 --token <group-jwt>
 
 # 2. List available services
-ucli services list
+ucli listoas
 
 # 3. Inspect a service's operations
-ucli services info payments
+ucli oas payments listapi
 
 # 4. Run an operation
-ucli run --service payments --operation getPetById --params '{"petId": 42}'
+ucli oas payments invokeapi getPetById --params '{"petId": 42}'
 ```
 
 ## Command Reference
@@ -109,12 +109,12 @@ Config is stored in the OS-appropriate config directory:
 
 ---
 
-### `services list`
+### `listoas`
 
 List all OpenAPI services available to your group.
 
 ```bash
-ucli services list [--format table|json|yaml] [--refresh]
+ucli listoas [--format table|json|yaml] [--refresh]
 ```
 
 | Flag | Default | Description |
@@ -125,51 +125,72 @@ ucli services list [--format table|json|yaml] [--refresh]
 **Example output (table):**
 
 ```
-NAME         DESCRIPTION              CACHE TTL
-payments     Payments service API     3600s
-inventory    Inventory management     1800s
-crm          CRM operations           7200s
-```
-
-**Example output (json):**
-
-```json
-[
-  { "name": "payments", "description": "Payments service API", "cacheTtl": 3600 },
-  { "name": "inventory", "description": "Inventory management", "cacheTtl": 1800 }
-]
+SERVICE      AUTH      DESCRIPTION
+----------   --------  ------------------------------------------
+payments     bearer    Payments service API
+inventory    api_key   Inventory management
+crm          oauth2_cc CRM operations
 ```
 
 ---
 
-### `services info <name>`
+### `oas <service> info`
 
-Show detailed information about a specific service, including its available operations.
+Show detailed information about a specific service.
 
 ```bash
-ucli services info <service-name> [--format table|json|yaml]
+ucli oas <service> info [--format json|table|yaml]
 ```
 
 | Argument/Flag | Description |
 |---------------|-------------|
-| `<name>` | Service name from `services list` |
-| `--format` | Output format (`table` default) |
+| `<service>` | Service name from `listoas` |
+| `--format` | Output format (`json` default) |
 
 ---
 
-### `run`
+### `oas <service> listapi`
+
+List all available API operations for a service.
+
+```bash
+ucli oas <service> listapi [--format json|table|yaml]
+```
+
+| Argument/Flag | Description |
+|---------------|-------------|
+| `<service>` | Service name from `listoas` |
+| `--format` | Output format (`json` default) |
+
+---
+
+### `oas <service> apiinfo <api>`
+
+Show detailed input/output parameters for a specific API operation.
+
+```bash
+ucli oas <service> apiinfo <api>
+```
+
+| Argument | Description |
+|----------|-------------|
+| `<service>` | Service name from `listoas` |
+| `<api>` | Operation ID from `oas <service> listapi` |
+
+---
+
+### `oas <service> invokeapi <api>`
 
 Execute a single API operation defined in an OpenAPI spec.
 
 ```bash
-ucli run --service <name> --operation <operationId> [options]
+ucli oas <service> invokeapi <api> [options]
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--service` | Yes | Service name (from `services list`) |
-| `--operation` | Yes | `operationId` from the OpenAPI spec |
-| `--params` | No | JSON string of parameters (path, query, body merged) |
+| `--data` | No | Request body (JSON string or @filename) |
+| `--params` | No | JSON string of parameters (path, query merged) |
 | `--format` | No | Output format: `json` (default), `table`, `yaml` |
 | `--query` | No | JMESPath expression to filter the response |
 | `--machine` | No | Structured JSON envelope output (agent-friendly) |
@@ -179,39 +200,33 @@ ucli run --service <name> --operation <operationId> [options]
 
 ```bash
 # GET with path parameter
-ucli run --service petstore --operation getPetById \
-  --params '{"petId": 42}'
+ucli oas petstore invokeapi getPetById --params '{"petId": 42}'
 
 # POST with body
-ucli run --service payments --operation createPayment \
-  --params '{"amount": 100, "currency": "USD", "recipient": "acct_123"}' \
-  --format json
+ucli oas payments invokeapi createPayment \
+  --data '{"amount": 100, "currency": "USD", "recipient": "acct_123"}'
 
 # GET with query parameter + JMESPath filter
-ucli run --service inventory --operation listProducts \
+ucli oas inventory invokeapi listProducts \
   --params '{"category": "electronics", "limit": 10}' \
   --query 'items[?price < `50`].name'
 
-# POST with data from file
-ucli run --service crm --operation createContact \
-  --params "@./contact.json"
-
 # Agent-friendly structured output
-ucli run --service payments --operation listTransactions --machine
+ucli oas payments invokeapi listTransactions --machine
 
 # Preview request without executing
-ucli run --service payments --operation createPayment --dry-run \
+ucli oas payments invokeapi createPayment --dry-run \
   --data '{"amount": 5000, "currency": "USD"}'
 ```
 
 ---
 
-### `mcp list`
+### `listmcp`
 
 List all MCP servers available to your group.
 
 ```bash
-ucli mcp list [--format table|json|yaml]
+ucli listmcp [--format table|json|yaml]
 ```
 
 | Flag | Default | Description |
@@ -220,76 +235,71 @@ ucli mcp list [--format table|json|yaml]
 
 ---
 
-### `mcp tools <server>`
+### `mcp <server> listtool`
 
 List tools available on a specific MCP server.
 
 ```bash
-ucli mcp tools <server-name> [--format table|json]
+ucli mcp <server> listtool [--format table|json|yaml]
 ```
 
 | Argument/Flag | Description |
 |---------------|-------------|
-| `<server-name>` | MCP server name from `mcp list` |
+| `<server>` | MCP server name from `listmcp` |
 | `--format` | Output format (`table` default) |
 
 ---
 
-### `mcp describe <server> <tool>`
+### `mcp <server> toolinfo <tool>`
 
 Show detailed parameter schema for a tool on a MCP server.
 
 ```bash
-ucli mcp describe <server-name> <tool-name> [--json]
+ucli mcp <server> toolinfo <tool> [--json]
 ```
 
 | Argument/Flag | Description |
 |---------------|-------------|
-| `<server-name>` | MCP server name from `mcp list` |
-| `<tool-name>` | Tool name from `mcp tools` |
+| `<server>` | MCP server name from `listmcp` |
+| `<tool>` | Tool name from `mcp <server> listtool` |
 | `--json` | Output full schema as JSON (for agent consumption) |
 
 **Examples:**
 
 ```bash
 # Human-readable tool description
-ucli mcp describe weather get_forecast
+ucli mcp weather toolinfo get_forecast
 
 # JSON schema (for agent introspection)
-ucli mcp describe weather get_forecast --json
+ucli mcp weather toolinfo get_forecast --json
 ```
 
 ---
 
-### `mcp run <server> <tool> [args...]`
+### `mcp <server> invoketool <tool>`
 
 Execute a tool on an MCP server.
 
 ```bash
-ucli mcp run <server-name> <tool-name> [args...]
+ucli mcp <server> invoketool <tool> [--data <json>] [--json]
 ```
-
-Args are passed as `key=value` pairs and converted to a JSON object, or use `--input-json` for direct JSON input.
 
 | Flag | Description |
 |------|-------------|
+| `--data` | Tool arguments as a JSON object |
 | `--json` | Machine-readable JSON output |
-| `--input-json` | Pass tool arguments as a JSON object (preferred for agents) |
 
 **Examples:**
 
 ```bash
-# Call a weather tool with key=value args
-ucli mcp run weather get_forecast location="New York" units=metric
+# Call a weather tool with JSON input
+ucli mcp weather invoketool get_forecast --data '{"location": "New York", "units": "metric"}'
 
 # Call a search tool
-ucli mcp run search-server web_search query="ucli MCP" limit=5
-
-# Call with JSON input (preferred for agents)
-ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+ucli mcp search-server invoketool web_search --data '{"query": "ucli MCP", "limit": 5}'
 
 # Get structured JSON output
-ucli mcp run weather get_forecast --json location="New York"
+ucli mcp weather invoketool get_forecast --json --data '{"location": "New York"}'
 ```
 
 ---
@@ -330,7 +340,7 @@ Config is managed via the `configure` command. Values are stored in the OS confi
 - OAS entries are cached locally as JSON files in the OS temp dir (`ucli/` subdirectory)
 - Cache TTL per entry is set by the server admin via the `cacheTtl` field (seconds)
 - Expired entries are automatically re-fetched on next access
-- Force a refresh: `ucli refresh` or use `--refresh` flag on `services list`
+- Force a refresh: `ucli refresh` or use `--refresh` flag on `listoas`
 
 ## Auth Handling
 
@@ -355,40 +365,43 @@ The recommended workflow for AI agents using `ucli` as a skill:
 
 ```bash
 # Step 1: Discover available services
-ucli services list --format json
+ucli listoas --format json
 
 # Step 2: Inspect a service to see available operations
-ucli services info <service-name> --format json
+ucli oas <service-name> listapi --format json
 
-# Step 3: Preview a request (dry-run — no execution)
-ucli run --service <name> --operation <operationId> --dry-run \
-  --params '{ ... }'
+# Step 3: Get detailed info about a specific API
+ucli oas <service-name> apiinfo <api>
 
-# Step 4: Execute an operation with structured output
-ucli run --service <name> --operation <operationId> \
-  --params '{ ... }' --machine
+# Step 4: Preview a request (dry-run — no execution)
+ucli oas <service-name> invokeapi <api> --dry-run \
+  --data '{ ... }'
 
-# Step 5: Filter results with JMESPath
-ucli run --service inventory --operation listProducts \
+# Step 5: Execute an operation with structured output
+ucli oas <service-name> invokeapi <api> \
+  --data '{ ... }' --machine
+
+# Step 6: Filter results with JMESPath
+ucli oas inventory invokeapi listProducts \
   --query 'items[?inStock == `true`] | [0:5]'
 
-# Step 6: Chain operations (use output from one as input to another)
-PRODUCT_ID=$(ucli run --service inventory --operation listProducts \
+# Step 7: Chain operations (use output from one as input to another)
+PRODUCT_ID=$(ucli oas inventory invokeapi listProducts \
   --query 'items[0].id' | tr -d '"')
-ucli run --service orders --operation createOrder \
-  --params "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
+ucli oas orders invokeapi createOrder \
+  --data "{\"productId\": \"$PRODUCT_ID\", \"quantity\": 1}"
 
-# Step 7: MCP — describe a tool, then call it with JSON input
-ucli mcp describe weather get_forecast --json
-ucli mcp run weather get_forecast --input-json '{"location": "New York", "units": "metric"}'
+# Step 8: MCP — inspect a tool, then call it with JSON input
+ucli mcp weather toolinfo get_forecast --json
+ucli mcp weather invoketool get_forecast --data '{"location": "New York", "units": "metric"}'
 ```
 
 **Tips for agents:**
-- Always run `services list` first to discover what's available
+- Always run `ucli listoas` first to discover what's available
 - Use `--machine` for structured envelope output from API operations
 - Use `--dry-run` to preview requests before executing destructive operations
-- Use `mcp describe <server> <tool> --json` to discover tool parameters
-- Use `--input-json` for MCP tool calls (more reliable than `key=value` for complex args)
+- Use `ucli mcp <server> toolinfo <tool> --json` to discover tool parameters
+- Use `--data` for both MCP tool calls and OAS API calls (JSON input)
 - Use `--format json` for programmatic parsing
 - Use `--query` with JMESPath to extract specific fields
 - Check pagination fields (`nextPage`, `totalCount`) for list operations
@@ -399,9 +412,9 @@ ucli mcp run weather get_forecast --input-json '{"location": "New York", "units"
 | Error | Likely Cause | Resolution |
 |-------|-------------|------------|
 | `Unauthorized (401)` | JWT expired or revoked | Get a new token from the admin |
-| `Service not found` | Service name misspelled or not in group | Run `services list` to see available services |
-| `Operation not found` | Invalid `operationId` | Run `services info <name>` to see valid operations |
-| `MCP server not found` | Server name misspelled or not in group | Run `ucli mcp list` to see available servers |
-| `Tool not found` | Invalid tool name | Run `ucli mcp tools <server>` to see available tools |
+| `Service not found` | Service name misspelled or not in group | Run `ucli listoas` to see available services |
+| `Operation not found` | Invalid `operationId` | Run `ucli oas <service> listapi` to see valid operations |
+| `MCP server not found` | Server name misspelled or not in group | Run `ucli listmcp` to see available servers |
+| `Tool not found` | Invalid tool name | Run `ucli mcp <server> listtool` to see available tools |
 | `Connection refused` | Server not running or wrong URL | Check server URL with `ucli configure` |
 | `Cache error` | Temp dir permissions issue | Run `ucli refresh` to reset cache |

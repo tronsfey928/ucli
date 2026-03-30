@@ -54,7 +54,7 @@ fantastic-potato/
     │   ├── src/
     │   │   ├── index.ts             # CLI entry point
     │   │   ├── config.ts            # Conf-based local config store
-    │   │   ├── commands/            # configure, services, run, refresh, help, mcp
+    │   │   ├── commands/            # configure, listoas, listmcp, oas, mcp, refresh, help
     │   │   └── lib/
     │   │       ├── server-client.ts # Axios HTTP client for /api/v1/oas + /api/v1/mcp
     │   │       ├── cache.ts         # OS temp dir file cache with TTL

@@ -28,7 +28,7 @@ export function registerHelp(program: Command): void {
             for (const e of entries) {
               console.log(`  ${e.name.padEnd(20)} ${e.description}`)
             }
-            console.log('\nTip: Run `ucli help <service>` for service-specific operations.')
+            console.log('\nTip: Run `ucli oas <service> listapi` for service-specific operations.')
           }
         } else {
           console.log('\nRun `ucli configure --server <url> --token <jwt>` to get started.')
@@ -45,7 +45,7 @@ export function registerHelp(program: Command): void {
         entry = await client.getOAS(service)
       } catch {
         console.error(`Unknown service: ${service}`)
-        console.error('Run `ucli services list` to see available services.')
+        console.error('Run `ucli listoas` to see available services.')
         process.exit(ExitCode.NOT_FOUND)
       }
 
@@ -59,10 +59,9 @@ export function registerHelp(program: Command): void {
       console.log(help)
 
       console.log('\nExamples:')
-      console.log(`  ucli run ${entry.name} <operation>`)
-      console.log(`  ucli run ${entry.name} <operation> --format table`)
-      console.log(`  ucli run ${entry.name} <operation> --query "results[*].id"`)
-      console.log(`  ucli run ${entry.name} <operation> --data '{"key":"value"}'`)
+      console.log(`  ucli oas ${entry.name} listapi`)
+      console.log(`  ucli oas ${entry.name} apiinfo <operation>`)
+      console.log(`  ucli oas ${entry.name} invokeapi <operation> --data '{"key":"value"}'`)
     })
 }
 
@@ -76,11 +75,11 @@ SETUP
       Configure server connection and authentication.
 
 DISCOVERY
-  ucli services list
+  ucli listoas
       List all OAS services available in your group.
 
-  ucli services info <service>
-      Show detailed service info and all available operations.
+  ucli listmcp
+      List all MCP servers available in your group.
 
   ucli introspect
       Return complete capability manifest in a single call (JSON).
@@ -89,9 +88,18 @@ DISCOVERY
   ucli help [service]
       Show this guide, or service-specific operations.
 
-EXECUTION
-  ucli run <service> <operation> [options]
-      Execute a service operation.
+OAS SERVICES
+  ucli oas <service> info
+      Show detailed service information.
+
+  ucli oas <service> listapi
+      List all available API operations.
+
+  ucli oas <service> apiinfo <api>
+      Show detailed input/output parameters for an API operation.
+
+  ucli oas <service> invokeapi <api> [options]
+      Execute an API operation.
 
       Options:
         --format json|table|yaml   Output format (default: json)
@@ -99,13 +107,13 @@ EXECUTION
         --data <json|@file>        Request body for POST/PUT/PATCH
 
 MCP SERVERS
-  ucli mcp list
-      List all MCP servers in your group.
-
-  ucli mcp tools <server>
+  ucli mcp <server> listtool
       List tools available on a MCP server.
 
-  ucli mcp run <server> <tool> [key=value ...]
+  ucli mcp <server> toolinfo <tool>
+      Show detailed input/output parameters for a tool.
+
+  ucli mcp <server> invoketool <tool> --data <json>
       Call a tool on a MCP server.
 
 MAINTENANCE
@@ -128,13 +136,14 @@ GLOBAL FLAGS
 
 ERRORS
   401 Unauthorized  → Run: ucli configure --server <url> --token <jwt>
-  404 Not Found     → Check service name: ucli services list
-  4xx Client Error  → Check operation args: ucli services info <service>
+  404 Not Found     → Check service name: ucli listoas
+  4xx Client Error  → Check operation args: ucli oas <service> listapi
   5xx Server Error  → Retry or run: ucli refresh
 
 AI AGENT QUICK START
   1. ucli introspect               # discover everything in one call
-  2. ucli run <svc> <op> [args]    # execute operations
-  3. Use --output json globally    # get structured { success, data/error } envelopes
+  2. ucli oas <svc> invokeapi <op> # execute OAS operations
+  3. ucli mcp <srv> invoketool <t> # execute MCP tools
+  4. Use --output json globally    # get structured { success, data/error } envelopes
 `)
 }
