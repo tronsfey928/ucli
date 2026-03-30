@@ -1,11 +1,12 @@
 import { Command } from 'commander'
 import { createRequire } from 'node:module'
 import { registerConfigure } from './commands/configure.js'
-import { registerServices } from './commands/services.js'
-import { registerRun } from './commands/run.js'
+import { registerListOas } from './commands/listoas.js'
+import { registerListMcp } from './commands/listmcp.js'
+import { registerOas } from './commands/oas.js'
+import { registerMcp } from './commands/mcp.js'
 import { registerRefresh } from './commands/refresh.js'
 import { registerHelp } from './commands/help-cmd.js'
-import { registerMcp } from './commands/mcp.js'
 import { registerDoctor } from './commands/doctor.js'
 import { registerCompletions } from './commands/completions.js'
 import { registerIntrospect } from './commands/introspect.js'
@@ -43,10 +44,11 @@ program
   })
 
 registerConfigure(program)
-registerServices(program)
-registerRun(program)
-registerRefresh(program)
+registerListOas(program)
+registerListMcp(program)
+registerOas(program)
 registerMcp(program)
+registerRefresh(program)
 registerDoctor(program)
 registerCompletions(program)
 registerIntrospect(program)

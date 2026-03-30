@@ -196,13 +196,13 @@ curl -s -X POST http://localhost:3000/admin/mcp \
 npm install -g @tronsfey/ucli
 
 ucli configure --server http://localhost:3000 --token $JWT
-ucli services list
-ucli run --service petstore --operation getPetById --params '{"petId": 1}'
+ucli listoas
+ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
 
 # 使用 MCP 服务器
-ucli mcp list
-ucli mcp tools weather
-ucli mcp run weather get_forecast location="New York"
+ucli listmcp
+ucli mcp weather listtool
+ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
 ```
 
 ## 在 OpenClaw 中使用
@@ -263,16 +263,16 @@ tags: [api, openapi, mcp, tools]
 
 ```
 > 列出可用的 API 服务
-  → 智能体执行：ucli services list
+  → 智能体执行：ucli listoas
 
 > 调用 petstore API 获取宠物 #1
-  → 智能体执行：ucli run petstore getPetById --petId 1
+  → 智能体执行：ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
 
 > 列出 weather 服务器上的 MCP 工具
-  → 智能体执行：ucli mcp tools weather
+  → 智能体执行：ucli mcp weather listtool
 
 > 获取纽约的天气预报
-  → 智能体执行：ucli mcp run weather get_forecast location="New York"
+  → 智能体执行：ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
 ```
 
 智能体会自动完成服务发现、操作查找和凭据注入——凭据**永远不会暴露**给智能体。
@@ -304,7 +304,7 @@ ucli configure --server https://your-ucli-server.example.com --token <group-jwt>
 }
 ```
 
-将 `"weather"` 替换为你在 ucli 中注册的 MCP 服务器名称（使用 `ucli mcp list` 查看已注册服务器列表）。
+将 `"weather"` 替换为你在 ucli 中注册的 MCP 服务器名称（使用 `ucli listmcp` 查看已注册服务器列表）。
 
 ### 第三步 — 重启 Claude Desktop
 

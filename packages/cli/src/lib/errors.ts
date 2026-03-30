@@ -42,7 +42,7 @@ export const HINT_MAP: Record<number, string> = {
   [ExitCode.CONNECTIVITY_ERROR]:
     'Check that the server URL is correct and the server is running. Run: ucli doctor',
   [ExitCode.NOT_FOUND]:
-    'Check the resource name. Run: ucli services list  or  ucli mcp list',
+    'Check the resource name. Run: ucli listoas  or  ucli listmcp',
   [ExitCode.SERVER_ERROR]:
     'The server returned an unexpected error. Try again or run: ucli doctor',
 }

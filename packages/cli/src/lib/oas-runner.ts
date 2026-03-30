@@ -157,3 +157,31 @@ export async function getServiceHelp(entry: OASEntryPublic): Promise<string> {
     child.on('error', reject)
   })
 }
+
+/**
+ * Get help for a specific operation by running `<operationId> --help`.
+ * Returns the raw help text including parameter details.
+ */
+export async function getOperationHelp(entry: OASEntryPublic, operationId: string): Promise<string> {
+  const bin = resolveOpenapi2CliBin()
+  const args = [
+    'run',
+    '--oas', entry.remoteUrl,
+    '--cache-ttl', String(entry.cacheTtl),
+    ...(entry.baseEndpoint ? ['--endpoint', entry.baseEndpoint] : []),
+    operationId,
+    '--help',
+  ]
+
+  return new Promise<string>((resolve, reject) => {
+    let output = ''
+    const child = spawn(process.execPath, [bin, ...args], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+
+    child.stdout?.on('data', (d: Buffer) => { output += d.toString() })
+    child.stderr?.on('data', (d: Buffer) => { output += d.toString() })
+    child.on('close', () => resolve(output))
+    child.on('error', reject)
+  })
+}
