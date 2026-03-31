@@ -88,13 +88,16 @@ export class OASService {
     try {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 15000)
-      const res = await fetch(url, {
-        headers: { Accept: 'application/json, application/yaml, text/yaml', ...(headers ?? {}) },
-        signal: controller.signal,
-      })
-      clearTimeout(timeout)
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-      body = await res.text()
+      try {
+        const res = await fetch(url, {
+          headers: { Accept: 'application/json, application/yaml, text/yaml', ...(headers ?? {}) },
+          signal: controller.signal,
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+        body = await res.text()
+      } finally {
+        clearTimeout(timeout)
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
       throw new BadRequestException(`Failed to fetch OAS spec: ${msg}`)

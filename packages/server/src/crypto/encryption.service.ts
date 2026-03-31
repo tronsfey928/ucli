@@ -11,7 +11,13 @@ export class EncryptionService {
   constructor(private readonly appConfig: AppConfigService) {}
 
   private getKey(): Buffer {
-    return Buffer.from(this.appConfig.encryptionKey, 'hex')
+    const key = Buffer.from(this.appConfig.encryptionKey, 'hex')
+    if (key.length !== 32) {
+      throw new InternalServerErrorException(
+        `Encryption key must be 32 bytes (256-bit), got ${key.length} bytes`,
+      )
+    }
+    return key
   }
 
   encrypt(config: object): string {

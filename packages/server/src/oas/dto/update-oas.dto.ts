@@ -1,4 +1,4 @@
-import { IsString, IsUrl, IsEnum, IsOptional, IsInt, IsBoolean, Min, Length, IsObject } from 'class-validator'
+import { IsString, IsUrl, IsEnum, IsOptional, IsInt, IsBoolean, Min, Length, Matches, IsObject, ValidateIf } from 'class-validator'
 import { ApiPropertyOptional } from '@nestjs/swagger'
 import type { AuthType, AuthConfig } from '../../storage/interfaces/repos.interface'
 
@@ -7,6 +7,7 @@ export class UpdateOASDto {
   @IsOptional()
   @IsString()
   @Length(1, 100)
+  @Matches(/^[a-z0-9\-_]+$/, { message: 'name must be lowercase alphanumeric with hyphens/underscores' })
   name?: string
 
   @ApiPropertyOptional({ example: 'Updated description', description: 'Updated description' })
@@ -22,6 +23,7 @@ export class UpdateOASDto {
 
   @ApiPropertyOptional({ example: 'https://api.example.com/v2', description: 'Updated base endpoint (null to clear)' })
   @IsOptional()
+  @ValidateIf((_o, value) => value !== null)
   @IsUrl()
   baseEndpoint?: string | null
 

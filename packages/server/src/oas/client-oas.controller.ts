@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { GroupTokenGuard } from '../auth/group-token.guard'
 import { JwtPayloadParam } from '../auth/decorators/jwt-payload.decorator'
+import { RequiredScopes } from '../auth/decorators/required-scopes.decorator'
 import type { JwtPayload } from '../crypto/jwt.service'
 import type { OASEntry } from '../storage/interfaces/repos.interface'
 import { OASService } from './oas.service'
@@ -11,6 +12,7 @@ import { PaginationQueryDto, paginate } from '../common'
 @ApiBearerAuth('GroupJWT')
 @Controller('api/v1/oas')
 @UseGuards(GroupTokenGuard)
+@RequiredScopes('oas:read')
 export class ClientOASController {
   constructor(private readonly oasService: OASService) {}
 
