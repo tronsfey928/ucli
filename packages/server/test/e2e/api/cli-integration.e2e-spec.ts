@@ -169,19 +169,19 @@ describe('CLI + Server integration (e2e)', () => {
     expect(configure.code).toBe(0)
     expect(configure.stdout).toContain('Configuration saved successfully')
 
-    const listoas = await runCli(['listoas', '--format', 'json'])
+    const listoas = await runCli(['oas', 'list', '--format', 'json'])
     expect(listoas.code).toBe(0)
     expect(listoas.stdout).toContain('"name": "demo"')
 
-    const listoasRefresh = await runCli(['listoas', '--refresh', '--format', 'json'])
+    const listoasRefresh = await runCli(['oas', 'list', '--refresh', '--format', 'json'])
     expect(listoasRefresh.code).toBe(0)
     expect(listoasRefresh.stdout).toContain('"name": "demo"')
 
-    const oasInfo = await runCli(['oas', 'demo', 'info', '--format', 'json'])
+    const oasInfo = await runCli(['oas', 'describe', 'demo', '--format', 'json'])
     expect(oasInfo.code).toBe(0)
     expect(oasInfo.stdout).toContain('"name": "demo"')
 
-    const oasListapi = await runCli(['oas', 'demo', 'listapi', '--format', 'json'])
+    const oasListapi = await runCli(['oas', 'operations', 'demo', '--format', 'json'])
     expect(oasListapi.code).toBe(0)
     expect(oasListapi.stdout).toContain('"name": "demo"')
     expect(oasListapi.stdout).toContain('"operationsHelp"')
@@ -196,8 +196,8 @@ describe('CLI + Server integration (e2e)', () => {
 
     const invokeapi = await runCli([
       'oas',
+      'invoke',
       'demo',
-      'invokeapi',
       'getPing',
       '--params',
       '{"name":"alice"}',
@@ -207,17 +207,17 @@ describe('CLI + Server integration (e2e)', () => {
     expect(invokeapi.code).toBe(0)
     expect(invokeapi.stderr).not.toContain('Operation failed')
 
-    const listmcp = await runCli(['listmcp', '--format', 'json'])
+    const listmcp = await runCli(['mcp', 'list', '--format', 'json'])
     expect(listmcp.code).toBe(0)
     expect(listmcp.stdout).toContain('"name": "filesystem-local"')
 
-    const mcpListtool = await runCli(['mcp', 'filesystem-local', 'listtool', '--format', 'json'])
+    const mcpListtool = await runCli(['mcp', 'tools', 'filesystem-local', '--format', 'json'])
     if (mcpListtool.code !== 0) {
-      throw new Error(`mcp listtool exit=${mcpListtool.code} signal=${mcpListtool.signal ?? 'none'} timeout=${mcpListtool.timedOut === true}\nstdout:\n${mcpListtool.stdout}\nstderr:\n${mcpListtool.stderr}`)
+      throw new Error(`mcp tools exit=${mcpListtool.code} signal=${mcpListtool.signal ?? 'none'} timeout=${mcpListtool.timedOut === true}\nstdout:\n${mcpListtool.stdout}\nstderr:\n${mcpListtool.stderr}`)
     }
     expect(mcpListtool.stdout).toContain('"name": "list_directory"')
 
-    const mcpInvoketool = await runCli(['mcp', 'filesystem-local', 'invoketool', 'list_directory', '--data', `{"path":"${mcpAllowedDir}"}`])
+    const mcpInvoketool = await runCli(['mcp', 'invoke', 'filesystem-local', 'list_directory', '--data', `{"path":"${mcpAllowedDir}"}`])
     expect(mcpInvoketool.code).toBe(0)
     expect(`${mcpInvoketool.stdout}\n${mcpInvoketool.stderr}`).toContain('sample.txt')
 
@@ -243,7 +243,7 @@ describe('CLI + Server integration (e2e)', () => {
     expect(manifest.commands.length).toBeGreaterThan(0)
 
     // --output json wraps results in { success, data } envelope
-    const jsonList = await runCli(['--output', 'json', 'listoas'])
+    const jsonList = await runCli(['--output', 'json', 'oas', 'list'])
     expect(jsonList.code).toBe(0)
     const envelope = JSON.parse(jsonList.stdout)
     expect(envelope.success).toBe(true)

@@ -1,8 +1,6 @@
 import { Command } from 'commander'
 import { createRequire } from 'node:module'
 import { registerConfigure } from './commands/configure.js'
-import { registerListOas } from './commands/listoas.js'
-import { registerListMcp } from './commands/listmcp.js'
 import { registerOas } from './commands/oas.js'
 import { registerMcp } from './commands/mcp.js'
 import { registerRefresh } from './commands/refresh.js'
@@ -44,8 +42,6 @@ program
   })
 
 registerConfigure(program)
-registerListOas(program)
-registerListMcp(program)
 registerOas(program)
 registerMcp(program)
 registerRefresh(program)

@@ -40,18 +40,18 @@ _ucli_completions() {
   COMPREPLY=()
   cur="\${COMP_WORDS[COMP_CWORD]}"
   prev="\${COMP_WORDS[COMP_CWORD-1]}"
-  commands="configure listoas listmcp oas mcp refresh help doctor completions introspect"
+  commands="configure oas mcp refresh help doctor completions introspect"
 
   case "\${COMP_WORDS[1]}" in
     oas)
-      if [ "$COMP_CWORD" -eq 3 ]; then
-        COMPREPLY=( $(compgen -W "info listapi apiinfo invokeapi" -- "$cur") )
+      if [ "$COMP_CWORD" -eq 2 ]; then
+        COMPREPLY=( $(compgen -W "list describe operations operation invoke" -- "$cur") )
       fi
       return 0
       ;;
     mcp)
-      if [ "$COMP_CWORD" -eq 3 ]; then
-        COMPREPLY=( $(compgen -W "listtool toolinfo invoketool" -- "$cur") )
+      if [ "$COMP_CWORD" -eq 2 ]; then
+        COMPREPLY=( $(compgen -W "list tools tool invoke" -- "$cur") )
       fi
       return 0
       ;;
@@ -59,7 +59,7 @@ _ucli_completions() {
       COMPREPLY=( $(compgen -W "bash zsh fish" -- "$cur") )
       return 0
       ;;
-    listoas|listmcp|help)
+    help)
       # dynamic completions would require server calls; skip for now
       return 0
       ;;
@@ -82,10 +82,8 @@ _ucli() {
   local -a commands
   commands=(
     'configure:Configure server URL and authentication token'
-    'listoas:List all OAS services'
-    'listmcp:List all MCP servers'
-    'oas:Interact with an OAS service'
-    'mcp:Interact with a MCP server'
+    'oas:Manage OAS services'
+    'mcp:Manage MCP servers'
     'refresh:Force-refresh the local OAS cache'
     'help:Show usage guide'
     'doctor:Check configuration and connectivity'
@@ -104,13 +102,13 @@ _ucli() {
     args)
       case $words[1] in
         oas)
-          if (( CURRENT == 3 )); then
-            _values 'action' 'info[Show service info]' 'listapi[List API operations]' 'apiinfo[Show API details]' 'invokeapi[Invoke an API]'
+          if (( CURRENT == 2 )); then
+            _values 'subcommand' 'list[List all OAS services]' 'describe[Show service info]' 'operations[List API operations]' 'operation[Show API details]' 'invoke[Invoke an API]'
           fi
           ;;
         mcp)
-          if (( CURRENT == 3 )); then
-            _values 'action' 'listtool[List tools]' 'toolinfo[Show tool details]' 'invoketool[Invoke a tool]'
+          if (( CURRENT == 2 )); then
+            _values 'subcommand' 'list[List all MCP servers]' 'tools[List tools]' 'tool[Show tool details]' 'invoke[Invoke a tool]'
           fi
           ;;
         completions)
@@ -130,26 +128,26 @@ complete -c ucli -e
 
 # Top-level commands
 complete -c ucli -n __fish_use_subcommand -a configure -d 'Configure server URL and token'
-complete -c ucli -n __fish_use_subcommand -a listoas -d 'List OAS services'
-complete -c ucli -n __fish_use_subcommand -a listmcp -d 'List MCP servers'
-complete -c ucli -n __fish_use_subcommand -a oas -d 'Interact with an OAS service'
-complete -c ucli -n __fish_use_subcommand -a mcp -d 'Interact with a MCP server'
+complete -c ucli -n __fish_use_subcommand -a oas -d 'Manage OAS services'
+complete -c ucli -n __fish_use_subcommand -a mcp -d 'Manage MCP servers'
 complete -c ucli -n __fish_use_subcommand -a refresh -d 'Refresh local cache'
 complete -c ucli -n __fish_use_subcommand -a help -d 'Show usage guide'
 complete -c ucli -n __fish_use_subcommand -a doctor -d 'Check config and connectivity'
 complete -c ucli -n __fish_use_subcommand -a completions -d 'Generate shell completions'
 complete -c ucli -n __fish_use_subcommand -a introspect -d 'Return capability manifest for AI agents'
 
-# oas actions (third argument after server name)
-complete -c ucli -n '__fish_seen_subcommand_from oas' -a info -d 'Show service info'
-complete -c ucli -n '__fish_seen_subcommand_from oas' -a listapi -d 'List API operations'
-complete -c ucli -n '__fish_seen_subcommand_from oas' -a apiinfo -d 'Show API details'
-complete -c ucli -n '__fish_seen_subcommand_from oas' -a invokeapi -d 'Invoke an API'
+# oas subcommands
+complete -c ucli -n '__fish_seen_subcommand_from oas' -a list -d 'List all OAS services'
+complete -c ucli -n '__fish_seen_subcommand_from oas' -a describe -d 'Show service info'
+complete -c ucli -n '__fish_seen_subcommand_from oas' -a operations -d 'List API operations'
+complete -c ucli -n '__fish_seen_subcommand_from oas' -a operation -d 'Show API details'
+complete -c ucli -n '__fish_seen_subcommand_from oas' -a invoke -d 'Invoke an API'
 
-# mcp actions (third argument after server name)
-complete -c ucli -n '__fish_seen_subcommand_from mcp' -a listtool -d 'List tools'
-complete -c ucli -n '__fish_seen_subcommand_from mcp' -a toolinfo -d 'Show tool details'
-complete -c ucli -n '__fish_seen_subcommand_from mcp' -a invoketool -d 'Invoke a tool'
+# mcp subcommands
+complete -c ucli -n '__fish_seen_subcommand_from mcp' -a list -d 'List all MCP servers'
+complete -c ucli -n '__fish_seen_subcommand_from mcp' -a tools -d 'List tools'
+complete -c ucli -n '__fish_seen_subcommand_from mcp' -a tool -d 'Show tool details'
+complete -c ucli -n '__fish_seen_subcommand_from mcp' -a invoke -d 'Invoke a tool'
 
 # completions subcommands
 complete -c ucli -n '__fish_seen_subcommand_from completions' -a 'bash zsh fish' -d 'Shell type'`
