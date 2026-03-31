@@ -24,7 +24,7 @@ export class TokensService {
 
   async issue(opts: { groupId: string; groupName: string; name: string; scopes?: string[]; ttlSec?: number }): Promise<IssueTokenResult> {
     const jti = randomUUID()
-    const scopes = opts.scopes ?? ['oas:read']
+    const scopes = opts.scopes ?? ['oas:read', 'mcp:read']
     const ttl = opts.ttlSec ?? this.appConfig.jwtDefaultTtl
     const expiresAt = ttl > 0 ? new Date(Date.now() + ttl * 1000) : null
 

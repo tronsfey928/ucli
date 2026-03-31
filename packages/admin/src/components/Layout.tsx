@@ -30,7 +30,7 @@ export default function Layout() {
       <aside className="flex w-56 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
         {/* Brand */}
         <div className="flex h-14 items-center gap-2 px-4">
-          <i className="ri-hexagon-line text-xl text-violet-400" />
+          <i className="ri-hexagon-line text-xl text-primary" />
           <span className="font-semibold text-sm tracking-tight">ucli</span>
           <span className="ml-auto text-xs text-sidebar-foreground/40">{t('nav_brand')}</span>
         </div>
