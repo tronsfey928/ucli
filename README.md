@@ -1,8 +1,8 @@
 <h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
-  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?label=%40tronsfey%2Fucli-server&color=7c3aed" alt="ucli-server version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?label=%40tronsfey%2Fucli&color=2563eb" alt="ucli version"/></a>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
 </p>
@@ -131,7 +131,7 @@ ucli/
     │   └── test/e2e/                # Jest E2E tests (memory adapters)
     └── cli/                         # @tronsfey/ucli (Commander.js + tsup/ESM)
         ├── src/
-        │   ├── commands/            # configure, listoas, listmcp, oas, mcp, refresh, help
+        │   ├── commands/            # configure, oas, mcp, refresh, doctor, completions, introspect, help
         │   └── lib/                 # server-client, cache, oas-runner, mcp-runner
         └── test/                    # Vitest unit tests
 ```
@@ -196,13 +196,13 @@ curl -s -X POST http://localhost:3000/admin/mcp \
 npm install -g @tronsfey/ucli
 
 ucli configure --server http://localhost:3000 --token $JWT
-ucli listoas
-ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
+ucli oas list
+ucli oas invoke petstore getPetById --params '{"petId": 1}'
 
 # Use MCP servers
-ucli listmcp
-ucli mcp weather listtool
-ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
+ucli mcp list
+ucli mcp tools weather
+ucli mcp invoke weather get_forecast --data '{"location": "New York"}'
 ```
 
 ## Using with OpenClaw
@@ -263,16 +263,16 @@ Once configured, the OpenClaw agent can:
 
 ```
 > List available API services
-  → Agent runs: ucli listoas
+  → Agent runs: ucli oas list
 
 > Call the petstore API to get pet #1
-  → Agent runs: ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
+  → Agent runs: ucli oas invoke petstore getPetById --params '{"petId": 1}'
 
 > List MCP tools on the weather server
-  → Agent runs: ucli mcp weather listtool
+  → Agent runs: ucli mcp tools weather
 
 > Get the weather forecast for New York
-  → Agent runs: ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
+  → Agent runs: ucli mcp invoke weather get_forecast --data '{"location": "New York"}'
 ```
 
 The agent handles service discovery, operation lookup, and credential injection automatically — credentials are **never exposed** to the agent.
@@ -304,7 +304,7 @@ Open `~/Library/Application Support/Claude/claude_desktop_config.json` (create i
 }
 ```
 
-Replace `"weather"` with the name of any MCP server you have registered in ucli (`ucli listmcp` to see available servers).
+Replace `"weather"` with the name of any MCP server you have registered in ucli (`ucli mcp list` to see available servers).
 
 ### Step 3 — Restart Claude Desktop
 
@@ -318,6 +318,8 @@ Quit and relaunch Claude Desktop. The registered MCP tools will appear automatic
 |---------|-------------|------|
 | [`@tronsfey/ucli-server`](./packages/server) | NestJS server — storage, crypto, auth, REST API, admin dashboard | [README](./packages/server/README.md) |
 | [`@tronsfey/ucli`](./packages/cli) | Commander.js CLI — service discovery, operation runner | [README](./packages/cli/README.md) |
+| [`@tronsfey/mcp2cli`](./packages/mcp2cli) | MCP client library used by ucli to call MCP server tools | [README](./packages/mcp2cli/README.md) |
+| [`@tronsfey/openapi2cli`](./packages/openapi2cli) | OpenAPI operation runner used by ucli to invoke OAS endpoints | [README](./packages/openapi2cli/README.md) |
 | `@tronsfey/ucli-admin` *(private)* | React admin dashboard — bundled into `ucli-server` at `/admin-ui` | — |
 
 ## Development

@@ -1,8 +1,8 @@
 <h1 align="center">ucli</h1>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?label=%40ucli%2Fserver&color=7c3aed" alt="ucli-server version"/></a>
-  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?label=%40ucli%2Fcli&color=2563eb" alt="ucli version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli-server"><img src="https://img.shields.io/npm/v/@tronsfey/ucli-server?label=%40tronsfey%2Fucli-server&color=7c3aed" alt="ucli-server version"/></a>
+  <a href="https://www.npmjs.com/package/@tronsfey/ucli"><img src="https://img.shields.io/npm/v/@tronsfey/ucli?label=%40tronsfey%2Fucli&color=2563eb" alt="ucli version"/></a>
   <img src="https://img.shields.io/badge/license-MIT-22c55e" alt="license"/>
   <img src="https://img.shields.io/badge/node-%3E%3D18-38bdf8" alt="node"/>
 </p>
@@ -196,13 +196,13 @@ curl -s -X POST http://localhost:3000/admin/mcp \
 npm install -g @tronsfey/ucli
 
 ucli configure --server http://localhost:3000 --token $JWT
-ucli listoas
-ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
+ucli oas list
+ucli oas invoke petstore getPetById --params '{"petId": 1}'
 
 # 使用 MCP 服务器
-ucli listmcp
-ucli mcp weather listtool
-ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
+ucli mcp list
+ucli mcp tools weather
+ucli mcp invoke weather get_forecast --data '{"location": "New York"}'
 ```
 
 ## 在 OpenClaw 中使用
@@ -263,16 +263,16 @@ tags: [api, openapi, mcp, tools]
 
 ```
 > 列出可用的 API 服务
-  → 智能体执行：ucli listoas
+  → 智能体执行：ucli oas list
 
 > 调用 petstore API 获取宠物 #1
-  → 智能体执行：ucli oas petstore invokeapi getPetById --params '{"petId": 1}'
+  → 智能体执行：ucli oas invoke petstore getPetById --params '{"petId": 1}'
 
 > 列出 weather 服务器上的 MCP 工具
-  → 智能体执行：ucli mcp weather listtool
+  → 智能体执行：ucli mcp tools weather
 
 > 获取纽约的天气预报
-  → 智能体执行：ucli mcp weather invoketool get_forecast --data '{"location": "New York"}'
+  → 智能体执行：ucli mcp invoke weather get_forecast --data '{"location": "New York"}'
 ```
 
 智能体会自动完成服务发现、操作查找和凭据注入——凭据**永远不会暴露**给智能体。
@@ -304,7 +304,7 @@ ucli configure --server https://your-ucli-server.example.com --token <group-jwt>
 }
 ```
 
-将 `"weather"` 替换为你在 ucli 中注册的 MCP 服务器名称（使用 `ucli listmcp` 查看已注册服务器列表）。
+将 `"weather"` 替换为你在 ucli 中注册的 MCP 服务器名称（使用 `ucli mcp list` 查看已注册服务器列表）。
 
 ### 第三步 — 重启 Claude Desktop
 
@@ -318,6 +318,8 @@ ucli configure --server https://your-ucli-server.example.com --token <group-jwt>
 |------|------|------|
 | [`@tronsfey/ucli-server`](./packages/server) | NestJS 服务端——存储、加密、认证、REST API、管理后台 | [README](./packages/server/README.zh.md) |
 | [`@tronsfey/ucli`](./packages/cli) | Commander.js CLI——服务发现、操作执行 | [README](./packages/cli/README.zh.md) |
+| [`@tronsfey/mcp2cli`](./packages/mcp2cli) | ucli 内部使用的 MCP 客户端库，用于调用 MCP 服务器工具 | [README](./packages/mcp2cli/README.md) |
+| [`@tronsfey/openapi2cli`](./packages/openapi2cli) | ucli 内部使用的 OpenAPI 操作运行器，用于调用 OAS 接口 | [README](./packages/openapi2cli/README.md) |
 | `@tronsfey/ucli-admin` *（私有）* | React 管理后台——随 `ucli-server` 打包，访问路径 `/admin-ui` | — |
 
 ## 开发
