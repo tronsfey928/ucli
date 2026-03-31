@@ -1,6 +1,6 @@
 {
   "name": "@tronsfey/ucli",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "ucli — proxy OpenAPI and MCP services for AI agents",
   "keywords": [
     "openapi",
